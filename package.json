@@ -1,0 +1,14 @@
+{
+  "name": "js-prototype",
+  "version": "0.0.0",
+  "description": "",
+  "scripts": {
+    "test": "tape ./test_runner.js"
+  },
+  "author": "mjbecze <mjbecze@gmail.com>",
+  "license": "ISC",
+  "dependencies": {
+    "es6-autobind": "^1.0.2",
+    "tape": "^4.5.1"
+  }
+}

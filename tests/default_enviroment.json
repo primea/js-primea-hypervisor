@@ -1,0 +1,15 @@
+enviroment: {
+  gasCounter: 0,
+  gas: 0,
+  gasPrice: 0,
+  gasLimit: 0,
+  address: [],
+  origin: [],
+  coinbase: [],
+  difficulty: [],
+  caller: [],
+  callValue: [],
+  callData: [],
+  code: [],
+  logs: []
+}

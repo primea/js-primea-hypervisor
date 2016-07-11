@@ -1,0 +1,3 @@
+[submodule "sexpr-wasm-prototype"]
+	path = sexpr-wasm-prototype
+	url = https://github.com/WebAssembly/sexpr-wasm-prototype.git

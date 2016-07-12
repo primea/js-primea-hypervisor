@@ -13,7 +13,7 @@ You need to compile [nodejs](https://github.com/nodejs/node) from master to run
 clone and run `npm install`
 
 # CLONE
-* [mango](https://github.com/axic/mango) `git clone mango://{repo address}`
+* [mango](https://github.com/axic/mango) `git clone mango://0xf75056c8c84d993434a2f19251df9ea2a8708df0`
 * [git-ssb](https://github.com/clehner/git-ssb) `git clone ssb://%ffhV6DU5qTXl7+fER4qztY37+/C2/6dsFALkREjb2MU=.sha256`
 * git `git clone https://github.com/ethereumjs/ewasm-kernel.git` 
 

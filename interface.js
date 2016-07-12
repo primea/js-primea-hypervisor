@@ -1,6 +1,10 @@
+/**
+ * This is the Ethereum interface that is exposed to the WASM instance which
+ * enables to interact with the Ethereum Environment
+ */
 const constants = require('./constants.js')
 
-// function.bind is not working corretly whith Wasm imports. So instead create 
+// function.bind is not working corretly whith Wasm imports. So instead create
 // a global for now. TODO REMOVE
 let ENV
 let MOD
@@ -14,13 +18,13 @@ module.exports = class Interface {
     this.module = MOD = mod
   }
 
-  debugPrint (a, b) {
-    console.log(a)
-  }
+  // debugPrint (a, b) {
+  //   console.log(a)
+  // }
 
-  memPrint () {
-    console.log((new Uint8Array(MOD.exports.memory)).toString())
-  }
+  // memPrint () {
+  //   console.log((new Uint8Array(MOD.exports.memory)).toString())
+  // }
 
   /**
    * Subtracts an amount to the gas counter

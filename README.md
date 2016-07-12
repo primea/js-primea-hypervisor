@@ -1,14 +1,35 @@
-# JS prototype
+# SYNOPSIS 
+[![Gitter](https://img.shields.io/gitter/room/ethereum/ethereumjs-lib.svg?style=flat-square)](https://gitter.im/ethereum/ethereumjs-lib) or #ethereumjs on freenode  
 
-The js prototype just implements the Ethereum interface. It uses v8 to run the WASM code.
+[![js-standard-style](https://cdn.rawgit.com/feross/standard/master/badge.svg)](https://github.com/feross/standard)  
 
-## Run tests
-The tests are written in wasm's text format (.wast) which are then compiled into binary format and ran in v8.
+This is a JS prototype of the [eWASM kernal](https://github.com/ethereum/evm2.0-design).
+
+
+# INSTALL
+You need to compile [nodejs](https://github.com/nodejs/node) from master to run
+~~`npm install ewasm-kernal`~~  
+
+clone and run `npm install`
+
+# CLONE
+* [mango](https://github.com/axic/mango) `git clone mango://{repo address}`
+* [git-ssb](https://github.com/clehner/git-ssb) `git clone ssb://{}`
+* git `git clone ` 
+
+
+
+# TESTS 
+The tests are written in wasm's text format (.wast) which are then compiled into binary format and ran in node.
 
 To run the test you need
-* download the submodules.
-* compile [v8](https://github.com/v8/v8), which will be in the v8 folder, Instuctions [here](https://github.com/v8/v8/wiki/Building-with-Gyp)
-* compile the [sexpr-wasm-prototype](https://github.com/WebAssembly/sexpr-wasm-prototype) which will be in the sexpr-wasm-prototype folder
-  `cd sexpr-wasm-prototype && make`
-* `npm install`
+* `git submodule update --init`
+* `cd sexpr-wasm-prototype && make`
 * `npm test`
+
+
+# API
+todo
+
+# LICENSE
+[MPL-2.0](https://tldrlegal.com/license/mozilla-public-license-2.0-(mpl-2))

@@ -1,14 +1,39 @@
 {
-  "name": "js-prototype",
+  "name": "ewams-kernal",
   "version": "0.0.0",
-  "description": "",
+  "description": "This is a JS prototype of the eWASM kernal.",
   "scripts": {
-    "test": "tape ./test_runner.js"
+    "lint": "standard",
+    "test": "node --expose-wasm ./tests/runner.js"
   },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ethereumjs/ethereumjs-account.git"
+  },
+  "bugs": {
+    "url": "https://github.com/ethereumjs/ethereumjs-account/issues"
+  },
+  "homepage": "https://github.com/ethereumjs/ethereumjs-account#readme",
+  "keywords": [
+    "ethereum",
+    "webassebly",
+    "wasm"
+  ],
   "author": "mjbecze <mjbecze@gmail.com>",
-  "license": "ISC",
-  "dependencies": {
-    "es6-autobind": "^1.0.2",
+  "license": "MPL-2.0",
+  "devDependencies": {
+    "standard": "^7.1.2",
     "tape": "^4.5.1"
+  },
+  "standard": {
+    "ignore": [
+      "/sexpr-wasm-prototype/"
+    ],
+    "globals": [
+      "Wasm"
+    ]
+  },
+  "dependencies": {
+    "generic-digraph": "^3.1.0"
   }
 }

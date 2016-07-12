@@ -25,7 +25,7 @@ layers. Environment, Kernel, and VM.
 ```
 ## VM
 
-The Vm implements [webassembly](https://github.com/WebAssembly/design). Two
+The VM implements [webassembly](https://github.com/WebAssembly/design). Two
 sets of intefaces are exposed to it by the kernal. The Kernal Interface and 
 The Environment Interface.
 

@@ -1,8 +1,7 @@
 # Architecture
 
-This prototype attemps to module Ethereum as three seperate but interlocking 
-layers. Environment, Kernel, and VM
-
+This prototype attempts to model Ethereum as three seperate but interlocking 
+layers. Environment, Kernel, and VM.
 ```
  +------------------+
  |                  |
@@ -32,9 +31,9 @@ The Environment Interface.
 
 ## Kernel Interface
 
-The kernal handles the following
+The kernel handles the following
  * Interprocess communication
- * Intializing the VM and exposes ROM to it (codeHandler)
+ * Intializing the VM and exposes ROM containing code to the VM (codeHandler)
  * Exposing the namespace and Intializes the Environment which VM instance exists 
  (callHandler)
  * Provides some built in contracts that facilitates different run levels 

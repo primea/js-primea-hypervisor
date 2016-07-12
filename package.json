@@ -1,5 +1,5 @@
 {
-  "name": "ewams-kernal",
+  "name": "ewasm-kernel",
   "version": "0.0.0",
   "description": "This is a JS prototype of the eWASM kernal.",
   "scripts": {
@@ -8,12 +8,12 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/ethereumjs/ethereumjs-account.git"
+    "url": "git+https://github.com/ethereumjs/ewasm-kernel.git"
   },
   "bugs": {
-    "url": "https://github.com/ethereumjs/ethereumjs-account/issues"
+    "url": "https://github.com/ethereumjs/ewasm-kernel/issues"
   },
-  "homepage": "https://github.com/ethereumjs/ethereumjs-account#readme",
+  "homepage": "https://github.com/ethereumjs/ewasm-kernel",
   "keywords": [
     "ethereum",
     "webassebly",

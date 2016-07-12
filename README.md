@@ -14,8 +14,8 @@ clone and run `npm install`
 
 # CLONE
 * [mango](https://github.com/axic/mango) `git clone mango://{repo address}`
-* [git-ssb](https://github.com/clehner/git-ssb) `git clone ssb://{}`
-* git `git clone ` 
+* [git-ssb](https://github.com/clehner/git-ssb) `git clone ssb://%ffhV6DU5qTXl7+fER4qztY37+/C2/6dsFALkREjb2MU=.sha256`
+* git `git clone https://github.com/ethereumjs/ewasm-kernel.git` 
 
 
 

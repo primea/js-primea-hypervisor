@@ -1,8 +1,9 @@
-# Architechture
+# Architecture
 
 This prototype attemps to module Ethereum as three seperate but interlocking 
 layers. Environment, Kernel, and VM
 
+```
  +------------------+
  |                  |
  | Environment      |
@@ -22,7 +23,7 @@ layers. Environment, Kernel, and VM
  | VM               |
  |                  |
  +------------------+
-
+```
 ## VM
 
 The Vm implements [webassembly](https://github.com/WebAssembly/design). Two

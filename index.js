@@ -18,7 +18,7 @@ module.exports = class Kernal {
     this.state = nameState
   }
 
-  // handles running code. `code` can be seen as ROM here
+  // handles running code.
   static codeHandler (code, environment) {
     const ethInterface = new Interface(environment)
     const instance = Wasm.instantiateModule(code, ethInterface)

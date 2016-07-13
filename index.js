@@ -21,13 +21,16 @@ module.exports = class Kernal {
   // handles running code.
   static codeHandler (code, environment) {
     const ethInterface = new Interface(environment)
-    const instance = Wasm.instantiateModule(code, ethInterface)
+    const instance = Wasm.instantiateModule(code, {
+      'ethereum': ethInterface
+    })
     ethInterface.setModule(ethInterface)
     return instance
   }
 
   // loads code from the merkle trie and delegates the message
-  static call (path, data, environment) {
+  // Detects if the code injection is needed
+  static callHandler (path, data, environment) {
     // const instance = Wasm.instantiateModule(code, interface)
     // interface.setModule(instance)
     // return instance
@@ -36,7 +39,7 @@ module.exports = class Kernal {
   // run tx
   runTx (tx, environment) {
     // verify tx then send to call Handler
-    this.call(tx, environment)
+    this.callHandler(tx, environment)
   }
 
   // run block

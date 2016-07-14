@@ -11,6 +11,7 @@
  */
 // const Environment = require('./environment.js')
 const Interface = require('./interface.js')
+const Environment = require('./environment.js')
 
 module.exports = class Kernal {
   // runs some code in the VM
@@ -19,17 +20,22 @@ module.exports = class Kernal {
   }
 
   // handles running code.
-  static codeHandler (code, environment) {
+  static codeHandler (code, environment = new Environment()) {
     const ethInterface = new Interface(environment)
     const instance = Wasm.instantiateModule(code, {
       'ethereum': ethInterface
     })
-    ethInterface.setModule(ethInterface)
+    ethInterface.setModule(instance)
+    if (instance.exports.main) {
+      instance.exports.main()
+    }
     return instance
   }
 
   // loads code from the merkle trie and delegates the message
+  // Detects if code is EVM or WASM
   // Detects if the code injection is needed
+  // Detects if transcompilation is needed
   static callHandler (path, data, environment) {
     // const instance = Wasm.instantiateModule(code, interface)
     // interface.setModule(instance)
@@ -48,7 +54,6 @@ module.exports = class Kernal {
     block.tx.forEach((tx) => {
       this.runTx(tx, environment)
     })
-
   }
 
   // run blockchain

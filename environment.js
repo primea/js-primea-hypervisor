@@ -4,10 +4,12 @@ const MAX_BAL_BYTES = require('./constants.js').MAX_BAL_BYTES
 module.exports = class Environment {
   constructor (data) {
     const defaults = {
+      // gas tank
       gasCounter: 0, // TODO: gasCounter is only 53 bits
       gas: 0, // The amount of gas this contract has
       gasPrice: 0,
       gasLimit: 0, // The gas limit for the block
+      // call infromation
       address: new Uint8Array(20),
       origin: new Uint8Array(20),
       coinbase: new Uint8Array(20),
@@ -15,12 +17,16 @@ module.exports = class Environment {
       caller: new Uint8Array(20),
       callValue: new Uint8Array(MAX_BAL_BYTES),
       callData: new ArrayBuffer(),
+      // the ROM
       code: new ArrayBuffer(), // the current running code
+      // output calls
       logs: [],
-      returnValue: new ArrayBuffer(),
       suicideAddress: new ArrayBuffer(),
-      accounts: new Map()
+      // more output calls
+      returnValue: new ArrayBuffer()
     }
+
+    this.state = new Graph()
 
     if (data) {
       data = JSON.parse(data)
@@ -32,7 +38,6 @@ module.exports = class Environment {
     if (data.accounts) {
       this.accounts = new Graph()
       const self = this
-      debugger
       data.accounts.forEach((account) => {
         self.accounts.set(new Uint8Array(account[0]).toString(), account[1])
       })

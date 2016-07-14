@@ -1,13 +1,12 @@
 # SYNOPSIS - WIP
 [![Gitter](https://img.shields.io/gitter/room/ethereum/ethereumjs-lib.svg?style=flat-square)](https://gitter.im/ethereum/ethereumjs-lib) or #ethereumjs on freenode  
-
 [![js-standard-style](https://cdn.rawgit.com/feross/standard/master/badge.svg)](https://github.com/feross/standard)  
 
 This is a JS prototype of the [eWASM kernal](https://github.com/ethereum/evm2.0-design).
 
 
 # INSTALL
-You need to compile [nodejs](https://github.com/nodejs/node) from master to run
+You need to compile [nodejs](https://github.com/nodejs/node) from master to run  
 ~~`npm install ewasm-kernal`~~  
 
 clone and run `npm install`

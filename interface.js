@@ -10,6 +10,15 @@ let ENV
 let MOD
 // The interface exposed to the WebAessembly Core
 module.exports = class Interface {
+
+  debugPrint (a) {
+    console.log(a)
+  }
+
+  memPrint () {
+    console.log((new Uint8Array(MOD.exports.memory)).toString())
+  }
+
   constructor (environment) {
     ENV = this.environment = environment
   }
@@ -17,14 +26,6 @@ module.exports = class Interface {
   setModule (mod) {
     this.module = MOD = mod
   }
-
-  // debugPrint (a, b) {
-  //   console.log(a)
-  // }
-
-  // memPrint () {
-  //   console.log((new Uint8Array(MOD.exports.memory)).toString())
-  // }
 
   /**
    * Subtracts an amount to the gas counter
@@ -266,7 +267,7 @@ module.exports = class Interface {
   }
 
   /**
-   * Sends a message with arbiatary date to a given address path
+   * Sends a message with arbiatary data to a given address path
    * @param {integer} addressOffset the offset to load the address path from
    * @param {integer} valueOffset the offset to load the value from
    * @param {integer} dataOffset the offset to load data from
@@ -306,10 +307,10 @@ module.exports = class Interface {
    * @return {integer} Returns 1 or 0 depending on if the VM trapped on the message or not
    */
   callDelegate (gas, addressOffset, dataOffset, dataLength, resultOffset, resultLength) {
-    const data = new Uint8Array(this.module.memory, dataOffset, dataLength)
-    const address = new Uint8Array(this.module.memory, addressOffset, constants.ADD_SIZE_BYTES)
+    const data = new Uint8Array(MOD.exports.memory, dataOffset, dataLength)
+    const address = new Uint8Array(MOD.exports.memory, addressOffset, constants.ADD_SIZE_BYTES)
     const [result, errorCode] = this.environment.callDelegate(gas, address, data)
-    const memory = new Uint8Array(this.module.memory, resultOffset, resultLength)
+    const memory = new Uint8Array(MOD.exports.memory, resultOffset, resultLength)
     memory.set(result)
 
     return errorCode
@@ -322,9 +323,9 @@ module.exports = class Interface {
    * @param {interger} valueOffset the memory offset to load the value from
    */
   sstore (pathOffest, valueOffset) {
-    const path = new Uint8Array(this.module.memory, pathOffest, pathOffest + 32)
-    const value = new Uint8Array(this.module.memory, valueOffset, valueOffset + 32)
-    this.environment.state.set(path, value)
+    const path = new Uint8Array(MOD.exports.memory, pathOffest, pathOffest + 32)
+    const value = new Uint8Array(MOD.exports.memory, valueOffset, valueOffset + 32)
+    ENV.state.set(path, value)
   }
 
   /**
@@ -333,9 +334,9 @@ module.exports = class Interface {
    * @param {interger} resultOffset the memory offset to load the value from
    */
   sget (pathOffest, resultOffset) {
-    const path = new Uint8Array(this.module.memory, pathOffest, pathOffest + 32)
-    const result = this.environment.state.get(path)
-    const memory = new Uint8Array(this.module.memory, resultOffset, resultOffset + 32)
+    const path = new Uint8Array(MOD.exports.memory, pathOffest, pathOffest + 32)
+    const result = ENV.state.getValue(path)
+    const memory = new Uint8Array(MOD.exports.memory, resultOffset, resultOffset + 32)
     memory.set(result)
   }
 
@@ -345,7 +346,7 @@ module.exports = class Interface {
    * @param {integer} length the length of the output data.
    */
   return (offset, length) {
-    this.environment.returnValue = new Uint8Array(this.module.memory, offset, length)
+    this.environment.returnValue = new Uint8Array(MOD.exports.memory, offset, length)
   }
 
   /**
@@ -354,7 +355,7 @@ module.exports = class Interface {
    * @param {integer} offset the offset to load the address from
    */
   suicide (addressOffset) {
-    const address = new Uint8Array(this.module.memory, addressOffset, constants.ADD_SIZE_BYTES)
+    const address = new Uint8Array(MOD.exports.memory, addressOffset, constants.ADD_SIZE_BYTES)
     this.environment.suicideAddress = address
   }
 }

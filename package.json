@@ -34,6 +34,6 @@
     ]
   },
   "dependencies": {
-    "generic-digraph": "^3.1.0"
+    "generic-digraph": "^3.1.1"
   }
 }

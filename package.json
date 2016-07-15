@@ -4,7 +4,7 @@
   "description": "This is a JS prototype of the eWASM kernal.",
   "scripts": {
     "lint": "standard",
-    "test": "node --expose-wasm ./tests/runner.js"
+    "test": "node --expose-wasm ./tests/interfaceRunner.js"
   },
   "repository": {
     "type": "git",

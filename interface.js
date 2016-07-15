@@ -2,6 +2,7 @@
  * This is the Ethereum interface that is exposed to the WASM instance which
  * enables to interact with the Ethereum Environment
  */
+const Environment = require('./environment.js')
 const constants = require('./constants.js')
 
 // function.bind is not working corretly whith Wasm imports. So instead create
@@ -19,7 +20,7 @@ module.exports = class Interface {
     console.log((new Uint8Array(MOD.exports.memory)).toString())
   }
 
-  constructor (environment) {
+  constructor (environment = new Environment()) {
     ENV = this.environment = environment
   }
 

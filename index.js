@@ -20,8 +20,8 @@ module.exports = class Kernal {
   }
 
   // handles running code.
-  static codeHandler (code, environment = new Environment()) {
-    const ethInterface = new Interface(environment)
+  static codeHandler (code, ethInterface = new Interface()) {
+    // const ethInterface = new Interface(environment)
     const instance = Wasm.instantiateModule(code, {
       'ethereum': ethInterface
     })
@@ -36,9 +36,7 @@ module.exports = class Kernal {
   // Detects if code is EVM or WASM
   // Detects if the code injection is needed
   // Detects if transcompilation is needed
-  static callHandler (path, data, environment) {
-    // const instance = Wasm.instantiateModule(code, interface)
-    // interface.setModule(instance)
+  static callHandler (path, data, environment = new Environment()) {
     // return instance
   }
 

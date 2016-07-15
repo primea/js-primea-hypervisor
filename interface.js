@@ -333,7 +333,7 @@ module.exports = class Interface {
    * @param {interger} pathOffest the memory offset to load the the path from
    * @param {interger} resultOffset the memory offset to load the value from
    */
-  sget (pathOffest, resultOffset) {
+  sload (pathOffest, resultOffset) {
     const path = new Uint8Array(MOD.exports.memory, pathOffest, pathOffest + 32)
     const result = ENV.state.getValue(path)
     const memory = new Uint8Array(MOD.exports.memory, resultOffset, resultOffset + 32)

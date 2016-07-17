@@ -5,7 +5,6 @@ module.exports = class Environment {
   constructor (data) {
     const defaults = {
       // gas tank
-      gasCounter: 0, // TODO: gasCounter is only 53 bits
       gasPrice: 0,
       gasLimit: 0, // The gas limit for the block
       // call infromation

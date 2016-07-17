@@ -34,24 +34,16 @@ module.exports = class Interface {
    */
   useGas (amount) {
     if (amount > 0) {
-      ENV.gasCounter += amount
+      ENV.gasLimit -= amount
     }
   }
 
   /**
-   * Returns the current gasCounter
+   * Returns the current amount of gas
    * @return {integer}
    */
-  gasUsed () {
-    return ENV.gasCounter
-  }
-
-  /**
-   * Returns the current gasCounter
-   * @return {integer}
-   */
-  gasLeft () {
-    return ENV.gasLimit - ENV.gasCounter
+  gas () {
+    return ENV.gasLimit
   }
 
   /**

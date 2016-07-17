@@ -32,7 +32,7 @@ module.exports = class Interface {
    * Subtracts an amount to the gas counter
    * @param {integer} amount the amount to subtract to the gas counter
    */
-  addGas (amount) {
+  useGas (amount) {
     if (amount > 0) {
       ENV.gasCounter += amount
     }
@@ -51,7 +51,7 @@ module.exports = class Interface {
    * @return {integer}
    */
   gasLeft () {
-    return ENV.gas - ENV.gasCounter
+    return ENV.gasLimit - ENV.gasCounter
   }
 
   /**

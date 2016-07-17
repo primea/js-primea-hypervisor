@@ -6,7 +6,6 @@ module.exports = class Environment {
     const defaults = {
       // gas tank
       gasCounter: 0, // TODO: gasCounter is only 53 bits
-      gas: 0, // The amount of gas this contract has
       gasPrice: 0,
       gasLimit: 0, // The gas limit for the block
       // call infromation
@@ -30,10 +29,11 @@ module.exports = class Environment {
 
     if (data) {
       data = JSON.parse(data)
-      Object.assign(this, defaults, data)
     } else {
       data = {}
     }
+
+    Object.assign(this, defaults, data)
 
     if (data.accounts) {
       this.accounts = new Graph()

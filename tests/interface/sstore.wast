@@ -13,12 +13,15 @@
       (i64.store (i32.const 0) (i64.const 173553719826446289))
       (call_import $sstore (i32.const 64) (i32.const 0))
       (call_import $sload (i32.const 64) (i32.const 64))
-      (set_local $temp 
-        (i64.load (i32.const 64)))
 
-      (if (i64.eq (i64.load (i32.const 0)) (i64.const 173553719826446289))
-        (return))
-      (unreachable)
+      (if (i64.ne (i64.load (i32.const 64)) (i64.const 173553719826446289))
+        (unreachable))
+
+      (i64.store (i32.const 128) (i64.const 173553719826446289))
+      (call_import $sstore (i32.const 64) (i32.const 128))
+      (call_import $sload (i32.const 64) (i32.const 64))
+      (if (i64.ne (i64.load (i32.const 64)) (i64.const 173553719826446289))
+        (unreachable))
     )
   )
 )

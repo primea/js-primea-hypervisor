@@ -316,8 +316,8 @@ module.exports = class Interface {
    * @param {interger} valueOffset the memory offset to load the value from
    */
   sstore (pathOffest, valueOffset) {
-    const path = new Uint8Array(MOD.exports.memory, pathOffest, pathOffest + 32)
-    const value = new Uint8Array(MOD.exports.memory, valueOffset, valueOffset + 32)
+    const path = new Uint8Array(MOD.exports.memory, pathOffest, 32)
+    const value = new Uint8Array(MOD.exports.memory, valueOffset,  32)
     ENV.state.set(path, value)
   }
 
@@ -327,9 +327,9 @@ module.exports = class Interface {
    * @param {interger} resultOffset the memory offset to load the value from
    */
   sload (pathOffest, resultOffset) {
-    const path = new Uint8Array(MOD.exports.memory, pathOffest, pathOffest + 32)
+    const path = new Uint8Array(MOD.exports.memory, pathOffest, 32)
     const result = ENV.state.getValue(path)
-    const memory = new Uint8Array(MOD.exports.memory, resultOffset, resultOffset + 32)
+    const memory = new Uint8Array(MOD.exports.memory, resultOffset, 32)
     memory.set(result)
   }
 

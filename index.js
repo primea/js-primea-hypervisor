@@ -21,10 +21,10 @@ module.exports = class Kernal {
 
   // handles running code.
   static codeHandler (code, ethInterface = new Interface()) {
-    // const ethInterface = new Interface(environment)
     const instance = Wasm.instantiateModule(code, {
       'ethereum': ethInterface
     })
+
     ethInterface.setModule(instance)
     if (instance.exports.main) {
       instance.exports.main()
@@ -40,14 +40,14 @@ module.exports = class Kernal {
     // return instance
   }
 
-  // run tx
-  runTx (tx, environment) {
+  // run tx; the tx message handler
+  runTx (tx, environment = new Environment()) {
     // verify tx then send to call Handler
     this.callHandler(tx, environment)
   }
 
-  // run block
-  runBlock (block, environment) {
+  // run block; the block message handler
+  runBlock (block, environment = new Environment()) {
     // verify block then run each tx
     block.tx.forEach((tx) => {
       this.runTx(tx, environment)

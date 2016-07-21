@@ -28,9 +28,11 @@ for (let testName of tests) {
       // console.log(ethInterface.environment);
       mod.exports.test()
     } catch (e) {
+      t.fail()
       console.error('FAIL')
       console.error(e)
     } finally {
+      t.pass(testName)
       console.log('done')
     }
     t.end()

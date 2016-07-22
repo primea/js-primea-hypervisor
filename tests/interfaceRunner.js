@@ -18,16 +18,17 @@ for (let testName of tests) {
     cp.execSync(`${__dirname}/../../evm-wasm-transcompiler/deps/sexpr-wasm-prototype/out/sexpr-wasm  ${dir}/${testName}.wast -o ${dir}/${testName}.wasm`)
     const buffer = fs.readFileSync(`${dir}/${testName}.wasm`)
     const envData = fs.readFileSync(`${dir}/${testName}.json`)
+    const ethereum     = new Kernel(new Environment(envData))
 
-    const environment = new Environment(envData)
-    const kernel = new Kernel()
-    const ethInterface = new Interface(environment, kernel)
+    // manually `callHander`
+    const environment  = new Environment(envData)
+    environment.parent = ethereum
+    const testContract = new Kernel(environment)
+    const ethInterface = new Interface(environment, testContract)
 
     try {
       const mod = Wasm.instantiateModule(buffer, {'ethereum': ethInterface})
       ethInterface.setModule(mod)
-      // ethInterface.address(0)
-      // console.log(ethInterface.environment);
       mod.exports.test()
     } catch (e) {
       t.fail()

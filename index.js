@@ -1,5 +1,6 @@
 /**
  * This implements the Ethereum Kernel
+ * Kernels must implement two methods `codeHandler` and `callHandler` (and `linkHandler` for sharding)
  * The Kernel Contract handles the following
  * - Interprocess communications
  * - Intializing the VM and exposes ROM to it (codeHandler)
@@ -10,8 +11,7 @@
  *   All State should be stored in the Environment.
  *
  */
-// const Environment = require('./environment.js')
-//
+
 // The Kernel Exposes this Interface to VM instances it makes
 const Interface = require('./interface.js')
 // The Kernel Stores all of its state in the Environment. The Interface is used
@@ -42,7 +42,7 @@ module.exports = class Kernal {
   // Detects if the code injection is needed
   // Detects if transcompilation is needed
   static callHandler (path, data) {
-    // creats a new Kernal
+    // creats a new Kernel
     // const environment = new Environment(data)
     // environment.parent = this
     // const kernel = new Kernel(this, environment)

@@ -2,7 +2,6 @@
  * This is the Ethereum interface that is exposed to the WASM instance which
  * enables to interact with the Ethereum Environment
  */
-const Environment = require('./environment.js')
 const constants = require('./constants.js')
 // const Graph = require('generic-digraph')
 
@@ -10,7 +9,6 @@ const constants = require('./constants.js')
 // a global for now. TODO REMOVE
 let ENV
 let MOD
-let self
 // The interface exposed to the WebAessembly Core
 module.exports = class Interface {
 
@@ -22,9 +20,8 @@ module.exports = class Interface {
     console.log((new Uint8Array(MOD.exports.memory)).toString())
   }
 
-  constructor (environment, kernal) {
+  constructor (environment) {
     ENV = this.environment = environment
-    self = this
   }
 
   setModule (mod) {
@@ -69,7 +66,8 @@ module.exports = class Interface {
   balance (addressOffset, offset) {
     const address = new Uint8Array(MOD.exports.memory, addressOffset, constants.ADD_SIZE_BYTES)
     const memory = new Uint8Array(MOD.exports.memory, offset, constants.MAX_BAL_BYTES)
-    const balance = ENV.getBalance(address)
+    // call the parent contract and ask for the balance of one of its child contracts
+    const balance = ENV.parent.environment.getBalance(address)
     memory.set(balance)
   }
 

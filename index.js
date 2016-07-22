@@ -1,6 +1,6 @@
 /**
  * This implements the Ethereum Kernel
- * The kernal handles the following
+ * The Kernel Contract handles the following
  * - Interprocess communications
  * - Intializing the VM and exposes ROM to it (codeHandler)
  * - Expose namespace which VM instance exists and Intializes the Environment (callHandler)
@@ -8,19 +8,24 @@
  * - Provides resource sharing and limiting via gas
  *
  *   All State should be stored in the Environment.
+ *
  */
 // const Environment = require('./environment.js')
+//
+// The Kernel Exposes this Interface to VM instances it makes
 const Interface = require('./interface.js')
+// The Kernel Stores all of its state in the Environment. The Interface is used
+// to by the VM to retrive infromation from the Environment.
 const Environment = require('./environment.js')
 
 module.exports = class Kernal {
   // runs some code in the VM
-  constructor (nameState) {
-    this.state = nameState
+  constructor (environment = new Environment()) {
+    this.environment = environment
   }
 
   // handles running code.
-  static codeHandler (code, ethInterface = new Interface()) {
+  static codeHandler (code, ethInterface) {
     const instance = Wasm.instantiateModule(code, {
       'ethereum': ethInterface
     })
@@ -36,8 +41,12 @@ module.exports = class Kernal {
   // Detects if code is EVM or WASM
   // Detects if the code injection is needed
   // Detects if transcompilation is needed
-  static callHandler (path, data, environment = new Environment()) {
-    // return instance
+  static callHandler (path, data) {
+    // creats a new Kernal
+    // const environment = new Environment(data)
+    // environment.parent = this
+    // const kernel = new Kernel(this, environment)
+    // kernel.codeHandler(code)
   }
 
   // run tx; the tx message handler

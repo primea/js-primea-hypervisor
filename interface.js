@@ -4,11 +4,13 @@
  */
 const Environment = require('./environment.js')
 const constants = require('./constants.js')
+// const Graph = require('generic-digraph')
 
 // function.bind is not working corretly whith Wasm imports. So instead create
 // a global for now. TODO REMOVE
 let ENV
 let MOD
+let self
 // The interface exposed to the WebAessembly Core
 module.exports = class Interface {
 
@@ -20,8 +22,9 @@ module.exports = class Interface {
     console.log((new Uint8Array(MOD.exports.memory)).toString())
   }
 
-  constructor (environment = new Environment()) {
-    ENV = this.environment = environment
+  constructor (kernal) {
+    ENV = this.environment = kernal.environment
+    self = this
   }
 
   setModule (mod) {
@@ -316,9 +319,23 @@ module.exports = class Interface {
    * @param {interger} valueOffset the memory offset to load the value from
    */
   sstore (pathOffest, valueOffset) {
-    const path = new Uint8Array(MOD.exports.memory, pathOffest, 32)
-    const value = new Uint8Array(MOD.exports.memory, valueOffset,  32)
-    ENV.state.set(path, value)
+    const path = new Uint8Array(MOD.exports.memory, pathOffest, 32).join('')
+    const value = new Uint8Array(MOD.exports.memory, valueOffset, 32)
+    const oldValue = ENV.state.get(path)
+    const valIsZero = value.every((i) => i === 0)
+
+    // write
+    if (!valIsZero && !oldValue) {
+      ENV.gasLimit -= 15000
+    }
+
+    // delete
+    if (valIsZero && oldValue) {
+      ENV.gasRefund += 15000
+      ENV.state.delete(path)
+    } else {
+      ENV.state.set(path, value)
+    }
   }
 
   /**
@@ -327,8 +344,8 @@ module.exports = class Interface {
    * @param {interger} resultOffset the memory offset to load the value from
    */
   sload (pathOffest, resultOffset) {
-    const path = new Uint8Array(MOD.exports.memory, pathOffest, 32)
-    const result = ENV.state.getValue(path)
+    const path = new Uint8Array(MOD.exports.memory, pathOffest, 32).join('')
+    const result = ENV.state.get(path)
     const memory = new Uint8Array(MOD.exports.memory, resultOffset, 32)
     memory.set(result)
   }

@@ -3,6 +3,7 @@ const tape = require('tape')
 const fs = require('fs')
 const cp = require('child_process')
 
+const Kernel = require('../index.js')
 const Environment = require('../environment.js')
 const Interface = require('../interface.js')
 const dir = __dirname + '/interface'
@@ -19,7 +20,8 @@ for (let testName of tests) {
     const envData = fs.readFileSync(`${dir}/${testName}.json`)
 
     const environment = new Environment(envData)
-    const ethInterface = new Interface(environment)
+    const kernel = new Kernel(environment)
+    const ethInterface = new Interface(kernel)
 
     try {
       const mod = Wasm.instantiateModule(buffer, {'ethereum': ethInterface})

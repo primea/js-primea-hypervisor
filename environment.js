@@ -7,6 +7,7 @@ module.exports = class Environment {
       // gas tank
       gasPrice: 0,
       gasLimit: 0, // The gas limit for the block
+      gasRefund: 0,
       // call infromation
       address: new Uint8Array(20),
       origin: new Uint8Array(20),
@@ -24,7 +25,7 @@ module.exports = class Environment {
       returnValue: new ArrayBuffer()
     }
 
-    this.state = new Graph()
+    this.state = new Map()
 
     if (data) {
       data = JSON.parse(data)
@@ -33,7 +34,6 @@ module.exports = class Environment {
     }
 
     Object.assign(this, defaults, data)
-
     if (data.accounts) {
       this.accounts = new Graph()
       const self = this
@@ -73,21 +73,6 @@ module.exports = class Environment {
 
   getBlockHash (height) {
     // STUB
-  }
-
-  // kernal
-  create (code, value) {
-    // STUB
-  }
-
-  call (gas, address, value, data) {
-    // STUB
-    return // result
-  }
-
-  delegateCall (gas, address, data) {
-    // STUB
-    return // result
   }
 }
 

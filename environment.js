@@ -74,6 +74,21 @@ module.exports = class Environment {
   getBlockHash (height) {
     // STUB
   }
+
+  // kernal
+  create (code, value) {
+    // STUB
+  }
+
+  call (gas, address, value, data) {
+    // STUB
+    return // result
+  }
+
+  delegateCall (gas, address, data) {
+    // STUB
+    return // result
+  }
 }
 
 function hexStr2arrayBuf (string) {

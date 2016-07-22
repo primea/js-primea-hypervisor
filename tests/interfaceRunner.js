@@ -20,8 +20,8 @@ for (let testName of tests) {
     const envData = fs.readFileSync(`${dir}/${testName}.json`)
 
     const environment = new Environment(envData)
-    const kernel = new Kernel(environment)
-    const ethInterface = new Interface(kernel)
+    const kernel = new Kernel()
+    const ethInterface = new Interface(environment, kernel)
 
     try {
       const mod = Wasm.instantiateModule(buffer, {'ethereum': ethInterface})

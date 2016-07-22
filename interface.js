@@ -22,8 +22,8 @@ module.exports = class Interface {
     console.log((new Uint8Array(MOD.exports.memory)).toString())
   }
 
-  constructor (kernal) {
-    ENV = this.environment = kernal.environment
+  constructor (environment, kernal) {
+    ENV = this.environment = environment
     self = this
   }
 

@@ -22,6 +22,12 @@ module.exports = class Interface {
     ENV = this.environment = environment
   }
 
+
+  // FIXME: this shouldn't be needed
+  get env () {
+    return ENV
+  }
+
   setModule (mod) {
     this.module = MOD = mod
   }

@@ -358,7 +358,7 @@ module.exports = class Interface {
    * @param {integer} length the length of the output data.
    */
   return (offset, length) {
-    this.environment.returnValue = new Uint8Array(MOD.exports.memory, offset, length)
+    ENV.returnValue = new Uint8Array(MOD.exports.memory, offset, length)
   }
 
   /**

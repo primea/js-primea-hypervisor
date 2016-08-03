@@ -14,9 +14,12 @@
 
 // The Kernel Exposes this Interface to VM instances it makes
 const Interface = require('./interface.js')
+
 // The Kernel Stores all of its state in the Environment. The Interface is used
 // to by the VM to retrive infromation from the Environment.
 const Environment = require('./environment.js')
+
+const DebugInterface = require('./debugInterface.js')
 
 module.exports = class Kernal {
   // runs some code in the VM
@@ -26,11 +29,16 @@ module.exports = class Kernal {
 
   // handles running code.
   static codeHandler (code, ethInterface = new Interface(new Environment())) {
+    const debugInterface = new DebugInterface()
+
     const instance = Wasm.instantiateModule(code, {
-      'ethereum': ethInterface.exportTable
+      'ethereum': ethInterface.exportTable,
+      'debug': debugInterface.exportTable
     })
 
     ethInterface.setModule(instance)
+    debugInterface.setModule(instance)
+
     if (instance.exports.main) {
       instance.exports.main()
     }

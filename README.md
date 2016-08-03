@@ -22,12 +22,11 @@ clone and run `npm install`
 The tests are written in wasm's text format (.wast) which are then compiled into binary format and ran in node.
 
 To run the test you need
-* `git submodule update --init`
-* `cd sexpr-wasm-prototype`
+* `git submodule update --init --recursive`
+* `cd tools/sexpr-wasm-prototype`
 * `git checkout origin/binary_0xa`
-* `git submodule update --init`
 * `make`
-* `cd ..`
+* `cd ../..`
 * `npm test`
 
 

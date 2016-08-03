@@ -227,7 +227,7 @@ module.exports = class Interface {
    */
   blockHash (number, offset) {
     const hash = this.environment.getBlockHash(number)
-    const memory = new Uint8Array(this.module.exports.memory, offset, constants.ADD_SIZE_BYTES)
+    const memory = new Uint8Array(this.module.exports.memory, offset, 32)
     memory.set(hash)
   }
 

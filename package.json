@@ -28,7 +28,7 @@
   },
   "standard": {
     "ignore": [
-      "/sexpr-wasm-prototype/"
+      "/tools/sexpr-wasm-prototype/"
     ],
     "globals": [
       "Wasm"

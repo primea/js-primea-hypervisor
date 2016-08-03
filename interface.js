@@ -91,9 +91,7 @@ module.exports = class Interface {
    * @param {integer} offset
    */
   address (offset) {
-    const address = this.environment.address
-    const memory = new Uint8Array(this.module.exports.memory, offset, constants.ADD_SIZE_BYTES)
-    memory.set(address)
+    this.setMemory(offset, constants.ADD_SIZE_BYTES, this.environment.address)
   }
 
   /**
@@ -103,11 +101,10 @@ module.exports = class Interface {
    * @param {integer} resultOffset
    */
   balance (addressOffset, offset) {
-    const address = new Uint8Array(this.module.exports.memory, addressOffset, constants.ADD_SIZE_BYTES)
-    const memory = new Uint8Array(this.module.exports.memory, offset, constants.MAX_BAL_BYTES)
+    const address = this.getMemory(addressOffset, constants.ADD_SIZE_BYTES)
     // call the parent contract and ask for the balance of one of its child contracts
     const balance = this.environment.parent.environment.getBalance(address)
-    memory.set(balance)
+    this.setMemory(offset, constants.MAX_BAL_BYTES, balance)
   }
 
   /**
@@ -117,9 +114,7 @@ module.exports = class Interface {
    * @param {integer} offset
    */
   origin (offset) {
-    const origin = this.environment.origin
-    const memory = new Uint8Array(this.module.exports.memory, offset, constants.ADD_SIZE_BYTES)
-    memory.set(origin)
+    this.setMemory(offset, constants.ADD_SIZE_BYTES, this.environment.origin)
   }
 
   /**
@@ -128,9 +123,7 @@ module.exports = class Interface {
    * @param {integer} offset
    */
   caller (offset) {
-    const caller = this.environment.caller
-    const memory = new Uint8Array(this.module.exports.memory, offset, constants.ADD_SIZE_BYTES)
-    memory.set(caller)
+    this.setMemory(offset, constants.ADD_SIZE_BYTES, this.environment.caller)
   }
 
   /**
@@ -139,9 +132,7 @@ module.exports = class Interface {
    * @param {integer} offset
    */
   callValue (offset) {
-    const callValue = this.environment.callValue
-    const memory = new Uint8Array(this.module.exports.memory, offset, constants.MAX_BAL_BYTES)
-    memory.set(callValue)
+    this.setMemory(offset, constants.MAX_BAL_BYTES, this.environment.callValue)
   }
 
   /**
@@ -162,8 +153,7 @@ module.exports = class Interface {
    */
   callDataCopy (offset, dataOffset, length) {
     const callData = new Uint8Array(this.environment.callData, offset, length)
-    const memory = new Uint8Array(this.module.exports.memory, offset, length)
-    memory.set(callData)
+    this.setMemory(offset, length, callData)
   }
 
   /**
@@ -182,8 +172,7 @@ module.exports = class Interface {
    */
   codeCopy (offset, codeOffset, length) {
     const code = new Uint8Array(this.environment.code, codeOffset, length)
-    const memory = new Uint8Array(this.module.exports.memory, offset, length)
-    memory.set(code)
+    this.setMemory(offset, length, code)
   }
 
   /**
@@ -192,7 +181,7 @@ module.exports = class Interface {
    * @return {integer}
    */
   extCodeSize (addressOffset) {
-    const address = new Uint8Array(this.module.exports.memory, addressOffset, constants.ADD_SIZE_BYTES)
+    const address = this.getMemory(addressOffset, constants.ADD_SIZE_BYTES)
     const code = this.environment.getCode(address)
     return code.byteLength
   }
@@ -205,11 +194,10 @@ module.exports = class Interface {
    * @param {integer} length the length of code to copy
    */
   extCodeCopy (addressOffset, offset, codeOffset, length) {
-    const address = new Uint8Array(this.module.exports.memory, addressOffset, constants.ADD_SIZE_BYTES)
+    const address = this.getMemory(addressOffset, constants.ADD_SIZE_BYTES)
     let code = this.environment.getCode(address)
     code = new Uint8Array(code, codeOffset, length)
-    const memory = new Uint8Array(this.module.exports.memory, offset, length)
-    memory.set(code)
+    this.setMemory(offset, length, code)
   }
 
   /**
@@ -227,8 +215,7 @@ module.exports = class Interface {
    */
   blockHash (number, offset) {
     const hash = this.environment.getBlockHash(number)
-    const memory = new Uint8Array(this.module.exports.memory, offset, 32)
-    memory.set(hash)
+    this.setMemory(offset, 32, hash)
   }
 
   /**
@@ -236,8 +223,7 @@ module.exports = class Interface {
    * @param offset
    */
   coinbase (offset) {
-    const memory = new Uint8Array(this.module.exports.memory, offset, constants.ADD_SIZE_BYTES)
-    memory.set(this.environment.coinbase)
+    this.setMemory(offset, constants.ADD_SIZE_BYTES, this.environment.coinbase)
   }
 
   /**
@@ -279,7 +265,7 @@ module.exports = class Interface {
    * TODO: replace with variadic
    */
   log (dataOffset, length, topic1, topic2, topic3, topic4, topic5) {
-    const data = new Uint8Array(this.module.exports.memory, dataOffset, length)
+    const data = this.getMemory(dataOffset, length)
     this.environment.logs.push({
       data: data,
       topics: [topic1, topic2, topic3, topic4, topic5]
@@ -293,8 +279,8 @@ module.exports = class Interface {
    * @param {integer} length the data length
    */
   create (valueOffset, dataOffset, length) {
-    const value = new Uint8Array(this.module.exports.memory, valueOffset, constants.MAX_BAL_BYTES)
-    const data = new Uint8Array(this.module.exports.memory, dataOffset, length)
+    const value = this.getMemory(valueOffset, constants.MAX_BAL_BYTES)
+    const data = this.getMemory(dataOffset, length)
     const result = this.environment.create(value, data)
     return result
   }
@@ -316,13 +302,12 @@ module.exports = class Interface {
       gas = this.gasLeft()
     }
     // Load the params from mem
-    const address = new Uint8Array(this.module.exports.memory, addressOffset, constants.ADD_SIZE_BYTES)
-    const value = new Uint8Array(this.module.exports.memory, valueOffset, constants.MAX_BAL_BYTES)
-    const data = new Uint8Array(this.module.exports.memory, dataOffset, dataLength)
+    const address = this.getMemory(addressOffset, constants.ADD_SIZE_BYTES)
+    const value = this.getMemory(valueOffset, constants.MAX_BAL_BYTES)
+    const data = this.getMemory(dataOffset, dataLength)
     // Run the call
     const [result, errorCode] = this.environment.call(gas, address, value, data)
-    const memory = new Uint8Array(this.module.exports.memory, resultOffset, resultLength)
-    memory.set(result)
+    this.setMemory(resultOffset, resultLength, result)
 
     return errorCode
   }
@@ -340,11 +325,10 @@ module.exports = class Interface {
    * @return {integer} Returns 1 or 0 depending on if the VM trapped on the message or not
    */
   callDelegate (gas, addressOffset, dataOffset, dataLength, resultOffset, resultLength) {
-    const data = new Uint8Array(this.module.exports.memory, dataOffset, dataLength)
-    const address = new Uint8Array(this.module.exports.memory, addressOffset, constants.ADD_SIZE_BYTES)
+    const data = this.getMemory(dataOffset, dataLength)
+    const address = this.getMemory(addressOffset, constants.ADD_SIZE_BYTES)
     const [result, errorCode] = this.environment.callDelegate(gas, address, data)
-    const memory = new Uint8Array(this.module.exports.memory, resultOffset, resultLength)
-    memory.set(result)
+    this.setMemory(resultOffset, resultLength, result)
 
     return errorCode
   }
@@ -356,8 +340,8 @@ module.exports = class Interface {
    * @param {interger} valueOffset the memory offset to load the value from
    */
   sstore (pathOffest, valueOffset) {
-    const path = new Buffer(this.module.exports.memory, pathOffest, 32).toString('hex')
-    const value = new Uint8Array(this.module.exports.memory, valueOffset, 32)
+    const path = this.getMemory(pathOffset, 32).toString('hex')
+    const value = this.getmemory(valueOffset, 32)
     const oldValue = this.environment.state.get(path)
     const valIsZero = value.every((i) => i === 0)
 
@@ -381,10 +365,9 @@ module.exports = class Interface {
    * @param {interger} resultOffset the memory offset to load the value from
    */
   sload (pathOffest, resultOffset) {
-    const path = new Buffer(this.module.exports.memory, pathOffest, 32).toString('hex')
+    const path = this.getMemory(pathOffset, 32).toString('hex')
     const result = this.environment.state.get(path)
-    const memory = new Uint8Array(this.module.exports.memory, resultOffset, 32)
-    memory.set(result)
+    this.setMemory(resultOffset, 32, result)
   }
 
   /**
@@ -393,7 +376,7 @@ module.exports = class Interface {
    * @param {integer} length the length of the output data.
    */
   return (offset, length) {
-    this.environment.returnValue = new Uint8Array(this.module.exports.memory, offset, length)
+    this.environment.returnValue = this.getMemory(offset, length)
   }
 
   /**
@@ -402,8 +385,16 @@ module.exports = class Interface {
    * @param {integer} offset the offset to load the address from
    */
   suicide (addressOffset) {
-    const address = new Uint8Array(this.module.exports.memory, addressOffset, constants.ADD_SIZE_BYTES)
-    this.environment.suicideAddress = address
+    this.environment.suicideAddress = this.getMemory(addressOffset, constants.ADD_SIZE_BYTES)
+  }
+
+  getMemory (offset, length) {
+    return new Uint8Array(this.module.exports.memory, offset, length)
+  }
+
+  setMemory (offset, length, value) {
+    const memory = new Uint8Array(this.module.exports.memory, offset, length)
+    memory.set(value)
   }
 }
 

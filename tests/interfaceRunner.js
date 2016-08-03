@@ -15,7 +15,7 @@ for (let testName of tests) {
   testName = testName.split('.')[0]
   tape(testName, (t) => {
     // Compile Command
-    cp.execSync(`${__dirname}/../../evm-wasm-transcompiler/deps/sexpr-wasm-prototype/out/sexpr-wasm  ${dir}/${testName}.wast -o ${dir}/${testName}.wasm`)
+    cp.execSync(`${__dirname}/../tools/sexpr-wasm-prototype/out/sexpr-wasm ${dir}/${testName}.wast -o ${dir}/${testName}.wasm`)
     const buffer = fs.readFileSync(`${dir}/${testName}.wasm`)
     const envData = fs.readFileSync(`${dir}/${testName}.json`)
     const ethereum     = new Kernel(new Environment(envData))

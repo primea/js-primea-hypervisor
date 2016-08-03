@@ -1,5 +1,5 @@
 const Graph = require('generic-digraph')
-const MAX_BAL_BYTES = require('./constants.js').MAX_BAL_BYTES
+const constants = require('./constants.js')
 
 module.exports = class Environment {
   constructor (data) {
@@ -9,12 +9,12 @@ module.exports = class Environment {
       gasLimit: 0, // The gas limit for the block
       gasRefund: 0,
       // call infromation
-      address: new Uint8Array(20),
-      origin: new Uint8Array(20),
-      coinbase: new Uint8Array(20),
+      address: new Uint8Array(constants.ADD_SIZE_BYTES),
+      origin: new Uint8Array(constants.ADD_SIZE_BYTES),
+      coinbase: new Uint8Array(constants.ADD_SIZE_BYTES),
       difficulty: new Uint8Array(20),
-      caller: new Uint8Array(20),
-      callValue: new Uint8Array(MAX_BAL_BYTES),
+      caller: new Uint8Array(constants.ADD_SIZE_BYTES),
+      callValue: new Uint8Array(constants.MAX_BAL_BYTES),
       callData: new ArrayBuffer(),
       // the ROM
       code: new ArrayBuffer(), // the current running code

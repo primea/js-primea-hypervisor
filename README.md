@@ -6,8 +6,8 @@ This is a JS prototype of the [eWASM kernal](https://github.com/ethereum/evm2.0-
 
 
 # INSTALL
-You need to compile [nodejs](https://github.com/nodejs/node) from master to run  
-~~`npm install ewasm-kernal`~~  
+You need to compile [nodejs](https://github.com/nodejs/node) from master (`9983af03470a89cc925781279be40898efae3f31` is known to be working) to run
+~~`npm install ewasm-kernel`~~
 
 clone and run `npm install`
 

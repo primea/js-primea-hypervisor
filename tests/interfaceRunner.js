@@ -27,7 +27,7 @@ for (let testName of tests) {
     const ethInterface = new Interface(environment, testContract)
 
     try {
-      const mod = Wasm.instantiateModule(buffer, {'ethereum': ethInterface})
+      const mod = Wasm.instantiateModule(buffer, { 'ethereum': ethInterface.exportTable })
       ethInterface.setModule(mod)
       mod.exports.test()
     } catch (e) {

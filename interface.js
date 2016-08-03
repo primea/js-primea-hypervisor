@@ -6,14 +6,6 @@ const constants = require('./constants.js')
 
 // The interface exposed to the WebAessembly Core
 module.exports = class Interface {
-  print (a) {
-    console.log(a)
-  }
-
-  memPrint () {
-    console.log((new Uint8Array(this.module.exports.memory)).toString())
-  }
-
   constructor (environment) {
     this.environment = environment
   }

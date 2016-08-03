@@ -339,9 +339,9 @@ module.exports = class Interface {
    * @param {interger} pathOffest the memory offset to load the the path from
    * @param {interger} valueOffset the memory offset to load the value from
    */
-  sstore (pathOffest, valueOffset) {
+  sstore (pathOffset, valueOffset) {
     const path = this.getMemory(pathOffset, 32).toString('hex')
-    const value = this.getmemory(valueOffset, 32)
+    const value = this.getMemory(valueOffset, 32)
     const oldValue = this.environment.state.get(path)
     const valIsZero = value.every((i) => i === 0)
 
@@ -364,7 +364,7 @@ module.exports = class Interface {
    * @param {interger} pathOffest the memory offset to load the the path from
    * @param {interger} resultOffset the memory offset to load the value from
    */
-  sload (pathOffest, resultOffset) {
+  sload (pathOffset, resultOffset) {
     const path = this.getMemory(pathOffset, 32).toString('hex')
     const result = this.environment.state.get(path)
     this.setMemory(resultOffset, 32, result)

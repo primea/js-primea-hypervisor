@@ -22,6 +22,16 @@ module.exports = class Interface {
     ENV = this.environment = environment
   }
 
+  get exportTable () {
+    let exportMethods = [
+      // include all the public methods according to the Ethereum Environment Interface (EEI)
+    ]
+    let ret = {}
+    exportMethods.forEach((method) => {
+      ret[method] = this[method].bind(this)
+    })
+    return ret
+  }
 
   // FIXME: this shouldn't be needed
   get env () {

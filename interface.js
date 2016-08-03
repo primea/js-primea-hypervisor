@@ -25,6 +25,35 @@ module.exports = class Interface {
   get exportTable () {
     let exportMethods = [
       // include all the public methods according to the Ethereum Environment Interface (EEI)
+      // FIXME: this currently doesn't match EEI r0
+      'useGas',
+      'gas',
+      'address',
+      'balance',
+      'origin',
+      'caller',
+      'callValue',
+      'callDataSize',
+      'callDataCopy',
+      'codeSize',
+      'codeCopy',
+      'extCodeSize',
+      'extCodeCopy',
+      'gasPrice',
+      'blockHash',
+      'coinbase',
+      'timestamp',
+      'number',
+      'difficulty',
+      'gasLimit',
+      'log',
+      'create',
+      'call',
+      'callDelegate',
+      'sstore',
+      'sload',
+      'return',
+      'suicide'
     ]
     let ret = {}
     exportMethods.forEach((method) => {

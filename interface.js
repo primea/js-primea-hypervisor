@@ -91,7 +91,7 @@ module.exports = class Interface {
    * @param {integer} offset
    */
   address (offset) {
-    this.setMemory(offset, constants.ADD_SIZE_BYTES, this.environment.address)
+    this.setMemory(offset, constants.ADDRESS_SIZE_BYTES, this.environment.address)
   }
 
   /**
@@ -101,10 +101,10 @@ module.exports = class Interface {
    * @param {integer} resultOffset
    */
   balance (addressOffset, offset) {
-    const address = this.getMemory(addressOffset, constants.ADD_SIZE_BYTES)
+    const address = this.getMemory(addressOffset, constants.ADDRESS_SIZE_BYTES)
     // call the parent contract and ask for the balance of one of its child contracts
     const balance = this.environment.parent.environment.getBalance(address)
-    this.setMemory(offset, constants.MAX_BAL_BYTES, balance)
+    this.setMemory(offset, constants.BALANCE_SIZE_BYTES, balance)
   }
 
   /**
@@ -114,7 +114,7 @@ module.exports = class Interface {
    * @param {integer} offset
    */
   origin (offset) {
-    this.setMemory(offset, constants.ADD_SIZE_BYTES, this.environment.origin)
+    this.setMemory(offset, constants.ADDRESS_SIZE_BYTES, this.environment.origin)
   }
 
   /**
@@ -123,7 +123,7 @@ module.exports = class Interface {
    * @param {integer} offset
    */
   caller (offset) {
-    this.setMemory(offset, constants.ADD_SIZE_BYTES, this.environment.caller)
+    this.setMemory(offset, constants.ADDRESS_SIZE_BYTES, this.environment.caller)
   }
 
   /**
@@ -132,7 +132,7 @@ module.exports = class Interface {
    * @param {integer} offset
    */
   callValue (offset) {
-    this.setMemory(offset, constants.MAX_BAL_BYTES, this.environment.callValue)
+    this.setMemory(offset, constants.BALANCE_SIZE_BYTES, this.environment.callValue)
   }
 
   /**
@@ -181,7 +181,7 @@ module.exports = class Interface {
    * @return {integer}
    */
   extCodeSize (addressOffset) {
-    const address = this.getMemory(addressOffset, constants.ADD_SIZE_BYTES)
+    const address = this.getMemory(addressOffset, constants.ADDRESS_SIZE_BYTES)
     const code = this.environment.getCode(address)
     return code.byteLength
   }
@@ -194,7 +194,7 @@ module.exports = class Interface {
    * @param {integer} length the length of code to copy
    */
   extCodeCopy (addressOffset, offset, codeOffset, length) {
-    const address = this.getMemory(addressOffset, constants.ADD_SIZE_BYTES)
+    const address = this.getMemory(addressOffset, constants.ADDRESS_SIZE_BYTES)
     let code = this.environment.getCode(address)
     code = new Uint8Array(code, codeOffset, length)
     this.setMemory(offset, length, code)
@@ -223,7 +223,7 @@ module.exports = class Interface {
    * @param offset
    */
   coinbase (offset) {
-    this.setMemory(offset, constants.ADD_SIZE_BYTES, this.environment.coinbase)
+    this.setMemory(offset, constants.ADDRESS_SIZE_BYTES, this.environment.coinbase)
   }
 
   /**
@@ -279,7 +279,7 @@ module.exports = class Interface {
    * @param {integer} length the data length
    */
   create (valueOffset, dataOffset, length) {
-    const value = this.getMemory(valueOffset, constants.MAX_BAL_BYTES)
+    const value = this.getMemory(valueOffset, constants.BALANCE_SIZE_BYTES)
     const data = this.getMemory(dataOffset, length)
     const result = this.environment.create(value, data)
     return result
@@ -302,8 +302,8 @@ module.exports = class Interface {
       gas = this.gasLeft()
     }
     // Load the params from mem
-    const address = this.getMemory(addressOffset, constants.ADD_SIZE_BYTES)
-    const value = this.getMemory(valueOffset, constants.MAX_BAL_BYTES)
+    const address = this.getMemory(addressOffset, constants.ADDRESS_SIZE_BYTES)
+    const value = this.getMemory(valueOffset, constants.BALANCE_SIZE_BYTES)
     const data = this.getMemory(dataOffset, dataLength)
     // Run the call
     const [result, errorCode] = this.environment.call(gas, address, value, data)
@@ -326,7 +326,7 @@ module.exports = class Interface {
    */
   callDelegate (gas, addressOffset, dataOffset, dataLength, resultOffset, resultLength) {
     const data = this.getMemory(dataOffset, dataLength)
-    const address = this.getMemory(addressOffset, constants.ADD_SIZE_BYTES)
+    const address = this.getMemory(addressOffset, constants.ADDRESS_SIZE_BYTES)
     const [result, errorCode] = this.environment.callDelegate(gas, address, data)
     this.setMemory(resultOffset, resultLength, result)
 
@@ -385,7 +385,7 @@ module.exports = class Interface {
    * @param {integer} offset the offset to load the address from
    */
   suicide (addressOffset) {
-    this.environment.suicideAddress = this.getMemory(addressOffset, constants.ADD_SIZE_BYTES)
+    this.environment.suicideAddress = this.getMemory(addressOffset, constants.ADDRESS_SIZE_BYTES)
   }
 
   getMemory (offset, length) {

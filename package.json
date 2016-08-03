@@ -8,16 +8,17 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/ethereumjs/ewasm-kernel.git"
+    "url": "git+https://github.com/ewasm/ewasm-kernel.git"
   },
   "bugs": {
-    "url": "https://github.com/ethereumjs/ewasm-kernel/issues"
+    "url": "https://github.com/ewasm/ewasm-kernel/issues"
   },
-  "homepage": "https://github.com/ethereumjs/ewasm-kernel",
+  "homepage": "https://github.com/ewasm/ewasm-kernel",
   "keywords": [
     "ethereum",
-    "webassebly",
-    "wasm"
+    "webassembly",
+    "wasm",
+    "ewasm"
   ],
   "author": "mjbecze <mjbecze@gmail.com>",
   "license": "MPL-2.0",

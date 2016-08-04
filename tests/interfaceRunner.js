@@ -6,6 +6,7 @@ const cp = require('child_process')
 const Kernel = require('../index.js')
 const Environment = require('../environment.js')
 const Interface = require('../interface.js')
+const DebugInterface = require('../debugInterface.js')
 const dir = __dirname + '/interface'
 // get the test names
 let tests = fs.readdirSync(dir).filter((file) => file.endsWith('.wast'))
@@ -25,10 +26,15 @@ for (let testName of tests) {
     environment.parent = ethereum
     const testContract = new Kernel(environment)
     const ethInterface = new Interface(environment, testContract)
+    const debugInterface = new DebugInterface()
 
     try {
-      const mod = Wasm.instantiateModule(buffer, { 'ethereum': ethInterface.exportTable })
+      const mod = Wasm.instantiateModule(buffer, {
+        'ethereum': ethInterface.exportTable,
+        'debug': debugInterface.exportTable
+      })
       ethInterface.setModule(mod)
+      debugInterface.setModule(mod)
       mod.exports.test()
     } catch (e) {
       t.fail()

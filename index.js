@@ -21,6 +21,8 @@ const Environment = require('./environment.js')
 
 const DebugInterface = require('./debugInterface.js')
 
+const Utils = require('./utils.js')
+
 module.exports = class Kernel {
   // runs some code in the VM
   constructor (environment = new Environment()) {
@@ -57,12 +59,19 @@ module.exports = class Kernel {
   // Detects if code is EVM or WASM
   // Detects if the code injection is needed
   // Detects if transcompilation is needed
-  static callHandler (path, data) {
+  callHandler (path, data) {
     // creats a new Kernel
-    // const environment = new Environment(data)
+    const environment = new Environment(data)
     // environment.parent = this
-    // const kernel = new Kernel(this, environment)
-    // kernel.codeHandler(code)
+    const kernel = new Kernel(this, environment)
+    const code = this.environment.state.get(path)
+    if (!code) {
+      throw new Error('Contract not found')
+    }
+    if (!Utils.isWASMCode(code)) {
+      throw new Error('Not an eWASM contract')
+    }
+    kernel.codeHandler(code, new Interface(environment))
   }
 
   // run tx; the tx message handler

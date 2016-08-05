@@ -357,7 +357,7 @@ module.exports = class Interface {
    * @param {interger} resultOffset the memory offset to load the value from
    */
   sload (pathOffset, resultOffset) {
-    const path = this.getMemory(pathOffset, 32).toString('hex')
+    const path = new Buffer(this.getMemory(pathOffset, 32)).toString('hex')
     const result = this.environment.state.get(path)
     this.setMemory(resultOffset, 32, result)
   }

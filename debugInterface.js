@@ -12,11 +12,15 @@ module.exports = class DebugInterface {
 
   get exportTable () {
     return {
-      'print': function (offset, length) {
+      'print': function (a) {
+        console.log(a)
+      },
+
+      'printMem': function (offset, length) {
         console.log(`<DEBUG(str): ${this.getMemoryBuffer(offset, length).toString()}>`)
       }.bind(this),
 
-      'printHex': function (offset, length) {
+      'printMemHex': function (offset, length) {
         console.log(`<DEBUG(hex): ${this.getMemoryBuffer(offset, length).toString('hex')}>`)
       }.bind(this),
 

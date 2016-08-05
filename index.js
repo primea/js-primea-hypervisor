@@ -33,7 +33,15 @@ module.exports = class Kernal {
 
     const instance = Wasm.instantiateModule(code, {
       'ethereum': ethInterface.exportTable,
-      'debug': debugInterface.exportTable
+      'debug': debugInterface.exportTable,
+
+      // export this for Rust
+      // FIXME: remove once Rust has proper imports, see https://github.com/ethereum/evm2.0-design/issues/15
+      'spectest': ethInterface.exportTable,
+
+      // export this for Binaryen
+      // FIXME: remove once C has proper imports, see https://github.com/ethereum/evm2.0-design/issues/16
+      'env': ethInterface.exportTable
     })
 
     ethInterface.setModule(instance)

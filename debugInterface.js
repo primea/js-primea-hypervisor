@@ -21,15 +21,15 @@ module.exports = class DebugInterface {
 
   get exportTable () {
     return {
-      'print': function (offset = 0, length = 100) {
+      'print': function (offset, length) {
         console.log(`<DEBUG(str): ${Uint8ArrayToString(new Uint8Array(this.module.exports.memory, offset, length))}>`)
       }.bind(this),
 
-      'printHex': function (offset = 0, length = 100) {
+      'printHex': function (offset, length) {
         console.log(`<DEBUG(hex): ${Uint8ArrayToHexString(new Uint8Array(this.module.exports.memory, offset, length))}>`)
       }.bind(this),
 
-      'stackTrace': function (sp, op) {
+      'evmStackTrace': function (sp, op) {
         const opcode = opcodes(op)
         if (opcode.number) {
           opcode.name += opcode.number

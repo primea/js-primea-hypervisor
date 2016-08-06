@@ -13,11 +13,11 @@ module.exports = class DebugInterface {
   get exportTable () {
     return {
       'print': function (offset, length) {
-        console.log(`<DEBUG(str): ${new Buffer(new Uint8Array(this.module.exports.memory, offset, length)).toString()}>`)
+        console.log(`<DEBUG(str): ${this.getMemoryBuffer(offset, length).toString()}>`)
       }.bind(this),
 
       'printHex': function (offset, length) {
-        console.log(`<DEBUG(hex): ${new Buffer(new Uint8Array(this.module.exports.memory, offset, length)).toString('hex')}>`)
+        console.log(`<DEBUG(hex): ${this.getMemoryBuffer(offset, length).toString('hex')}>`)
       }.bind(this),
 
       'evmStackTrace': function (sp, op) {
@@ -28,10 +28,14 @@ module.exports = class DebugInterface {
         console.error(opcode.name)
         console.log('-------------stack--------------')
         for (let i = sp; i > 0; i -= 32) {
-          console.log(`${(sp - i) / 32} ${new Buffer(new Uint8Array(this.module.exports.memory, i - 24, 32)).toString('hex')}`)
+          console.log(`${(sp - i) / 32} ${this.getMemoryBuffer(i - 24, 32).toString('hex')}`)
         }
         return sp
       }.bind(this)
     }
+  }
+
+  getMemoryBuffer (offset, length) {
+    return new Buffer(new Uint8Array(this.module.exports.memory, offset, length))
   }
 }

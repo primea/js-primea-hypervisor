@@ -30,6 +30,8 @@ module.exports = class Kernel {
   }
 
   // handles running code.
+  // NOTE: it assumes that wasm will raise an exception if something went wrong,
+  //       otherwise execution succeeded
   static codeHandler (code, ethInterface = new Interface(new Environment())) {
     const debugInterface = new DebugInterface(ethInterface.environment)
 
@@ -77,7 +79,26 @@ module.exports = class Kernel {
   // run tx; the tx message handler
   runTx (tx, environment = new Environment()) {
     // verify tx then send to call Handler
-    this.callHandler(tx, environment)
+    // - from account has enough balance
+    // - check nonce
+    // - ecrecover
+    // new ethTx(tx).validate(tx)
+    // - reduce balance
+
+    // Contract deployment
+    const isDeployment = tx.data && !tx.to;
+    if (isDeployment) {
+      this.environment.accounts.set(new Uint8Array())
+    }
+
+    var toAccount = this.environment.accounts.get(new Uint8Array(tx.to).toString())
+    var fromAccount = this.environment.accounts.get(new Uint8Array(tx.form).toString())
+
+    if (!toAccount) {
+      throw new Error('Account not found')
+    }
+
+    this.callHandler(account.codeHash, environment)
   }
 
   // run block; the block message handler

@@ -21,10 +21,9 @@ module.exports = class DebugInterface {
 
   get exportTable () {
     return {
-      'print': function (offset, length) {
-        console.log(`<DEBUG(str): ${Uint8ArrayToString(new Uint8Array(this.module.exports.memory, offset, length))}>`)
-      }.bind(this),
-
+      'print': function (a) {
+        console.log(a)
+      },
       'printHex': function (offset, length) {
         console.log(`<DEBUG(hex): ${Uint8ArrayToHexString(new Uint8Array(this.module.exports.memory, offset, length))}>`)
       }.bind(this),

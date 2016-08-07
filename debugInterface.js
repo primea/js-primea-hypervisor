@@ -6,6 +6,10 @@ const opcodes = require('./opcodes.js')
  */
 
 module.exports = class DebugInterface {
+  constructor (environment) {
+    this.environment = environment
+  }
+
   setModule (mod) {
     this.module = mod
   }
@@ -29,7 +33,7 @@ module.exports = class DebugInterface {
         if (opcode.number) {
           opcode.name += opcode.number
         }
-        console.error(opcode.name)
+        console.error(`op: ${opcode.name} gas: ${this.environment.gasLimit}`)
         console.log('-------------stack--------------')
         for (let i = sp; i > 0; i -= 32) {
           console.log(`${(sp - i) / 32} ${this.getMemoryBuffer(i - 24, 32).toString('hex')}`)

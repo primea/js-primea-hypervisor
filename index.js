@@ -29,7 +29,7 @@ module.exports = class Kernal {
 
   // handles running code.
   static codeHandler (code, ethInterface = new Interface(new Environment())) {
-    const debugInterface = new DebugInterface()
+    const debugInterface = new DebugInterface(ethInterface.environment)
 
     const instance = Wasm.instantiateModule(code, {
       'ethereum': ethInterface.exportTable,

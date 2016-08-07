@@ -43,7 +43,7 @@ The kernel handles the following
 The kernel Interface expose kernal primitives to VM which contain
  * IPC (calls)
  * Namespace Interface
-  * GET/PUT/DELETE/ROOT/NEXT - currently implemented as a [digraph](https://github.com/wanderer/generic-digraph/blob/master/docs/index.md)
+  * GET/PUT/DELETE/ROOT/NEXT - currently implemented as a `Map`
 
 ## Environment Interface
 

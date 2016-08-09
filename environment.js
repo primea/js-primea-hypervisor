@@ -1,4 +1,3 @@
-const Graph = require('generic-digraph')
 const constants = require('./constants.js')
 
 module.exports = class Environment {
@@ -35,10 +34,9 @@ module.exports = class Environment {
 
     Object.assign(this, defaults, data)
     if (data.accounts) {
-      this.accounts = new Graph()
       const self = this
       data.accounts.forEach((account) => {
-        self.accounts.set(new Uint8Array(account[0]).toString(), account[1])
+        self.state.set(new Uint8Array(account[0]).toString(), account[1])
       })
     }
 
@@ -64,7 +62,7 @@ module.exports = class Environment {
   }
 
   getBalance (address) {
-    return this.accounts.getValue(address.toString()).balance
+    return this.state.get(address.toString()).balance
   }
 
   getCode (address) {

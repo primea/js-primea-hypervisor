@@ -5,7 +5,7 @@ module.exports = class Environment {
     const defaults = {
       // gas tank
       gasPrice: 0,
-      gasLimit: 0, // The gas limit for the block
+      gasLimit: 1000000, // The gas limit for the block
       gasRefund: 0,
       // call infromation
       address: new Uint8Array(constants.ADDRESS_SIZE_BYTES),

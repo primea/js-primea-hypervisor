@@ -67,20 +67,23 @@ module.exports = class Kernel {
       throw new Error('Account not found')
     }
 
-    // creats a new Kernel
-    const environment = new Environment(data)
-    environment.parent = this
-    const kernel = new Kernel(this, environment)
     const code = this.environment.state.get(address)
-
-    //environment.setCallHandler(callHandler)
 
     if (!code) {
       throw new Error('Contract not found')
     }
+
     if (!Utils.isWASMCode(code)) {
       throw new Error('Not an eWASM contract')
     }
+
+    // creats a new Kernel
+    const environment = new Environment(data)
+    environment.parent = this
+
+    //environment.setCallHandler(callHandler)
+
+    const kernel = new Kernel(this, environment)
     kernel.codeHandler(code, new Interface(environment))
 
     // generate new stateroot

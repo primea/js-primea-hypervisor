@@ -22,19 +22,19 @@ module.exports = class U256 {
   }
 
   sub (u256) {
-    return this._value.sub(u256._value)
+    return new U256(this._value.sub(u256._value))
   }
 
   add (u256) {
-    return this._value.add(u256._value)
+    return new U256(this._value.add(u256._value))
   }
 
   mul (u256) {
-    return this._value.mul(u256._value)
+    return new U256(this._value.mul(u256._value))
   }
 
   div (u256) {
-    return this._value.div(u256._value)
+    return new U256(this._value.div(u256._value))
   }
 
   lt (u256) {

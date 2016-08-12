@@ -32,7 +32,7 @@ module.exports = class Kernel {
   // handles running code.
   // NOTE: it assumes that wasm will raise an exception if something went wrong,
   //       otherwise execution succeeded
-  static codeHandler (code, ethInterface = new Interface(new Environment())) {
+  codeHandler (code, ethInterface = new Interface(new Environment())) {
     const debugInterface = new DebugInterface(ethInterface.environment)
 
     const instance = Wasm.instantiateModule(code, {
@@ -61,12 +61,20 @@ module.exports = class Kernel {
   // Detects if code is EVM or WASM
   // Detects if the code injection is needed
   // Detects if transcompilation is needed
-  callHandler (path, data) {
+  callHandler (address, gaslimit, gasprice, value, data) {
+    var toAccount = this.environment.accounts.get(new Uint8Array(address).toString())
+    if (!toAccount) {
+      throw new Error('Account not found')
+    }
+
     // creats a new Kernel
     const environment = new Environment(data)
-    // environment.parent = this
+    environment.parent = this
     const kernel = new Kernel(this, environment)
-    const code = this.environment.state.get(path)
+    const code = this.environment.state.get(address)
+
+    //environment.setCallHandler(callHandler)
+
     if (!code) {
       throw new Error('Contract not found')
     }
@@ -74,6 +82,18 @@ module.exports = class Kernel {
       throw new Error('Not an eWASM contract')
     }
     kernel.codeHandler(code, new Interface(environment))
+
+    // generate new stateroot
+    //this.environment.state.set(address, { stateRoot: stateRoot })
+
+    return {
+      executionOutcome: 1, // success
+      gasLeft: 0,
+      gasRefunds: 0,
+      returnValue: new ArrayBuffer(),
+      selfDestructAddress: new Uint8Array(),
+      logs: []
+    }
   }
 
   // run tx; the tx message handler
@@ -85,20 +105,46 @@ module.exports = class Kernel {
     // new ethTx(tx).validate(tx)
     // - reduce balance
 
+    this.environment = environment
+
     // Contract deployment
-    const isDeployment = tx.data && !tx.to;
-    if (isDeployment) {
-      this.environment.accounts.set(new Uint8Array())
+    //const isDeployment = tx.data && !tx.to;
+    //if (isDeployment) {
+    //  this.environment.accounts.set(new Uint8Array())
+    //}
+
+    //
+    // environment.state - the merkle tree
+    // key: address (20 byte, hex string, without 0x prefix)
+    // every path has an account
+    //
+    // { balance, codeHash, stateRoot }
+    //
+
+    // look up sender
+    let fromAccount = this.environment.accounts.get(new Uint8Array(tx.form).toString())
+
+    // deduct gasLimit * gasPrice from sender
+    if (fromAccount.balance < (tx.gasLimit * tx.gasPrice)) {
+      throw new Error('Insufficient account balance')
     }
 
-    var toAccount = this.environment.accounts.get(new Uint8Array(tx.to).toString())
-    var fromAccount = this.environment.accounts.get(new Uint8Array(tx.form).toString())
+    fromAccount.balance -= ts.gasLimit * tx.gasPrice
 
-    if (!toAccount) {
-      throw new Error('Account not found')
+    let ret = this.callHandler(tx.to, tx.gasLimit, tx.gasPrice, tx.value, tx.data)
+
+    // refund gas
+    if (ret.executionOutcome === 1) {
+      fromAccount.balance += (ret.gasLeft + ret.gasRefund) * tx.gasPrice
     }
 
-    this.callHandler(account.codeHash, environment)
+    // save new state?
+
+    return {
+      returnValue: ret.returnValue,
+      gasLeft: ret.gasLeft,
+      logs: ret.logs
+    }
   }
 
   // run block; the block message handler

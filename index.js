@@ -91,11 +91,11 @@ module.exports = class Kernel {
 
     return {
       executionOutcome: 1, // success
-      gasLeft: 0,
-      gasRefunds: 0,
-      returnValue: new ArrayBuffer(),
-      selfDestructAddress: new Uint8Array(),
-      logs: []
+      gasLeft: environment.gasLimit, // this starts as the limit and results as the gas left
+      gasRefund: environment.gasRefund,
+      returnValue: environment.returnValue,
+      selfDestructAddress: environment.selfDestructAddress,
+      logs: environment.logs
     }
   }
 

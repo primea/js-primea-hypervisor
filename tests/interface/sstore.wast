@@ -2,7 +2,7 @@
 (module
   (memory 1)
   (import $sstore  "ethereum" "sstore" (param i32 i32))
-  (import $sload    "ethereum" "sload"   (param i32 i32))
+  (import $sload   "ethereum" "sload"  (param i32 i32))
 
   (export "test" 0)
   (export "a" memory)
@@ -19,6 +19,7 @@
 
       (i64.store (i32.const 128) (i64.const 173553719826446289))
       (call_import $sstore (i32.const 64) (i32.const 128))
+      (i64.store (i32.const 128) (i64.const 173559826446289))
       (call_import $sload (i32.const 64) (i32.const 64))
       (if (i64.ne (i64.load (i32.const 64)) (i64.const 173553719826446289))
         (unreachable))

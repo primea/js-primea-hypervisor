@@ -19,7 +19,6 @@ module.exports = class DebugInterface {
       'print': function (a) {
         console.log(a)
       },
-
       'printMem': function (offset, length) {
         console.log(`<DEBUG(str): ${this.getMemoryBuffer(offset, length).toString()}>`)
       }.bind(this),
@@ -35,8 +34,8 @@ module.exports = class DebugInterface {
         }
         console.error(`op: ${opcode.name} gas: ${this.environment.gasLimit}`)
         console.log('-------------stack--------------')
-        for (let i = sp; i > 0; i -= 32) {
-          console.log(`${(sp - i) / 32} ${this.getMemoryBuffer(i - 24, 32).toString('hex')}`)
+        for (let i = sp; i > -32; i -= 32) {
+          console.log(`${(sp - i) / 32} ${this.getMemoryBuffer(i, 32).toString('hex')}`)
         }
         return sp
       }.bind(this)

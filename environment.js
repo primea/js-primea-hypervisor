@@ -24,6 +24,7 @@ module.exports = class Environment {
       returnValue: new ArrayBuffer()
     }
 
+    const self = this
     this.state = new Map()
 
     if (data) {
@@ -34,7 +35,6 @@ module.exports = class Environment {
 
     Object.assign(this, defaults, data)
     if (data.accounts) {
-      const self = this
       data.accounts.forEach((account) => {
         self.state.set(new Uint8Array(account[0]).toString(), account[1])
       })

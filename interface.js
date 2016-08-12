@@ -332,8 +332,9 @@ module.exports = class Interface {
    * @param {interger} valueOffset the memory offset to load the value from
    */
   sstore (pathOffset, valueOffset) {
-    const path =  new Buffer(this.getMemory(pathOffset, 32)).toString('hex')
-    const value = this.getMemory(valueOffset, 32)
+    const path = new Buffer(this.getMemory(pathOffset, 32)).toString('hex')
+    // copy the value
+    const value = this.getMemory(valueOffset, 32).slice(0)
     const oldValue = this.environment.state.get(path)
     const valIsZero = value.every((i) => i === 0)
 

@@ -2,6 +2,12 @@ const ethUtils = require('ethereumjs-util')
 
 module.exports = class Address {
   constructor (value) {
+    // Special case: duplicate
+    if (value instanceof Address) {
+      this._value = new Buffer(value._value)
+      return
+    }
+
     if (typeof value !== 'string') {
       throw new Error('Invalid input to address')
     }

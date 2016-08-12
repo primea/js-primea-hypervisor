@@ -66,8 +66,8 @@ module.exports = class Kernel {
   callHandler (address, gaslimit, gasprice, value, data) {
     // Special case: contract deployment
     // FIXME: place this in the best location with the best condition checking
-    if (address === 0) {
-      if (data) {
+    if (address.isZero()) {
+      if (data.length !== 0) {
         let codeHash = sha3(data)
         this.environment.state.set(codeHash, data);
         this.environment.state.set(address.toString(), { balance: value, codeHash: codeHash })

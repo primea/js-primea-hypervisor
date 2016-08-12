@@ -26,4 +26,8 @@ module.exports = class Address {
   toString () {
     return '0x' + this._value.toString('hex')
   }
+
+  isZero () {
+    return this._value.equals(ethUtils.zeros(20))
+  }
 }

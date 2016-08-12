@@ -21,12 +21,12 @@ module.exports = class U256 {
     return this._value.toBuffer('be', 32)
   }
 
-  subi (u256) {
-    this._value.subi(u256._value)
+  sub (u256) {
+    return this._value.sub(u256._value)
   }
 
-  addi (u256) {
-    this._value.addi(u256._value)
+  add (u256) {
+    return this._value.add(u256._value)
   }
 
   lt (u256) {

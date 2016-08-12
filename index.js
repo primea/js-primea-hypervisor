@@ -130,6 +130,9 @@ module.exports = class Kernel {
 
     // look up sender
     let fromAccount = this.environment.state.get(new Uint8Array(tx.form).toString())
+    if (!fromAccount) {
+      throw new Error('Sender account not found')
+    }
 
     // deduct gasLimit * gasPrice from sender
     if (fromAccount.balance < (tx.gasLimit * tx.gasPrice)) {

@@ -22,6 +22,7 @@ const Environment = require('./environment.js')
 const DebugInterface = require('./debugInterface.js')
 
 const Address = require('./address.js')
+const U256 = require('./u256.js')
 const Utils = require('./utils.js')
 
 module.exports = class Kernel {
@@ -102,8 +103,8 @@ module.exports = class Kernel {
 
     return {
       executionOutcome: 1, // success
-      gasLeft: environment.gasLimit, // this starts as the limit and results as the gas left
-      gasRefund: environment.gasRefund,
+      gasLeft: new U256(environment.gasLimit), // this starts as the limit and results as the gas left
+      gasRefund: new U256(environment.gasRefund),
       returnValue: environment.returnValue,
       selfDestructAddress: environment.selfDestructAddress,
       logs: environment.logs
@@ -136,17 +137,17 @@ module.exports = class Kernel {
     }
 
     // deduct gasLimit * gasPrice from sender
-    if (fromAccount.balance < (tx.gasLimit * tx.gasPrice)) {
+    if (fromAccount.balance.lt(tx.gasLimit.mul(tx.gasPrice))) {
       throw new Error('Insufficient account balance')
     }
 
-    fromAccount.balance -= ts.gasLimit * tx.gasPrice
+    fromAccount.balance = fromAccount.balance.sub(ts.gasLimit.mul(tx.gasPrice))
 
     let ret = this.callHandler(tx.to, tx.gasLimit, tx.gasPrice, tx.value, tx.data)
 
     // refund gas
     if (ret.executionOutcome === 1) {
-      fromAccount.balance += (ret.gasLeft + ret.gasRefund) * tx.gasPrice
+      fromAccount.balance = fromAccount.balance.add(tx.gasPrice.mul(ret.gasLeft.add(ret.gasRefund)))
     }
 
     // save new state?

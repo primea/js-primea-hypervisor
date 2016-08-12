@@ -62,6 +62,16 @@ module.exports = class Kernel {
   // Detects if the code injection is needed
   // Detects if transcompilation is needed
   callHandler (address, gaslimit, gasprice, value, data) {
+    // Special case: contract deployment
+    // FIXME: place this in the best location with the best condition checking
+    if (address === 0) {
+      if (data) {
+        let codeHash = sha3(data)
+        this.environment.state.set(codeHash, data);
+        this.environment.state.set(new Uint8Array(address).toString(), { balance: value, codeHash: codeHash })
+      }
+    }
+
     var account = this.environment.state.get(new Uint8Array(address).toString())
     if (!account) {
       throw new Error('Account not found')
@@ -109,12 +119,6 @@ module.exports = class Kernel {
     // - reduce balance
 
     this.environment = environment
-
-    // Contract deployment
-    //const isDeployment = tx.data && !tx.to;
-    //if (isDeployment) {
-    //  this.environment.accounts.set(new Uint8Array())
-    //}
 
     //
     // environment.state - the merkle tree

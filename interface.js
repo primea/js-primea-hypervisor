@@ -147,8 +147,8 @@ module.exports = class Interface {
    * @param {integer} length the length of data to copy
    */
   callDataCopy (offset, dataOffset, length) {
-    const callData = new Uint8Array(this.environment.callData, offset, length)
-    this.setMemory(offset, length, callData)
+    const callData = Buffer.from(this.environment.callData.slice(offset, offset + length)).reverse()
+    this.setMemory(dataOffset, length, callData)
   }
 
   /**
@@ -303,7 +303,6 @@ module.exports = class Interface {
     // Run the call
     const [result, errorCode] = this.environment.call(gas, address, value, data)
     this.setMemory(resultOffset, resultLength, result)
-
     return errorCode
   }
 
@@ -324,7 +323,6 @@ module.exports = class Interface {
     const address = this.getMemory(addressOffset, constants.ADDRESS_SIZE_BYTES)
     const [result, errorCode] = this.environment.callDelegate(gas, address, data)
     this.setMemory(resultOffset, resultLength, result)
-
     return errorCode
   }
 

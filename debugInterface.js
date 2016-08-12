@@ -34,15 +34,15 @@ module.exports = class DebugInterface {
         }
         console.error(`op: ${opcode.name} gas: ${this.environment.gasLimit}`)
         console.log('-------------stack--------------')
-        for (let i = sp; i > -32; i -= 32) {
-          console.log(`${(sp - i) / 32} ${this.getMemoryBuffer(i, 32).toString('hex')}`)
+        for (let i = sp; i >= 0; i -= 32) {
+          console.log(`${(sp - i) / 32} ${this.getMemoryBuffer(i).toString('hex')}`)
         }
         return sp
       }.bind(this)
     }
   }
 
-  getMemoryBuffer (offset, length) {
-    return new Buffer(new Uint8Array(this.module.exports.memory, offset, length))
+  getMemoryBuffer (offset) {
+    return new Buffer(this.module.exports.memory.slice(offset, offset + 32)).reverse()
   }
 }

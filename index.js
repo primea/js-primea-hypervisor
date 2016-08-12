@@ -62,12 +62,12 @@ module.exports = class Kernel {
   // Detects if the code injection is needed
   // Detects if transcompilation is needed
   callHandler (address, gaslimit, gasprice, value, data) {
-    var toAccount = this.environment.state.get(new Uint8Array(address).toString())
-    if (!toAccount) {
+    var account = this.environment.state.get(new Uint8Array(address).toString())
+    if (!account) {
       throw new Error('Account not found')
     }
 
-    const code = this.environment.state.get(address)
+    const code = this.environment.state.get(account.codeHash)
 
     if (!code) {
       throw new Error('Contract not found')

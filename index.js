@@ -62,7 +62,7 @@ module.exports = class Kernel {
   // Detects if the code injection is needed
   // Detects if transcompilation is needed
   callHandler (address, gaslimit, gasprice, value, data) {
-    var toAccount = this.environment.accounts.get(new Uint8Array(address).toString())
+    var toAccount = this.environment.state.get(new Uint8Array(address).toString())
     if (!toAccount) {
       throw new Error('Account not found')
     }
@@ -122,7 +122,7 @@ module.exports = class Kernel {
     //
 
     // look up sender
-    let fromAccount = this.environment.accounts.get(new Uint8Array(tx.form).toString())
+    let fromAccount = this.environment.state.get(new Uint8Array(tx.form).toString())
 
     // deduct gasLimit * gasPrice from sender
     if (fromAccount.balance < (tx.gasLimit * tx.gasPrice)) {

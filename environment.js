@@ -19,7 +19,7 @@ module.exports = class Environment {
       code: new ArrayBuffer(), // the current running code
       // output calls
       logs: [],
-      suicideAddress: new ArrayBuffer(),
+      selfDestructAddress: new ArrayBuffer(),
       // more output calls
       returnValue: new ArrayBuffer()
     }

@@ -21,6 +21,7 @@ const Environment = require('./environment.js')
 
 const DebugInterface = require('./debugInterface.js')
 
+const Address = require('./address.js')
 const Utils = require('./utils.js')
 
 module.exports = class Kernel {
@@ -68,11 +69,11 @@ module.exports = class Kernel {
       if (data) {
         let codeHash = sha3(data)
         this.environment.state.set(codeHash, data);
-        this.environment.state.set(new Uint8Array(address).toString(), { balance: value, codeHash: codeHash })
+        this.environment.state.set(address.toString(), { balance: value, codeHash: codeHash })
       }
     }
 
-    var account = this.environment.state.get(new Uint8Array(address).toString())
+    let account = this.environment.state.get(address.toString())
     if (!account) {
       throw new Error('Account not found')
     }
@@ -129,7 +130,7 @@ module.exports = class Kernel {
     //
 
     // look up sender
-    let fromAccount = this.environment.state.get(new Uint8Array(tx.form).toString())
+    let fromAccount = this.environment.state.get(tx.from.toString())
     if (!fromAccount) {
       throw new Error('Sender account not found')
     }

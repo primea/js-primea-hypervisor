@@ -65,6 +65,9 @@ module.exports = class Interface {
    */
   useGas (amount) {
     if (amount > 0) {
+      if (this.environment.gasLimit < amount) {
+        throw new Error('Ran out of gas')
+      }
       this.environment.gasLimit -= amount
     }
   }

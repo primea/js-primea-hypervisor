@@ -44,11 +44,11 @@ module.exports = class Environment {
   }
 
   getBalance (address) {
-    return this.state.get(address.toString()).balance
+    return this.state.get(address.toString())['balance']
   }
 
   getCode (address) {
-    return this.state.get(address.toString()).code
+    return this.state.get(address.toString())['code']
   }
 
   getBlockHash (height) {

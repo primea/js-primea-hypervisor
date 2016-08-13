@@ -68,9 +68,16 @@ module.exports = class Kernel {
     // FIXME: place this in the best location with the best condition checking
     if (address.isZero()) {
       if (data.length !== 0) {
-        let codeHash = sha3(data)
-        this.environment.state.set(codeHash, data);
-        this.environment.state.set(address.toString(), { balance: value, codeHash: codeHash })
+        console.log('This is a contract deployment transaction')
+
+        let account = new Map()
+        account.set('nonce', new U256(0))
+        account.set('balance', value)
+        account.set('code', data)
+        account.set('storage', new Map())
+
+        // FIXME: calculate the contract address
+        this.environment.state.set(address.toString(), account)
       }
     }
 
@@ -79,9 +86,8 @@ module.exports = class Kernel {
       throw new Error('Account not found')
     }
 
-    const code = this.environment.state.get(account.codeHash)
-
-    if (!code) {
+    const code = Uint8Array.from(account.get('code'))
+    if (code.length === 0) {
       throw new Error('Contract not found')
     }
 
@@ -137,17 +143,17 @@ module.exports = class Kernel {
     }
 
     // deduct gasLimit * gasPrice from sender
-    if (fromAccount.balance.lt(tx.gasLimit.mul(tx.gasPrice))) {
-      throw new Error('Insufficient account balance')
+    if (fromAccount.get('balance').lt(tx.gasLimit.mul(tx.gasPrice))) {
+      throw new Error(`Insufficient account balance: ${fromAccount.get('balance').toString()} < ${tx.gasLimit.mul(tx.gasPrice).toString()}`)
     }
 
-    fromAccount.balance = fromAccount.balance.sub(ts.gasLimit.mul(tx.gasPrice))
+    fromAccount.set('balance', fromAccount.get('balance').sub(tx.gasLimit.mul(tx.gasPrice)))
 
     let ret = this.callHandler(tx.to, tx.gasLimit, tx.gasPrice, tx.value, tx.data)
 
     // refund gas
     if (ret.executionOutcome === 1) {
-      fromAccount.balance = fromAccount.balance.add(tx.gasPrice.mul(ret.gasLeft.add(ret.gasRefund)))
+      fromAccount.set('balance', fromAccount.get('balance').add(tx.gasPrice.mul(ret.gasLeft.add(ret.gasRefund))))
     }
 
     // save new state?

@@ -21,6 +21,7 @@
     "ewasm"
   ],
   "author": "mjbecze <mjbecze@gmail.com>",
+  "contributors": "Alex Beregszaszi <alex@rtfs.hu>",
   "license": "MPL-2.0",
   "devDependencies": {
     "standard": "^7.1.2",
@@ -35,5 +36,7 @@
     ]
   },
   "dependencies": {
+    "bn.js": "^4.11.6",
+    "ethereumjs-util": "^4.5.0"
   }
 }

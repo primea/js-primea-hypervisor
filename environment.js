@@ -35,7 +35,7 @@ module.exports = class Environment {
   }
 
   getCode (address) {
-    // STUB
+    return this.state.get(address.toString()).code
   }
 
   getBlockHash (height) {

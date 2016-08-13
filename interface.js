@@ -147,8 +147,8 @@ module.exports = class Interface {
    * @param {integer} length the length of data to copy
    */
   callDataCopy (offset, dataOffset, length) {
-    const callData = Buffer.from(this.environment.callData.slice(offset, offset + length)).reverse()
-    this.setMemory(dataOffset, length, callData)
+    const callData = Buffer.from(this.environment.callData.slice(dataOffset, dataOffset + length)).reverse()
+    this.setMemory(offset, length, callData)
   }
 
   /**
@@ -191,7 +191,7 @@ module.exports = class Interface {
   extCodeCopy (addressOffset, offset, codeOffset, length) {
     const address = this.getMemory(addressOffset, constants.ADDRESS_SIZE_BYTES)
     let code = this.environment.getCode(address)
-    code = new Uint8Array(code, codeOffset, length)
+   code = new Uint8Array(code, codeOffset, length)
     this.setMemory(offset, length, code)
   }
 

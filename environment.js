@@ -33,6 +33,16 @@ module.exports = class Environment {
     Object.assign(this, defaults, data || {})
   }
 
+  addAccount (address, trie) {
+    let account = new Map()
+    account.set('nonce', trie.nonce || new U256(0))
+    account.set('balance', trie.balance || new U256(0))
+    account.set('code', trie.code || new Uint8Array())
+    account.set('storage', trie.storage || new Map())
+
+    this.state.set(address.toString(), account)
+  }
+
   getBalance (address) {
     return this.state.get(address.toString()).balance
   }

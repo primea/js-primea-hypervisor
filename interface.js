@@ -127,7 +127,7 @@ module.exports = class Interface {
    * @param {integer} offset
    */
   callValue (offset) {
-    this.setMemory(offset, constants.BALANCE_SIZE_BYTES, this.environment.callValue)
+    this.setMemory(offset, constants.BALANCE_SIZE_BYTES, this.environment.callValue.toBuffer())
   }
 
   /**

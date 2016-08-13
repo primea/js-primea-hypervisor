@@ -1,4 +1,5 @@
 const constants = require('./constants.js')
+const U256 = require('./u256.js')
 
 module.exports = class Environment {
   constructor (data) {
@@ -13,7 +14,7 @@ module.exports = class Environment {
       coinbase: new Uint8Array(constants.ADDRESS_SIZE_BYTES),
       difficulty: 0,
       caller: new Uint8Array(constants.ADDRESS_SIZE_BYTES),
-      callValue: new Uint8Array(constants.BALANCE_SIZE_BYTES),
+      callValue: new U256(0),
       callData: new ArrayBuffer(),
       // the ROM
       code: new ArrayBuffer(), // the current running code

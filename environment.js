@@ -11,7 +11,7 @@ module.exports = class Environment {
       address: new Uint8Array(constants.ADDRESS_SIZE_BYTES),
       origin: new Uint8Array(constants.ADDRESS_SIZE_BYTES),
       coinbase: new Uint8Array(constants.ADDRESS_SIZE_BYTES),
-      difficulty: new Uint8Array(20),
+      difficulty: 0,
       caller: new Uint8Array(constants.ADDRESS_SIZE_BYTES),
       callValue: new Uint8Array(constants.BALANCE_SIZE_BYTES),
       callData: new ArrayBuffer(),

@@ -15,14 +15,14 @@ module.exports = class Environment {
       difficulty: 0,
       caller: new Uint8Array(constants.ADDRESS_SIZE_BYTES),
       callValue: new U256(0),
-      callData: new ArrayBuffer(),
+      callData: new Uint8Array(),
       // the ROM
-      code: new ArrayBuffer(), // the current running code
+      code: new Uint8Array(), // the current running code
       // output calls
       logs: [],
-      selfDestructAddress: new ArrayBuffer(),
+      selfDestructAddress: new Uint8Array(constants.ADDRESS_SIZE_BYTES),
       // more output calls
-      returnValue: new ArrayBuffer()
+      returnValue: new Uint8Array()
     }
 
     const self = this

@@ -136,7 +136,7 @@ module.exports = class Interface {
    * @return {integer}
    */
   callDataSize () {
-    return this.environment.callData.byteLength
+    return this.environment.callData.length
   }
 
   /**
@@ -156,7 +156,7 @@ module.exports = class Interface {
    * @return {interger}
    */
   codeSize () {
-    return this.environment.code.byteLength
+    return this.environment.code.length
   }
 
   /**
@@ -178,7 +178,7 @@ module.exports = class Interface {
   extCodeSize (addressOffset) {
     const address = this.getMemory(addressOffset, constants.ADDRESS_SIZE_BYTES)
     const code = this.environment.getCode(address)
-    return code.byteLength
+    return code.length
   }
 
   /**

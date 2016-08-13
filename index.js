@@ -21,7 +21,7 @@ const Environment = require('./environment.js')
 
 const DebugInterface = require('./debugInterface.js')
 
-module.exports = class Kernal {
+module.exports = class Kernel {
   // runs some code in the VM
   constructor (environment = new Environment()) {
     this.environment = environment

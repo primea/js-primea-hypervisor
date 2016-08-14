@@ -50,11 +50,6 @@ module.exports = class Interface {
     return ret
   }
 
-  // FIXME: this shouldn't be needed
-  get env () {
-    return this.environment
-  }
-
   setModule (mod) {
     this.module = mod
   }

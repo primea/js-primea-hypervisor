@@ -64,23 +64,6 @@ module.exports = class Kernel {
   // Detects if the code injection is needed
   // Detects if transcompilation is needed
   callHandler (address, gaslimit, gasprice, value, data) {
-    // Special case: contract deployment
-    // FIXME: place this in the best location with the best condition checking
-    if (address.isZero()) {
-      if (data.length !== 0) {
-        console.log('This is a contract deployment transaction')
-
-        let account = new Map()
-        account.set('nonce', new U256(0))
-        account.set('balance', value)
-        account.set('code', data)
-        account.set('storage', new Map())
-
-        // FIXME: calculate the contract address
-        this.environment.state.set(address.toString(), account)
-      }
-    }
-
     let account = this.environment.state.get(address.toString())
     if (!account) {
       throw new Error('Account not found')
@@ -140,6 +123,30 @@ module.exports = class Kernel {
     let fromAccount = this.environment.state.get(tx.from.toString())
     if (!fromAccount) {
       throw new Error('Sender account not found')
+    }
+
+    // Special case: contract deployment
+    if (tx.to.isZero()) {
+      if (tx.data.length !== 0) {
+        console.log('This is a contract deployment transaction')
+
+        let account = new Map()
+        account.set('nonce', new U256(0))
+        account.set('balance', tx.value)
+        account.set('code', tx.data)
+        account.set('storage', new Map())
+
+        // FIXME: calculate the contract address
+        let address = tx.to
+
+        this.environment.state.set(address.toString(), account)
+
+        // FIXME: deduct fees
+
+        return {
+          accountCreated: address
+        }
+      }
     }
 
     // deduct gasLimit * gasPrice from sender

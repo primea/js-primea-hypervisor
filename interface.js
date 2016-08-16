@@ -3,6 +3,7 @@
  * enables to interact with the Ethereum Environment
  */
 const constants = require('./constants.js')
+const Address = require('./address.js')
 
 // The interface exposed to the WebAessembly Core
 module.exports = class Interface {
@@ -81,7 +82,7 @@ module.exports = class Interface {
    * @param {integer} offset
    */
   address (offset) {
-    this.setMemory(offset, constants.ADDRESS_SIZE_BYTES, this.environment.address)
+    this.setMemory(offset, constants.ADDRESS_SIZE_BYTES, this.environment.address.toBuffer())
   }
 
   /**
@@ -91,7 +92,7 @@ module.exports = class Interface {
    * @param {integer} resultOffset
    */
   balance (addressOffset, offset) {
-    const address = this.getMemory(addressOffset, constants.ADDRESS_SIZE_BYTES)
+    const address = new Address(this.getMemory(addressOffset, constants.ADDRESS_SIZE_BYTES))
     // call the parent contract and ask for the balance of one of its child contracts
     const balance = this.environment.parent.environment.getBalance(address)
     this.setMemory(offset, constants.BALANCE_SIZE_BYTES, balance)
@@ -104,7 +105,7 @@ module.exports = class Interface {
    * @param {integer} offset
    */
   origin (offset) {
-    this.setMemory(offset, constants.ADDRESS_SIZE_BYTES, this.environment.origin)
+    this.setMemory(offset, constants.ADDRESS_SIZE_BYTES, this.environment.origin.toBuffer())
   }
 
   /**
@@ -113,7 +114,7 @@ module.exports = class Interface {
    * @param {integer} offset
    */
   caller (offset) {
-    this.setMemory(offset, constants.ADDRESS_SIZE_BYTES, this.environment.caller)
+    this.setMemory(offset, constants.ADDRESS_SIZE_BYTES, this.environment.caller.toBuffer())
   }
 
   /**
@@ -171,7 +172,7 @@ module.exports = class Interface {
    * @return {integer}
    */
   extCodeSize (addressOffset) {
-    const address = this.getMemory(addressOffset, constants.ADDRESS_SIZE_BYTES)
+    const address = new Address(this.getMemory(addressOffset, constants.ADDRESS_SIZE_BYTES))
     const code = this.environment.getCode(address)
     return code.length
   }
@@ -184,7 +185,7 @@ module.exports = class Interface {
    * @param {integer} length the length of code to copy
    */
   extCodeCopy (addressOffset, offset, codeOffset, length) {
-    const address = this.getMemory(addressOffset, constants.ADDRESS_SIZE_BYTES)
+    const address = new Address(this.getMemory(addressOffset, constants.ADDRESS_SIZE_BYTES))
     let code = this.environment.getCode(address)
    code = new Uint8Array(code, codeOffset, length)
     this.setMemory(offset, length, code)
@@ -213,7 +214,7 @@ module.exports = class Interface {
    * @param offset
    */
   coinbase (offset) {
-    this.setMemory(offset, constants.ADDRESS_SIZE_BYTES, this.environment.coinbase)
+    this.setMemory(offset, constants.ADDRESS_SIZE_BYTES, this.environment.coinbase.toBuffer())
   }
 
   /**
@@ -292,7 +293,7 @@ module.exports = class Interface {
       gas = this.gasLeft()
     }
     // Load the params from mem
-    const address = this.getMemory(addressOffset, constants.ADDRESS_SIZE_BYTES)
+    const address = new Address(this.getMemory(addressOffset, constants.ADDRESS_SIZE_BYTES))
     const value = this.getMemory(valueOffset, constants.BALANCE_SIZE_BYTES)
     const data = this.getMemory(dataOffset, dataLength)
     // Run the call
@@ -315,7 +316,7 @@ module.exports = class Interface {
    */
   callDelegate (gas, addressOffset, dataOffset, dataLength, resultOffset, resultLength) {
     const data = this.getMemory(dataOffset, dataLength)
-    const address = this.getMemory(addressOffset, constants.ADDRESS_SIZE_BYTES)
+    const address = new Address(this.getMemory(addressOffset, constants.ADDRESS_SIZE_BYTES))
     const [result, errorCode] = this.environment.callDelegate(gas, address, data)
     this.setMemory(resultOffset, resultLength, result)
     return errorCode
@@ -374,7 +375,7 @@ module.exports = class Interface {
    * @param {integer} offset the offset to load the address from
    */
   suicide (addressOffset) {
-    this.environment.suicideAddress = this.getMemory(addressOffset, constants.ADDRESS_SIZE_BYTES)
+    this.environment.suicideAddress = new Address(this.getMemory(addressOffset, constants.ADDRESS_SIZE_BYTES))
   }
 
   getMemory (offset, length) {

@@ -2,6 +2,7 @@
  * This is the Ethereum interface that is exposed to the WASM instance which
  * enables to interact with the Ethereum Environment
  */
+const ethUtil = require('ethereumjs-util')
 const constants = require('./constants.js')
 
 // The interface exposed to the WebAessembly Core
@@ -191,7 +192,7 @@ module.exports = class Interface {
   extCodeCopy (addressOffset, offset, codeOffset, length) {
     const address = this.getMemory(addressOffset, constants.ADDRESS_SIZE_BYTES)
     let code = this.environment.getCode(address)
-   code = new Uint8Array(code, codeOffset, length)
+    code = new Uint8Array(code, codeOffset, length)
     this.setMemory(offset, length, code)
   }
 
@@ -209,7 +210,14 @@ module.exports = class Interface {
    * @param {integer} offset the offset to load the hash into
    */
   blockHash (number, offset) {
-    const hash = this.environment.getBlockHash(number)
+    const diff = ethUtil.bufferToInt(this.environment.block.header.number) - number
+    let hash
+
+    if (diff > 256 || diff <= 0) {
+      hash = new Uint8Array(32)
+    } else {
+      hash = this.environment.getBlockHash(number).reverse()
+    }
     this.setMemory(offset, 32, hash)
   }
 

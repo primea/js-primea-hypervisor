@@ -1,7 +1,7 @@
 const utils = require('ethereumjs-util')
 
 module.exports = {
-  getBlock: (n, cb) => {
+  getBlock: (n) => {
     const hash = utils.sha3(new Buffer(utils.bufferToInt(n).toString()))
     const block = {
       hash: () => {

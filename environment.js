@@ -1,10 +1,12 @@
+const U256 = require('./u256.js')
+const Block = require('ethereumjs-block')
 const constants = require('./constants.js')
 const blockChain = require('./fakeBlockChain.js')
-const U256 = require('./u256.js')
 
 module.exports = class Environment {
   constructor (data) {
     const defaults = {
+      block: new Block(),
       // gas tank
       gasPrice: 0,
       gasLimit: 1000000, // The gas limit for the block

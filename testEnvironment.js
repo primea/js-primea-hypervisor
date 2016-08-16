@@ -52,8 +52,7 @@ module.exports = class TestEnvironment extends Environment {
 }
 
 function hexStr2arrayBuf (string) {
-  const ab = new ArrayBuffer(string.length / 2)
-  const view = new Uint8Array(ab)
+  const view = new Uint8Array(string.length / 2)
   string = [...string]
   let temp = ''
   string.forEach((el, i) => {
@@ -63,5 +62,5 @@ function hexStr2arrayBuf (string) {
       temp = ''
     }
   })
-  return ab
+  return view
 }

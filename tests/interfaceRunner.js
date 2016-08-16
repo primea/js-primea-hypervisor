@@ -37,7 +37,7 @@ for (let testName of tests) {
       debugInterface.setModule(mod)
       mod.exports.test()
     } catch (e) {
-      t.fail()
+      t.fail('Exception: ' + e)
       console.error('FAIL')
       console.error(e)
     } finally {

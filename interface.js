@@ -187,7 +187,7 @@ module.exports = class Interface {
   extCodeCopy (addressOffset, offset, codeOffset, length) {
     const address = new Address(this.getMemory(addressOffset, constants.ADDRESS_SIZE_BYTES))
     let code = this.environment.getCode(address)
-   code = new Uint8Array(code, codeOffset, length)
+    code = new Uint8Array(code, codeOffset, length)
     this.setMemory(offset, length, code)
   }
 
@@ -205,7 +205,14 @@ module.exports = class Interface {
    * @param {integer} offset the offset to load the hash into
    */
   blockHash (number, offset) {
-    const hash = this.environment.getBlockHash(number)
+    const diff = this.environment.number - number
+    let hash
+
+    if (diff > 256 || diff <= 0) {
+      hash = new Uint8Array(32)
+    } else {
+      hash = this.environment.getBlockHash(number).reverse()
+    }
     this.setMemory(offset, 32, hash)
   }
 

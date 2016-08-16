@@ -1,10 +1,17 @@
 const constants = require('./constants.js')
 const U256 = require('./u256.js')
 const Address = require('./address.js')
+const ethUtils = require('ethereumjs-util')
+const Block = require('ethereumjs-block')
+const blockChain = require('./fakeBlockChain.js')
 
 module.exports = class Environment {
   constructor (data) {
+    const block = new Block()
+
     const defaults = {
+      block: block,
+      number: ethUtils.bufferToInt(block.header.number),
       // gas tank
       gasPrice: 0,
       gasLimit: 1000000, // The gas limit for the block
@@ -40,7 +47,7 @@ module.exports = class Environment {
   }
 
   getBlockHash (height) {
-    // STUB
+    return blockChain.getBlock(height).hash()
   }
 
   // kernal

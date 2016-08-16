@@ -17,8 +17,11 @@ module.exports = class U256 {
     return this._value.toString(radix)
   }
 
-  toBuffer () {
-    return this._value.toBuffer('le', 32)
+  toBuffer (width) {
+    if (width <= 0 || width > 32) {
+      throw new Error('Invalid U256 width')
+    }
+    return this._value.toBuffer('le', width || 32)
   }
 
   sub (u256) {

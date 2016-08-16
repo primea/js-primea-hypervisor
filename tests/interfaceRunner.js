@@ -4,7 +4,7 @@ const fs = require('fs')
 const cp = require('child_process')
 
 const Kernel = require('../index.js')
-const Environment = require('../environment.js')
+const TestEnvironment = require('../testEnvironment.js')
 const Interface = require('../interface.js')
 const DebugInterface = require('../debugInterface.js')
 const dir = __dirname + '/interface'
@@ -18,11 +18,11 @@ for (let testName of tests) {
     // Compile Command
     cp.execSync(`${__dirname}/../tools/sexpr-wasm-prototype/out/sexpr-wasm ${dir}/${testName}.wast -o ${dir}/${testName}.wasm`)
     const buffer = fs.readFileSync(`${dir}/${testName}.wasm`)
-    const envData = fs.readFileSync(`${dir}/${testName}.json`)
-    const ethereum     = new Kernel(new Environment(envData))
+    const envData = fs.readFileSync(`${dir}/${testName}.json`).toString()
+    const ethereum     = new Kernel(new TestEnvironment(envData))
 
     // manually `callHander`
-    const environment  = new Environment(envData)
+    const environment  = new TestEnvironment(envData)
     environment.parent = ethereum
     const testContract = new Kernel(environment)
     const ethInterface = new Interface(environment, testContract)

@@ -18,7 +18,7 @@ module.exports = class U256 {
   }
 
   toBuffer () {
-    return this._value.toBuffer('be', 32)
+    return this._value.toBuffer('le', 32)
   }
 
   sub (u256) {

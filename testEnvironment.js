@@ -1,6 +1,7 @@
 const Environment = require('./environment.js')
 const U256 = require('./u256.js')
 const Address = require('./address.js')
+const BN = require('bn.js')
 
 module.exports = class TestEnvironment extends Environment {
   constructor (data) {
@@ -14,7 +15,10 @@ module.exports = class TestEnvironment extends Environment {
 
     if (data.accounts) {
       data.accounts.forEach((account) => {
-        self.state.set(new Address(new Uint8Array(account[0])).toString(), account[1])
+        let tmp = account[1]
+        self.state.set(new Address(new Uint8Array(account[0])).toString(), {
+          balance: new U256(new BN(tmp.balance, 16, 'le'))
+        })
       })
     }
 

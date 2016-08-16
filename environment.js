@@ -1,4 +1,5 @@
 const constants = require('./constants.js')
+const blockChain = require('./fakeBlockChain.js')
 
 module.exports = class Environment {
   constructor (data) {
@@ -70,7 +71,7 @@ module.exports = class Environment {
   }
 
   getBlockHash (height) {
-    // STUB
+    return blockChain.getBlock(height).hash()
   }
 
   // kernal

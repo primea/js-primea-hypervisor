@@ -95,7 +95,7 @@ module.exports = class Interface {
     const address = new Address(this.getMemory(addressOffset, constants.ADDRESS_SIZE_BYTES))
     // call the parent contract and ask for the balance of one of its child contracts
     const balance = this.environment.parent.environment.getBalance(address)
-    this.setMemory(offset, constants.BALANCE_SIZE_BYTES, balance)
+    this.setMemory(offset, constants.BALANCE_SIZE_BYTES, balance.toBuffer(constants.BALANCE_SIZE_BYTES))
   }
 
   /**

@@ -23,6 +23,10 @@ module.exports = class Address {
     }
   }
 
+  toBuffer () {
+    return this._value
+  }
+
   toString () {
     return '0x' + this._value.toString('hex')
   }

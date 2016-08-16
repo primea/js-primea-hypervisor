@@ -1,4 +1,5 @@
 const constants = require('./constants.js')
+const U256 = require('./u256.js')
 
 module.exports = class Environment {
   constructor (data) {
@@ -11,17 +12,17 @@ module.exports = class Environment {
       address: new Uint8Array(constants.ADDRESS_SIZE_BYTES),
       origin: new Uint8Array(constants.ADDRESS_SIZE_BYTES),
       coinbase: new Uint8Array(constants.ADDRESS_SIZE_BYTES),
-      difficulty: new Uint8Array(20),
+      difficulty: 0,
       caller: new Uint8Array(constants.ADDRESS_SIZE_BYTES),
-      callValue: new Uint8Array(constants.BALANCE_SIZE_BYTES),
-      callData: new ArrayBuffer(),
+      callValue: new U256(0),
+      callData: new Uint8Array(),
       // the ROM
-      code: new ArrayBuffer(), // the current running code
+      code: new Uint8Array(), // the current running code
       // output calls
       logs: [],
-      selfDestructAddress: new ArrayBuffer(),
+      selfDestructAddress: new Uint8Array(constants.ADDRESS_SIZE_BYTES),
       // more output calls
-      returnValue: new ArrayBuffer()
+      returnValue: new Uint8Array()
     }
 
     const self = this

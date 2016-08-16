@@ -1,5 +1,6 @@
 const constants = require('./constants.js')
 const U256 = require('./u256.js')
+const Address = require('./address.js')
 
 module.exports = class Environment {
   constructor (data) {
@@ -9,18 +10,18 @@ module.exports = class Environment {
       gasLimit: 1000000, // The gas limit for the block
       gasRefund: 0,
       // call infromation
-      address: new Uint8Array(constants.ADDRESS_SIZE_BYTES),
-      origin: new Uint8Array(constants.ADDRESS_SIZE_BYTES),
-      coinbase: new Uint8Array(constants.ADDRESS_SIZE_BYTES),
+      address: new Address('0x0000000000000000000000000000000000000000'),
+      origin: new Address('0x0000000000000000000000000000000000000000'),
+      coinbase: new Address('0x0000000000000000000000000000000000000000'),
       difficulty: 0,
-      caller: new Uint8Array(constants.ADDRESS_SIZE_BYTES),
+      caller: new Address('0x0000000000000000000000000000000000000000'),
       callValue: new U256(0),
       callData: new Uint8Array(),
       // the ROM
       code: new Uint8Array(), // the current running code
       // output calls
       logs: [],
-      selfDestructAddress: new Uint8Array(constants.ADDRESS_SIZE_BYTES),
+      selfDestructAddress: new Address('0x0000000000000000000000000000000000000000'),
       // more output calls
       returnValue: new Uint8Array()
     }

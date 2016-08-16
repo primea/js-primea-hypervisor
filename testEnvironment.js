@@ -28,12 +28,24 @@ module.exports = class TestEnvironment extends Environment {
       self.caller = new Uint8Array(data.caller)
     }
 
+    if (data.coinbase) {
+      self.coinbase = new Uint8Array(data.coinbase)
+    }
+
     if (data.callValue) {
       self.callValue = new Uint8Array(data.callValue)
     }
 
     if (data.callData) {
       self.callData = hexStr2arrayBuf(data.callData)
+    }
+
+    if (data.gasPrice) {
+      self.gasPrice = data.gasPrice
+    }
+
+    if (data.gasLimit) {
+      self.gasLimit = data.gasLimit
     }
   }
 }

@@ -1,4 +1,5 @@
 const Environment = require('./environment.js')
+const U256 = require('./u256.js')
 
 module.exports = class TestEnvironment extends Environment {
   constructor (data) {
@@ -33,7 +34,7 @@ module.exports = class TestEnvironment extends Environment {
     }
 
     if (data.callValue) {
-      self.callValue = new Uint8Array(data.callValue)
+      self.callValue = new U256(data.callValue)
     }
 
     if (data.callData) {

@@ -4,6 +4,7 @@
  */
 const constants = require('./constants.js')
 const Address = require('./address.js')
+const U256 = require('./u256.js')
 
 // The interface exposed to the WebAessembly Core
 module.exports = class Interface {
@@ -277,7 +278,7 @@ module.exports = class Interface {
    * @param {integer} length the data length
    */
   create (valueOffset, dataOffset, length) {
-    const value = this.getMemory(valueOffset, constants.BALANCE_SIZE_BYTES)
+    const value = new U256(this.getMemory(valueOffset, constants.BALANCE_SIZE_BYTES))
     const data = this.getMemory(dataOffset, length)
     const result = this.environment.create(value, data)
     return result
@@ -301,7 +302,7 @@ module.exports = class Interface {
     }
     // Load the params from mem
     const address = new Address(this.getMemory(addressOffset, constants.ADDRESS_SIZE_BYTES))
-    const value = this.getMemory(valueOffset, constants.BALANCE_SIZE_BYTES)
+    const value = new U256(this.getMemory(valueOffset, constants.BALANCE_SIZE_BYTES))
     const data = this.getMemory(dataOffset, dataLength)
     // Run the call
     const [result, errorCode] = this.environment.call(gas, address, value, data)

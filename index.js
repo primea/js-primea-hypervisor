@@ -130,15 +130,12 @@ module.exports = class Kernel {
       if (tx.data.length !== 0) {
         console.log('This is a contract deployment transaction')
 
-        let account = new Map()
-        account.set('nonce', new U256(0))
-        account.set('balance', tx.value)
-        account.set('code', tx.data)
-        account.set('storage', new Map())
+        let address = Utils.newAccountAddress(tx.from, tx.data)
 
-        let address = address = Utils.newAccountAddress(tx.from, tx.data)
-
-        this.environment.state.set(address.toString(), account)
+        this.environment.addAccount(address.toString(), {
+          balance: tx.value,
+          code: tx.data
+        })
 
         // FIXME: deduct fees
 

@@ -9,8 +9,7 @@
     (block
       (call_import $callDataCopy (i32.const 0) (i32.const 0) (i32.const 8))
 
-      ;; FIXME: this should be 0x2065726120756f59
-      (if (i64.eq (i64.load (i32.const 0)) (i64.const 0x596f752061726520))
+      (if (i64.eq (i64.load (i32.const 0)) (i64.const 0x2065726120756f59))
         (return)
       )
       (unreachable)

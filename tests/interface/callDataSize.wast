@@ -1,6 +1,6 @@
 (module
   (memory 1)
-  (import $callDataSize  "ethereum" "callDataSize"  (result i64))
+  (import $callDataSize  "ethereum" "getCallDataSize"  (result i64))
 
   (export "test" 0)
   (func 

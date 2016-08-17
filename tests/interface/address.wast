@@ -2,7 +2,7 @@
 (module
   (memory 1)
 
-  (import $address  "ethereum" "address"  (param i32))
+  (import $address  "ethereum" "getAddress"  (param i32))
   (export "test" 0)
   (export "a" memory)
   (func 

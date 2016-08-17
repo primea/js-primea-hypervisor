@@ -1,7 +1,7 @@
 ;; starts with an origin of 5d48c1018904a172886829bbbd9c6f4a2d06c47b
 (module
   (memory 1)
-  (import $origin  "ethereum" "origin"  (param i32))
+  (import $origin  "ethereum" "getTxOrigin"  (param i32))
 
   (export "test" 0)
   (export "a" memory)

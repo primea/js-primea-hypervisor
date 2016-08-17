@@ -84,7 +84,6 @@ module.exports = class Interface {
    * @param {integer} offset
    */
   address (offset) {
-    console.log(this.environment.address);
     this.setMemory(offset, constants.ADDRESS_SIZE_BYTES, this.environment.address)
   }
 

@@ -14,8 +14,6 @@ module.exports = class Environment {
       // call infromation
       address: new Address('0x0000000000000000000000000000000000000000'),
       origin: new Address('0x0000000000000000000000000000000000000000'),
-      coinbase: new Address('0x0000000000000000000000000000000000000000'),
-      difficulty: 0,
       caller: new Address('0x0000000000000000000000000000000000000000'),
       callValue: new U256(0),
       callData: new Uint8Array(),

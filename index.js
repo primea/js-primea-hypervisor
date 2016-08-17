@@ -136,8 +136,7 @@ module.exports = class Kernel {
         account.set('code', tx.data)
         account.set('storage', new Map())
 
-        // FIXME: calculate the contract address
-        let address = tx.to
+        let address = address = Utils.newAccountAddress(tx.from, tx.data)
 
         this.environment.state.set(address.toString(), account)
 

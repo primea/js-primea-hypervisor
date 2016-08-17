@@ -34,4 +34,8 @@ module.exports = class Address {
   isZero () {
     return this._value.equals(ethUtils.zeros(20))
   }
+
+  equals (address) {
+    return this._value.toString('hex') === address.toBuffer().toString('hex')
+  }
 }

@@ -230,7 +230,7 @@ module.exports = class Interface {
    * @return {integer}
    */
   timestamp () {
-    return this.environment.timestamp
+    return this.environment.block.header.timestamp
   }
 
   /**
@@ -238,7 +238,7 @@ module.exports = class Interface {
    * @return {integer}
    */
   number () {
-    return this.environment.number
+    return this.environment.block.header.number
   }
 
   /**
@@ -246,7 +246,7 @@ module.exports = class Interface {
    * @return {integer}
    */
   difficulty () {
-    return this.environment.difficulty
+    return this.environment.block.header.difficulty
   }
 
   /**
@@ -254,7 +254,7 @@ module.exports = class Interface {
    * @return {integer}
    */
   gasLimit () {
-    return this.environment.gasLimit
+    return this.environment.block.header.gasLimit
   }
 
   /**

@@ -65,11 +65,7 @@ module.exports = class Interface {
       throw new Error('Negative gas deduction requested')
     }
 
-    if (this.environment.gasLimit < amount) {
-      throw new Error('Ran out of gas')
-    }
-
-    this.environment.gasLimit -= amount
+    this.takeGas(amount)
   }
 
   /**
@@ -419,6 +415,17 @@ module.exports = class Interface {
   setMemory (offset, length, value) {
     const memory = new Uint8Array(this.module.exports.memory, offset, length)
     memory.set(value)
+  }
+
+  /*
+   * Takes gas from the tank. Only needs to check if there's gas left to be taken,
+   * because every caller of this method is trusted.
+   */
+  takeGas (amount) {
+    if (this.environment.gasLimit < amount) {
+      throw new Error('Ran out of gas')
+    }
+    this.environment.gasLimit -= amount
   }
 }
 

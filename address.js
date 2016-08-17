@@ -24,4 +24,8 @@ module.exports = class Address extends Buffer {
   isZero () {
     return this.every((el) => el === 0)
   }
+
+  equals (address) {
+    return this._value.toString('hex') === address.toBuffer().toString('hex')
+  }
 }

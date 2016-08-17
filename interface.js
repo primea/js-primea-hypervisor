@@ -145,7 +145,7 @@ module.exports = class Interface {
    * @param {integer} length the length of data to copy
    */
   callDataCopy (offset, dataOffset, length) {
-    const callData = Buffer.from(this.environment.callData.slice(dataOffset, dataOffset + length)).reverse()
+    const callData = this.environment.callData.slice(dataOffset, dataOffset + length)
     this.setMemory(offset, length, callData)
   }
 

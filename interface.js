@@ -233,7 +233,7 @@ module.exports = class Interface {
   getBlockHash (number, offset) {
     this.takeGas(20)
 
-    const diff = this.environment.number - number
+    const diff = this.environment.block.header.number - number
     let hash
 
     if (diff > 256 || diff <= 0) {
@@ -251,7 +251,7 @@ module.exports = class Interface {
   getBlockCoinbase (offset) {
     this.takeGas(2)
 
-    this.setMemory(offset, constants.ADDRESS_SIZE_BYTES, this.environment.coinbase)
+    this.setMemory(offset, constants.ADDRESS_SIZE_BYTES, this.environment.block.header.coinbase)
   }
 
   /**
@@ -261,7 +261,7 @@ module.exports = class Interface {
   getBlockTimestamp () {
     this.takeGas(2)
 
-    return this.environment.timestamp
+    return this.environment.block.header.timestamp
   }
 
   /**
@@ -271,7 +271,7 @@ module.exports = class Interface {
   getBlockNumber () {
     this.takeGas(2)
 
-    return this.environment.number
+    return this.environment.block.header.number
   }
 
   /**
@@ -281,7 +281,7 @@ module.exports = class Interface {
   getBlockDifficulty () {
     this.takeGas(2)
 
-    return this.environment.difficulty
+    return this.environment.block.header.difficulty
   }
 
   /**
@@ -291,7 +291,7 @@ module.exports = class Interface {
   getBlockGasLimit () {
     this.takeGas(2)
 
-    return this.environment.gasLimit
+    return this.environment.block.header.gasLimit
   }
 
   /**

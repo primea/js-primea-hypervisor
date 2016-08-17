@@ -1,8 +1,8 @@
 ;; starts with an caller of 5d48c1018904a172886829bbbd9c6f4a2d06c47b
 (module
   (memory 1)
-  (import $sstore  "ethereum" "sstore" (param i32 i32))
-  (import $sload   "ethereum" "sload"  (param i32 i32))
+  (import $sstore  "ethereum" "storageStore" (param i32 i32))
+  (import $sload   "ethereum" "storageLoad"  (param i32 i32))
 
   (export "test" 0)
   (export "a" memory)

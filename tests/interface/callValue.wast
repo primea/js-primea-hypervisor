@@ -1,7 +1,7 @@
 ;; call value of 100
 (module
   (memory 1)
-  (import $callValue  "ethereum" "callValue"  (param i32))
+  (import $callValue  "ethereum" "getCallValue"  (param i32))
 
   (export "a" memory)
   (export "test" 0)

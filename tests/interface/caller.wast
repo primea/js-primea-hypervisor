@@ -1,7 +1,7 @@
 ;; starts with an caller of 5d48c1018904a172886829bbbd9c6f4a2d06c47b
 (module
   (memory 1)
-  (import $caller  "ethereum" "caller"  (param i32))
+  (import $caller  "ethereum" "getCaller"  (param i32))
 
   (export "test" 0)
   (export "a" memory)

@@ -14,36 +14,36 @@ module.exports = class Interface {
 
   get exportTable () {
     let exportMethods = [
-      // include all the public methods according to the Ethereum Environment Interface (EEI)
-      // FIXME: this currently doesn't match EEI r0
+      // include all the public methods according to the Ethereum Environment Interface (EEI) r1
       'useGas',
-      'gas',
-      'address',
-      'balance',
-      'origin',
-      'caller',
-      'callValue',
-      'callDataSize',
+      'getGasLeft',
+      'getAddress',
+      'getBalance',
+      'getTxOrigin',
+      'getCaller',
+      'getCallValue',
+      'getCallDataSize',
       'callDataCopy',
-      'codeSize',
+      'getCodeSize',
       'codeCopy',
-      'extCodeSize',
-      'extCodeCopy',
-      'gasPrice',
-      'blockHash',
-      'coinbase',
-      'timestamp',
-      'number',
-      'difficulty',
-      'gasLimit',
+      'getExternalCodeSize',
+      'externalCodeCopy',
+      'getTxGasPrice',
+      'getBlockHash',
+      'getBlockCoinbase',
+      'getBlockTimestamp',
+      'getBlockNumber',
+      'getBlockDifficulty',
+      'getBlockGasLimit',
       'log',
       'create',
       'call',
+      'callCode',
       'callDelegate',
-      'sstore',
-      'sload',
+      'storageStore',
+      'storageLoad',
       'return',
-      'suicide'
+      'selfDestruct'
     ]
     let ret = {}
     exportMethods.forEach((method) => {
@@ -73,7 +73,7 @@ module.exports = class Interface {
    * Returns the current amount of gas
    * @return {integer}
    */
-  gas () {
+  getGasLeft () {
     return this.environment.gasLimit
   }
 
@@ -82,7 +82,7 @@ module.exports = class Interface {
    * the given offset.
    * @param {integer} offset
    */
-  address (offset) {
+  getAddress (offset) {
     this.setMemory(offset, constants.ADDRESS_SIZE_BYTES, this.environment.address.toBuffer())
   }
 
@@ -92,7 +92,7 @@ module.exports = class Interface {
    * @param {integer} addressOffset the memory offset to laod the address
    * @param {integer} resultOffset
    */
-  balance (addressOffset, offset) {
+  getBalance (addressOffset, offset) {
     const address = new Address(this.getMemory(addressOffset, constants.ADDRESS_SIZE_BYTES))
     // call the parent contract and ask for the balance of one of its child contracts
     const balance = this.environment.parent.environment.getBalance(address)
@@ -105,7 +105,7 @@ module.exports = class Interface {
    * account with non-empty associated code.
    * @param {integer} offset
    */
-  origin (offset) {
+  getTxOrigin (offset) {
     this.setMemory(offset, constants.ADDRESS_SIZE_BYTES, this.environment.origin.toBuffer())
   }
 
@@ -114,7 +114,7 @@ module.exports = class Interface {
    * the address of the account that is directly responsible for this execution.
    * @param {integer} offset
    */
-  caller (offset) {
+  getCaller (offset) {
     this.setMemory(offset, constants.ADDRESS_SIZE_BYTES, this.environment.caller.toBuffer())
   }
 
@@ -123,7 +123,7 @@ module.exports = class Interface {
    * this execution and loads it into memory at the given location.
    * @param {integer} offset
    */
-  callValue (offset) {
+  getCallValue (offset) {
     this.setMemory(offset, constants.BALANCE_SIZE_BYTES, this.environment.callValue.toBuffer(constants.BALANCE_SIZE_BYTES))
   }
 
@@ -132,7 +132,7 @@ module.exports = class Interface {
    * data passed with the message call instruction or transaction.
    * @return {integer}
    */
-  callDataSize () {
+  getCallDataSize () {
     return this.environment.callData.length
   }
 
@@ -152,7 +152,7 @@ module.exports = class Interface {
    * Gets the size of code running in current environment.
    * @return {interger}
    */
-  codeSize () {
+  getCodeSize () {
     return this.environment.code.length
   }
 
@@ -162,9 +162,9 @@ module.exports = class Interface {
    * @param {integer} codeOffset the code offset
    * @param {integer} length the length of code to copy
    */
-  codeCopy (offset, codeOffset, length) {
+  codeCopy (resultOffset, codeOffset, length) {
     const code = new Uint8Array(this.environment.code, codeOffset, length)
-    this.setMemory(offset, length, code)
+    this.setMemory(resultOffset, length, code)
   }
 
   /**
@@ -172,7 +172,7 @@ module.exports = class Interface {
    * @param {integer} addressOffset the offset in memory to load the address from
    * @return {integer}
    */
-  extCodeSize (addressOffset) {
+  getExternalCodeSize (addressOffset) {
     const address = new Address(this.getMemory(addressOffset, constants.ADDRESS_SIZE_BYTES))
     const code = this.environment.getCode(address)
     return code.length
@@ -181,22 +181,22 @@ module.exports = class Interface {
   /**
    * Copys the code of an account to memory.
    * @param {integer} addressOffset the memory offset of the address
-   * @param {integer} offset the memory offset
+   * @param {integer} resultOffset the memory offset
    * @param {integer} codeOffset the code offset
    * @param {integer} length the length of code to copy
    */
-  extCodeCopy (addressOffset, offset, codeOffset, length) {
+  externalCodeCopy (addressOffset, resultOffset, codeOffset, length) {
     const address = new Address(this.getMemory(addressOffset, constants.ADDRESS_SIZE_BYTES))
     let code = this.environment.getCode(address)
     code = new Uint8Array(code, codeOffset, length)
-    this.setMemory(offset, length, code)
+    this.setMemory(resultOffset, length, code)
   }
 
   /**
    * Gets price of gas in current environment.
    * @return {integer}
    */
-  gasPrice () {
+  getTxGasPrice () {
     return this.environment.gasPrice
   }
 
@@ -205,7 +205,7 @@ module.exports = class Interface {
    * @param {integer} number which block to load
    * @param {integer} offset the offset to load the hash into
    */
-  blockHash (number, offset) {
+  getBlockHash (number, offset) {
     const diff = this.environment.number - number
     let hash
 
@@ -221,7 +221,7 @@ module.exports = class Interface {
    * Gets the block’s beneficiary address and loads into memory.
    * @param offset
    */
-  coinbase (offset) {
+  getBlockCoinbase (offset) {
     this.setMemory(offset, constants.ADDRESS_SIZE_BYTES, this.environment.coinbase.toBuffer())
   }
 
@@ -229,7 +229,7 @@ module.exports = class Interface {
    * Get the block’s timestamp.
    * @return {integer}
    */
-  timestamp () {
+  getBlockTimestamp () {
     return this.environment.timestamp
   }
 
@@ -237,7 +237,7 @@ module.exports = class Interface {
    * Get the block’s number.
    * @return {integer}
    */
-  number () {
+  getBlockNumber () {
     return this.environment.number
   }
 
@@ -245,7 +245,7 @@ module.exports = class Interface {
    * Get the block’s difficulty.
    * @return {integer}
    */
-  difficulty () {
+  getBlockDifficulty () {
     return this.environment.difficulty
   }
 
@@ -253,7 +253,7 @@ module.exports = class Interface {
    * Get the block’s gas limit.
    * @return {integer}
    */
-  gasLimit () {
+  getBlockGasLimit () {
     return this.environment.gasLimit
   }
 
@@ -296,7 +296,7 @@ module.exports = class Interface {
    * @return {integer} Returns 1 or 0 depending on if the VM trapped on the message or not
    * TODO: add proper gas counting
    */
-  call (addressOffset, valueOffset, dataOffset, dataLength, resultOffset, resultLength, gas) {
+  call (gas, addressOffset, valueOffset, dataOffset, dataLength, resultOffset, resultLength) {
     if (gas === undefined) {
       gas = this.gasLeft()
     }
@@ -306,6 +306,29 @@ module.exports = class Interface {
     const data = this.getMemory(dataOffset, dataLength)
     // Run the call
     const [result, errorCode] = this.environment.call(gas, address, value, data)
+    this.setMemory(resultOffset, resultLength, result)
+    return errorCode
+  }
+
+  /**
+   * Message-call into this account with an alternative account’s code.
+   * @param {integer} addressOffset the offset to load the address path from
+   * @param {integer} valueOffset the offset to load the value from
+   * @param {integer} dataOffset the offset to load data from
+   * @param {integer} dataLength the length of data
+   * @param {integer} resultOffset the offset to store the result data at
+   * @param {integer} resultLength
+   * @param {integer} gas
+   * @return {integer} Returns 1 or 0 depending on if the VM trapped on the message or not
+   * TODO: add proper gas counting
+   */
+  callCode (gas, addressOffset, valueOffset, dataOffset, dataLength, resultOffset, resultLength) {
+    // Load the params from mem
+    const address = new Address(this.getMemory(addressOffset, constants.ADDRESS_SIZE_BYTES))
+    const value = new U256(this.getMemory(valueOffset, constants.BALANCE_SIZE_BYTES))
+    const data = this.getMemory(dataOffset, dataLength)
+    // Run the call
+    const [result, errorCode] = this.environment.callCode(gas, address, value, data)
     this.setMemory(resultOffset, resultLength, result)
     return errorCode
   }
@@ -336,7 +359,7 @@ module.exports = class Interface {
    * @param {interger} pathOffest the memory offset to load the the path from
    * @param {interger} valueOffset the memory offset to load the value from
    */
-  sstore (pathOffset, valueOffset) {
+  storageStore (pathOffset, valueOffset) {
     const path = new Buffer(this.getMemory(pathOffset, 32)).toString('hex')
     // copy the value
     const value = this.getMemory(valueOffset, 32).slice(0)
@@ -362,7 +385,7 @@ module.exports = class Interface {
    * @param {interger} pathOffest the memory offset to load the the path from
    * @param {interger} resultOffset the memory offset to load the value from
    */
-  sload (pathOffset, resultOffset) {
+  storageLoad (pathOffset, resultOffset) {
     const path = new Buffer(this.getMemory(pathOffset, 32)).toString('hex')
     const result = this.environment.state.get(path)
     this.setMemory(resultOffset, 32, result)
@@ -382,7 +405,7 @@ module.exports = class Interface {
    * balance to an address path
    * @param {integer} offset the offset to load the address from
    */
-  suicide (addressOffset) {
+  selfDestruct (addressOffset) {
     this.environment.suicideAddress = new Address(this.getMemory(addressOffset, constants.ADDRESS_SIZE_BYTES))
   }
 

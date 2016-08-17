@@ -67,7 +67,7 @@ module.exports = class Kernel {
   callHandler (call) {
     let account = this.environment.state.get(call.to.toString())
     if (!account) {
-      throw new Error('Account not found')
+      throw new Error('Account not found: ' + call.to.toString())
     }
 
     const code = Uint8Array.from(account.get('code'))
@@ -140,7 +140,7 @@ module.exports = class Kernel {
     // look up sender
     let fromAccount = this.environment.state.get(tx.from.toString())
     if (!fromAccount) {
-      throw new Error('Sender account not found')
+      throw new Error('Sender account not found: ' + tx.from.toString())
     }
 
     // Special case: contract deployment

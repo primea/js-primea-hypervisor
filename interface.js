@@ -61,12 +61,15 @@ module.exports = class Interface {
    * @param {integer} amount the amount to subtract to the gas counter
    */
   useGas (amount) {
-    if (amount > 0) {
-      if (this.environment.gasLimit < amount) {
-        throw new Error('Ran out of gas')
-      }
-      this.environment.gasLimit -= amount
+    if (amount < 0) {
+      throw new Error('Negative gas deduction requested')
     }
+
+    if (this.environment.gasLimit < amount) {
+      throw new Error('Ran out of gas')
+    }
+
+    this.environment.gasLimit -= amount
   }
 
   /**

@@ -6,7 +6,7 @@ const BN = require('bn.js')
 module.exports = class TestEnvironment extends Environment {
   constructor (data) {
     super()
-  
+
     if (typeof data === 'string') {
       data = JSON.parse(data)
     }

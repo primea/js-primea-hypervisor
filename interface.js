@@ -222,7 +222,7 @@ module.exports = class Interface {
    * @param offset
    */
   coinbase (offset) {
-    this.setMemory(offset, constants.ADDRESS_SIZE_BYTES, this.environment.coinbase.toBuffer())
+    this.setMemory(offset, constants.ADDRESS_SIZE_BYTES, this.environment.block.header.coinbase.reverse())
   }
 
   /**

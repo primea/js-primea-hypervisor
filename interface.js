@@ -73,7 +73,6 @@ module.exports = class Interface {
    * @return {integer}
    */
   getGasLeft () {
-    // FIXME: should the return value reflect this or not?
     this.takeGas(2)
 
     return this.environment.gasLimit

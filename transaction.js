@@ -35,7 +35,7 @@ module.exports = class Transaction {
   }
 
   get data () {
-    return this._tx.data
+    return Uint8Array.from(this._tx.data)
   }
 
   get from () {

@@ -1,7 +1,7 @@
 ;; starts with 1000 gas
 (module
   (import $useGas  "ethereum" "useGas" (param i32))
-  (import $gas "ethereum" "gas" (result i32))
+  (import $gas "ethereum" "getGasLeft" (result i32))
 
   (export "test" 0)
   (func 

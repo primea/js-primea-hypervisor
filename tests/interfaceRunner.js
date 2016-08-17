@@ -19,10 +19,10 @@ for (let testName of tests) {
     cp.execSync(`${__dirname}/../tools/sexpr-wasm-prototype/out/sexpr-wasm ${dir}/${testName}.wast -o ${dir}/${testName}.wasm`)
     const buffer = fs.readFileSync(`${dir}/${testName}.wasm`)
     const envData = fs.readFileSync(`${dir}/${testName}.json`).toString()
-    const ethereum     = new Kernel(new TestEnvironment(envData))
+    const ethereum = new Kernel(new TestEnvironment(envData))
 
     // manually `callHander`
-    const environment  = new TestEnvironment(envData)
+    const environment = new TestEnvironment(envData)
     environment.parent = ethereum
     const testContract = new Kernel(environment)
     const ethInterface = new Interface(environment, testContract)

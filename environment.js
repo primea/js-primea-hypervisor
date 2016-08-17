@@ -53,6 +53,11 @@ module.exports = class Environment {
     return // result
   }
 
+  callCode (gas, address, value, data) {
+    // STUB
+    return // result
+  }
+
   delegateCall (gas, address, data) {
     // STUB
     return // result

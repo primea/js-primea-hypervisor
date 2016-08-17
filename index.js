@@ -25,6 +25,10 @@ const Address = require('./address.js')
 const U256 = require('./u256.js')
 const Utils = require('./utils.js')
 const Transaction = require('./transaction.js')
+const Precompile = require('./precompile.js')
+
+const meteringContract = new Address("0x000000000000000000000000000000000000000A")
+const transcompilerContract = new Address("0x000000000000000000000000000000000000000B")
 
 module.exports = class Kernel {
   // runs some code in the VM
@@ -65,6 +69,14 @@ module.exports = class Kernel {
   // Detects if the code injection is needed
   // Detects if transcompilation is needed
   callHandler (call) {
+    // FIXME: this is here until these two contracts are compiled to WASM
+    // The two special contracts (precompiles now, but will be real ones later)
+    if (call.to.equals(meteringContract)) {
+      return Precompile.meteringInjector(call)
+    } else if (call.to.equals(transcompilerContract)) {
+      return Precompile.transcompiler(call)
+    }
+
     let account = this.environment.state.get(call.to.toString())
     if (!account) {
       throw new Error('Account not found: ' + call.to.toString())
@@ -76,7 +88,10 @@ module.exports = class Kernel {
     }
 
     if (!Utils.isWASMCode(code)) {
-      throw new Error('Not an eWASM contract')
+      // throw new Error('Not an eWASM contract')
+
+      // Transcompile code
+      code = this.callHandler({ to: transcompilerContract, data: code }).returnValue
     }
 
     // creats a new Kernel
@@ -103,7 +118,7 @@ module.exports = class Kernel {
 
     return {
       executionOutcome: 1, // success
-      gasLeft: new U256(environment.gasLimit), // this starts as the limit and results as the gas left
+      gasLeft: new U256(environment.gasLimit),  // this starts as the limit and results as the gas left
       gasRefund: new U256(environment.gasRefund),
       returnValue: environment.returnValue,
       selfDestructAddress: environment.selfDestructAddress,
@@ -154,8 +169,8 @@ module.exports = class Kernel {
       if (tx.data.length !== 0) {
         console.log('This is a contract deployment transaction')
 
-        // FIXME: do metering injection here
-        const code = tx.data
+        // Inject metering
+        const code = this.callHandler({ to: meteringContract, data: tx.data }).returnValue
 
         let address = Utils.newAccountAddress(tx.from, code)
 

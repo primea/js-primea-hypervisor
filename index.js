@@ -64,8 +64,8 @@ module.exports = class Kernel {
   // Detects if code is EVM or WASM
   // Detects if the code injection is needed
   // Detects if transcompilation is needed
-  callHandler (address, gaslimit, gasprice, value, data) {
-    let account = this.environment.state.get(address.toString())
+  callHandler (call) {
+    let account = this.environment.state.get(call.to.toString())
     if (!account) {
       throw new Error('Account not found')
     }
@@ -80,8 +80,18 @@ module.exports = class Kernel {
     }
 
     // creats a new Kernel
-    const environment = new Environment(data)
+    const environment = new Environment()
     environment.parent = this
+
+    // copy the transaction details
+    environment.code = code
+    environment.address = call.to
+    // FIXME: make distinction between origin and caller
+    environment.origin = call.from
+    environment.caller = call.from
+    environment.callData = call.data
+    environment.callValue = call.value
+    environment.gasLimit = call.gasLimit
 
     //environment.setCallHandler(callHandler)
 
@@ -160,7 +170,13 @@ module.exports = class Kernel {
 
     fromAccount.set('balance', fromAccount.get('balance').sub(tx.gasLimit.mul(tx.gasPrice)))
 
-    let ret = this.callHandler(tx.to, tx.gasLimit, tx.gasPrice, tx.value, tx.data)
+    let ret = this.callHandler({
+      to: tx.to,
+      from: tx.from,
+      gasLimit: tx.gasLimit,
+      value: tx.value,
+      data: tx.data
+    })
 
     // refund gas
     if (ret.executionOutcome === 1) {

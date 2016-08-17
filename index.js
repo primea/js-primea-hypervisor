@@ -143,6 +143,12 @@ module.exports = class Kernel {
       throw new Error('Sender account not found: ' + tx.from.toString())
     }
 
+    if (fromAccount.get('nonce').gt(tx.nonce)) {
+      throw new Error(`Invalid nonce: ${fromAccount.get('nonce')} > ${tx.nonce}`)
+    }
+
+    fromAccount.set('nonce', fromAccount.get('nonce').add(new U256(1)))
+
     // Special case: contract deployment
     if (tx.to.isZero()) {
       if (tx.data.length !== 0) {

@@ -39,6 +39,7 @@ module.exports = class Interface {
       'log',
       'create',
       'call',
+      'callCode',
       'callDelegate',
       'sstore',
       'sload',
@@ -306,6 +307,29 @@ module.exports = class Interface {
     const data = this.getMemory(dataOffset, dataLength)
     // Run the call
     const [result, errorCode] = this.environment.call(gas, address, value, data)
+    this.setMemory(resultOffset, resultLength, result)
+    return errorCode
+  }
+
+  /**
+   * Message-call into this account with an alternative account’s code.
+   * @param {integer} addressOffset the offset to load the address path from
+   * @param {integer} valueOffset the offset to load the value from
+   * @param {integer} dataOffset the offset to load data from
+   * @param {integer} dataLength the length of data
+   * @param {integer} resultOffset the offset to store the result data at
+   * @param {integer} resultLength
+   * @param {integer} gas
+   * @return {integer} Returns 1 or 0 depending on if the VM trapped on the message or not
+   * TODO: add proper gas counting
+   */
+  callCode (addressOffset, valueOffset, dataOffset, dataLength, resultOffset, resultLength, gas) {
+    // Load the params from mem
+    const address = new Address(this.getMemory(addressOffset, constants.ADDRESS_SIZE_BYTES))
+    const value = new U256(this.getMemory(valueOffset, constants.BALANCE_SIZE_BYTES))
+    const data = this.getMemory(dataOffset, dataLength)
+    // Run the call
+    const [result, errorCode] = this.environment.callCode(gas, address, value, data)
     this.setMemory(resultOffset, resultLength, result)
     return errorCode
   }

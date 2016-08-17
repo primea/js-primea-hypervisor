@@ -24,6 +24,7 @@ const DebugInterface = require('./debugInterface.js')
 const Address = require('./address.js')
 const U256 = require('./u256.js')
 const Utils = require('./utils.js')
+const Transaction = require('./transaction.js')
 
 module.exports = class Kernel {
   // runs some code in the VM
@@ -118,6 +119,13 @@ module.exports = class Kernel {
     //
     // { balance, codeHash, stateRoot }
     //
+
+    if (Buffer.isBuffer(tx) || typeof tx === 'string') {
+      tx = new Transaction(tx)
+      if (!tx.valid) {
+        throw new Error('Invalid transaction signature')
+      }
+    }
 
     // look up sender
     let fromAccount = this.environment.state.get(tx.from.toString())

@@ -154,11 +154,14 @@ module.exports = class Kernel {
       if (tx.data.length !== 0) {
         console.log('This is a contract deployment transaction')
 
-        let address = Utils.newAccountAddress(tx.from, tx.data)
+        // FIXME: do metering injection here
+        const code = tx.data
+
+        let address = Utils.newAccountAddress(tx.from, code)
 
         this.environment.addAccount(address.toString(), {
           balance: tx.value,
-          code: tx.data
+          code: code
         })
 
         // FIXME: deduct fees

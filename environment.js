@@ -1,7 +1,7 @@
 const U256 = require('./u256.js')
 const Block = require('ethereumjs-block')
-const constants = require('./constants.js')
 const blockChain = require('./fakeBlockChain.js')
+const Address = require('./address.js')
 
 module.exports = class Environment {
   constructor (data) {
@@ -12,57 +12,25 @@ module.exports = class Environment {
       gasLimit: 1000000, // The gas limit for the block
       gasRefund: 0,
       // call infromation
-      address: new Uint8Array(constants.ADDRESS_SIZE_BYTES),
-      origin: new Uint8Array(constants.ADDRESS_SIZE_BYTES),
-      coinbase: new Uint8Array(constants.ADDRESS_SIZE_BYTES),
+      address: new Address('0x0000000000000000000000000000000000000000'),
+      origin: new Address('0x0000000000000000000000000000000000000000'),
+      coinbase: new Address('0x0000000000000000000000000000000000000000'),
       difficulty: 0,
-      caller: new Uint8Array(constants.ADDRESS_SIZE_BYTES),
+      caller: new Address('0x0000000000000000000000000000000000000000'),
       callValue: new U256(0),
       callData: new Uint8Array(),
       // the ROM
       code: new Uint8Array(), // the current running code
       // output calls
       logs: [],
-      selfDestructAddress: new Uint8Array(constants.ADDRESS_SIZE_BYTES),
+      selfDestructAddress: new Address('0x0000000000000000000000000000000000000000'),
       // more output calls
       returnValue: new Uint8Array()
     }
 
-    const self = this
     this.state = new Map()
 
-    if (data) {
-      data = JSON.parse(data)
-    } else {
-      data = {}
-    }
-
-    Object.assign(this, defaults, data)
-    if (data.accounts) {
-      data.accounts.forEach((account) => {
-        self.state.set(new Uint8Array(account[0]).toString(), account[1])
-      })
-    }
-
-    if (data.address) {
-      this.address = new Uint8Array(data.address)
-    }
-
-    if (data.origin) {
-      this.origin = new Uint8Array(data.origin)
-    }
-
-    if (data.caller) {
-      this.caller = new Uint8Array(data.caller)
-    }
-
-    if (data.callValue) {
-      this.callValue = new Uint8Array(data.callValue)
-    }
-
-    if (data.callData) {
-      this.callData = hexStr2arrayBuf(data.callData)
-    }
+    Object.assign(this, defaults, data || {})
   }
 
   getBalance (address) {
@@ -70,7 +38,7 @@ module.exports = class Environment {
   }
 
   getCode (address) {
-    // STUB
+    return this.state.get(address.toString()).code
   }
 
   getBlockHash (height) {
@@ -91,19 +59,4 @@ module.exports = class Environment {
     // STUB
     return // result
   }
-}
-
-function hexStr2arrayBuf (string) {
-  const ab = new ArrayBuffer(string.length / 2)
-  const view = new Uint8Array(ab)
-  string = [...string]
-  let temp = ''
-  string.forEach((el, i) => {
-    temp += el
-    if (i % 2) {
-      view[(i + 1) / 2 - 1] = parseInt(temp, 16)
-      temp = ''
-    }
-  })
-  return ab
 }

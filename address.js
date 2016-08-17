@@ -1,22 +1,23 @@
 const ethUtils = require('ethereumjs-util')
 
-module.exports = class Address {
+module.exports = class Address extends Uint8Array {
   constructor (value) {
+    super(value)
     // Special case: duplicate
     if (value instanceof Address) {
       this._value = new Buffer(value._value)
       return
     }
 
-    if (typeof value !== 'string') {
+    if (value instanceof Uint8Array) {
+      this._value = new Buffer(value)
+    } else if (typeof value !== 'string') {
       throw new Error('Invalid input to address')
-    }
-
-    if (!ethUtils.isHexPrefixed(value)) {
+    } else if (!ethUtils.isHexPrefixed(value)) {
       throw new Error('Invalid address format')
+    } else {
+      this._value = new Buffer(ethUtils.stripHexPrefix(value), 'hex')
     }
-
-    this._value = new Buffer(ethUtils.stripHexPrefix(value), 'hex')
 
     if (this._value.length !== 20) {
       throw new Error('Invalid address length')

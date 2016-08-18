@@ -85,7 +85,6 @@ module.exports = class Interface {
    */
   getAddress (offset) {
     this.setMemory(offset, constants.ADDRESS_SIZE_BYTES, this.environment.address)
-    this.setMemory(offset, constants.ADDRESS_SIZE_BYTES, this.environment.address.toBuffer())
   }
 
   /**
@@ -231,7 +230,7 @@ module.exports = class Interface {
    * @return {integer}
    */
   getBlockTimestamp () {
-    return this.environment.block.header.timestamp
+    return ethUtil.bufferToInt(this.environment.block.header.timestamp)
   }
 
   /**
@@ -239,7 +238,7 @@ module.exports = class Interface {
    * @return {integer}
    */
   getBlockNumber () {
-    return this.environment.block.header.number
+    return ethUtil.bufferToInt(this.environment.block.header.number)
   }
 
   /**
@@ -247,7 +246,7 @@ module.exports = class Interface {
    * @return {integer}
    */
   getBlockDifficulty () {
-    return this.environment.block.header.difficulty
+    return ethUtil.bufferToInt(this.environment.block.header.difficulty)
   }
 
   /**
@@ -255,7 +254,7 @@ module.exports = class Interface {
    * @return {integer}
    */
   getBlockGasLimit () {
-    return this.environment.block.header.gasLimit
+    return ethUtil.bufferToInt(this.environment.block.header.gasLimit)
   }
 
   /**

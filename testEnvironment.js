@@ -23,19 +23,19 @@ module.exports = class TestEnvironment extends Environment {
     }
 
     if (data.address) {
-      self.address = new Address(new Uint8Array(data.address))
+      self.address = new Address(data.address)
     }
 
     if (data.origin) {
-      self.origin = new Address(new Uint8Array(data.origin))
+      self.origin = new Address(data.origin)
     }
 
     if (data.caller) {
-      self.caller = new Address(new Uint8Array(data.caller))
+      self.caller = new Address(data.caller)
     }
 
     if (data.coinbase) {
-      self.coinbase = new Uint8Array(data.coinbase)
+      self.coinbase = new Address(data.coinbase)
     }
 
     if (data.callValue) {

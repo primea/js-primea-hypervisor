@@ -16,26 +16,26 @@ module.exports = class TestEnvironment extends Environment {
     if (data.accounts) {
       data.accounts.forEach((account) => {
         let tmp = account[1]
-        self.state.set(new Address(new Uint8Array(account[0])).toString(), {
-          balance: new U256(new BN(tmp.balance, 16, 'le'))
+        self.state.set(new Address(account[0]).toString(), {
+          balance: new U256(tmp.balance)
         })
       })
     }
 
     if (data.address) {
-      self.address = new Address(new Uint8Array(data.address))
+      self.address = new Address(data.address)
     }
 
     if (data.origin) {
-      self.origin = new Address(new Uint8Array(data.origin))
+      self.origin = new Address(data.origin)
     }
 
     if (data.caller) {
-      self.caller = new Address(new Uint8Array(data.caller))
+      self.caller = new Address(data.caller)
     }
 
     if (data.coinbase) {
-      self.coinbase = new Uint8Array(data.coinbase)
+      self.coinbase = new Address(data.coinbase)
     }
 
     if (data.callValue) {
@@ -43,7 +43,7 @@ module.exports = class TestEnvironment extends Environment {
     }
 
     if (data.callData) {
-      self.callData = hexStr2arrayBuf(data.callData)
+      self.callData = Uint8Array.from(new Buffer(data.callData, 'hex'))
     }
 
     if (data.gasPrice) {
@@ -54,18 +54,4 @@ module.exports = class TestEnvironment extends Environment {
       self.gasLimit = data.gasLimit
     }
   }
-}
-
-function hexStr2arrayBuf (string) {
-  const view = new Uint8Array(string.length / 2)
-  string = [...string]
-  let temp = ''
-  string.forEach((el, i) => {
-    temp += el
-    if (i % 2) {
-      view[(i + 1) / 2 - 1] = parseInt(temp, 16)
-      temp = ''
-    }
-  })
-  return view
 }

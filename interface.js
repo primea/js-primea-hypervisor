@@ -210,11 +210,11 @@ module.exports = class Interface {
     const diff = ethUtil.bufferToInt(this.environment.block.header.number) - number
     let hash
     if (diff > 256 || diff <= 0) {
-      hash = new Uint8Array(32)
+      hash = new U256(0)
     } else {
-      hash = this.environment.getBlockHash(number).reverse()
+      hash = new U256(this.environment.getBlockHash(number))
     }
-    this.setMemory(offset, 32, hash)
+    this.setMemory(offset, 32, hash.toBuffer().reverse())
   }
 
   /**

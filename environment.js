@@ -5,6 +5,8 @@ const Address = require('./address.js')
 
 module.exports = class Environment {
   constructor (data) {
+    const block = new Block()
+
     const defaults = {
       block: new Block(),
       // gas tank

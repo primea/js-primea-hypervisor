@@ -83,7 +83,7 @@ module.exports = class Interface {
    * @param {integer} offset
    */
   getAddress (offset) {
-    this.setMemory(offset, constants.ADDRESS_SIZE_BYTES, this.environment.address.toBuffer())
+    this.setMemory(offset, constants.ADDRESS_SIZE_BYTES, this.environment.address)
   }
 
   /**
@@ -106,7 +106,7 @@ module.exports = class Interface {
    * @param {integer} offset
    */
   getTxOrigin (offset) {
-    this.setMemory(offset, constants.ADDRESS_SIZE_BYTES, this.environment.origin.toBuffer())
+    this.setMemory(offset, constants.ADDRESS_SIZE_BYTES, this.environment.origin)
   }
 
   /**
@@ -115,7 +115,7 @@ module.exports = class Interface {
    * @param {integer} offset
    */
   getCaller (offset) {
-    this.setMemory(offset, constants.ADDRESS_SIZE_BYTES, this.environment.caller.toBuffer())
+    this.setMemory(offset, constants.ADDRESS_SIZE_BYTES, this.environment.caller)
   }
 
   /**
@@ -222,7 +222,7 @@ module.exports = class Interface {
    * @param offset
    */
   getBlockCoinbase (offset) {
-    this.setMemory(offset, constants.ADDRESS_SIZE_BYTES, this.environment.coinbase.toBuffer())
+    this.setMemory(offset, constants.ADDRESS_SIZE_BYTES, this.environment.coinbase)
   }
 
   /**

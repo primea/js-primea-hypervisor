@@ -43,7 +43,7 @@ module.exports = class TestEnvironment extends Environment {
     }
 
     if (data.callData) {
-      self.callData = hexStr2arrayBuf(data.callData)
+      self.callData = Uint8Array.from(new Buffer(data.callData, 'hex'))
     }
 
     if (data.gasPrice) {
@@ -54,18 +54,4 @@ module.exports = class TestEnvironment extends Environment {
       self.gasLimit = data.gasLimit
     }
   }
-}
-
-function hexStr2arrayBuf (string) {
-  const view = new Uint8Array(string.length / 2)
-  string = [...string]
-  let temp = ''
-  string.forEach((el, i) => {
-    temp += el
-    if (i % 2) {
-      view[(i + 1) / 2 - 1] = parseInt(temp, 16)
-      temp = ''
-    }
-  })
-  return view
 }

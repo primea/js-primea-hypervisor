@@ -214,7 +214,7 @@ module.exports = class Interface {
     } else {
       hash = new U256(this.environment.getBlockHash(number))
     }
-    this.setMemory(offset, 32, hash.toBuffer().reverse())
+    this.setMemory(offset, 32, hash.toBuffer())
   }
 
   /**
@@ -222,7 +222,7 @@ module.exports = class Interface {
    * @param offset
    */
   getBlockCoinbase (offset) {
-    this.setMemory(offset, constants.ADDRESS_SIZE_BYTES, this.environment.block.header.coinbase.reverse())
+    this.setMemory(offset, constants.ADDRESS_SIZE_BYTES, this.environment.block.header.coinbase)
   }
 
   /**

@@ -8,6 +8,12 @@ const ethUtil = require('ethereumjs-util')
 const OldBlock = require('ethereumjs-block')
 
 module.exports = class Block extends OldBlock {
+  constructor (data) {
+    super(data)
+    // set reasonable gas limit
+    this.header.gasLimit = 1000000
+  }
+
   get number () {
     return ethUtil.bufferToInt(this.header.number)
   }

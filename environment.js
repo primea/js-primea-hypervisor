@@ -5,11 +5,13 @@ const Address = require('./address.js')
 
 module.exports = class Environment {
   constructor (data) {
+    const block = new Block()
+
     const defaults = {
-      block: new Block(),
+      block: block,
       // gas tank
       gasPrice: 0,
-      gasLimit: 1000000, // The gas limit for the block
+      gasLimit: block.gasLimit, // The gas limit for the block
       gasRefund: 0,
       // call infromation
       address: new Address('0x0000000000000000000000000000000000000000'),

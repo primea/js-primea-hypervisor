@@ -3,15 +3,13 @@
 //
 // The input is a Buffer.
 //
-
 const Address = require('./address.js')
 const U256 = require('./u256.js')
-const ethUtils = require('ethereumjs-util')
-const ethTx = require('ethereumjs-tx')
+const OldTx = require('ethereumjs-tx')
 
 module.exports = class Transaction {
   constructor (tx) {
-    this._tx = new ethTx(tx)
+    this._tx = new OldTx(tx)
   }
 
   get valid () {

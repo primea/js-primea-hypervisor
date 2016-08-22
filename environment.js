@@ -1,12 +1,10 @@
 const U256 = require('./u256.js')
-const Block = require('ethereumjs-block')
+const Block = require('./block.js')
 const blockChain = require('./fakeBlockChain.js')
 const Address = require('./address.js')
 
 module.exports = class Environment {
   constructor (data) {
-    const block = new Block()
-
     const defaults = {
       block: new Block(),
       // gas tank

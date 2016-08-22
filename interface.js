@@ -24,6 +24,7 @@ module.exports = class Interface {
       'getCallValue',
       'getCallDataSize',
       'callDataCopy',
+      'callDataCopy256',
       'getCodeSize',
       'codeCopy',
       'getExternalCodeSize',
@@ -276,7 +277,7 @@ module.exports = class Interface {
    */
   getBlockDifficulty (offset) {
     this.takeGas(2)
-    this.setMemory(offset, constants.ADDRESS_SIZE_BYTES, this.environment.block.difficulty)
+    this.setMemory(offset, 32, this.environment.block.difficulty.toBuffer())
   }
 
   /**

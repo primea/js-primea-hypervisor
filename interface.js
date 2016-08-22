@@ -24,6 +24,7 @@ module.exports = class Interface {
       'getCallValue',
       'getCallDataSize',
       'callDataCopy',
+      'callDataCopy256',
       'getCodeSize',
       'codeCopy',
       'getExternalCodeSize',
@@ -164,6 +165,19 @@ module.exports = class Interface {
   }
 
   /**
+   * Copys the input data in current environment to memory. This pertains to
+   * the input data passed with the message call instruction or transaction.
+   * @param {integer} offset the offset in memory to load into
+   * @param {integer} dataOffset the offset in the input data
+   * @param {integer} length the length of data to copy
+   */
+  callDataCopy256 (offset, dataOffset) {
+    this.takeGas(3)
+    const callData = this.environment.callData.slice(dataOffset, dataOffset + 32)
+    this.setMemory(offset, 32, callData)
+  }
+
+  /**
    * Gets the size of code running in current environment.
    * @return {interger}
    */
@@ -278,10 +292,10 @@ module.exports = class Interface {
    * Get the block’s difficulty.
    * @return {integer}
    */
-  getBlockDifficulty () {
+  getBlockDifficulty (offset) {
     this.takeGas(2)
 
-    return this.environment.block.difficulty
+    this.setMemory(offset, 32, this.environment.block.difficulty.toBuffer())
   }
 
   /**

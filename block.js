@@ -6,6 +6,7 @@
 const Address = require('./address.js')
 const ethUtil = require('ethereumjs-util')
 const OldBlock = require('ethereumjs-block')
+const U256 = require('./u256.js')
 
 module.exports = class Block extends OldBlock {
   get number () {
@@ -17,7 +18,7 @@ module.exports = class Block extends OldBlock {
   }
 
   get difficulty () {
-    return ethUtil.bufferToInt(this.header.difficulty)
+    return new U256(this.header.difficulty)
   }
 
   get timestamp () {

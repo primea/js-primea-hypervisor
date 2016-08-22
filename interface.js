@@ -149,10 +149,22 @@ module.exports = class Interface {
    * @param {integer} length the length of data to copy
    */
   callDataCopy (offset, dataOffset, length) {
-    this.takeGas(3)
-
+    this.takeGas(3 + ((length / 32) * 3))
     const callData = this.environment.callData.slice(dataOffset, dataOffset + length)
     this.setMemory(offset, length, callData)
+  }
+
+  /**
+   * Copys the input data in current environment to memory. This pertains to
+   * the input data passed with the message call instruction or transaction.
+   * @param {integer} offset the offset in memory to load into
+   * @param {integer} dataOffset the offset in the input data
+   * @param {integer} length the length of data to copy
+   */
+  callDataCopy256 (offset, dataOffset) {
+    this.takeGas(3)
+    const callData = this.environment.callData.slice(dataOffset, dataOffset + 32)
+    this.setMemory(offset, 32, callData)
   }
 
   /**
@@ -262,9 +274,9 @@ module.exports = class Interface {
    * Get the block’s difficulty.
    * @return {integer}
    */
-  getBlockDifficulty () {
+  getBlockDifficulty (offset) {
     this.takeGas(2)
-    return this.environment.block.difficulty
+    this.setMemory(offset, constants.ADDRESS_SIZE_BYTES, this.environment.block.difficulty)
   }
 
   /**

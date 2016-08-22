@@ -6,7 +6,6 @@ const Address = require('./address.js')
 module.exports = class Environment {
   constructor (data) {
     const block = new Block()
-
     const defaults = {
       block: block,
       // gas tank
@@ -29,7 +28,6 @@ module.exports = class Environment {
     }
 
     this.state = new Map()
-
     Object.assign(this, defaults, data || {})
   }
 

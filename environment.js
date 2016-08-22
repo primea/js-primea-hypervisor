@@ -1,8 +1,6 @@
-const constants = require('./constants.js')
 const U256 = require('./u256.js')
 const Address = require('./address.js')
-const ethUtils = require('ethereumjs-util')
-const Block = require('ethereumjs-block')
+const Block = require('./block.js')
 const blockChain = require('./fakeBlockChain.js')
 
 module.exports = class Environment {

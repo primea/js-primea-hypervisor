@@ -1,7 +1,6 @@
 const Environment = require('./environment.js')
 const U256 = require('./u256.js')
 const Address = require('./address.js')
-const BN = require('bn.js')
 
 module.exports = class TestEnvironment extends Environment {
   constructor (data) {

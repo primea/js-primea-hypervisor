@@ -233,7 +233,7 @@ module.exports = class Interface {
   getBlockHash (number, offset) {
     this.takeGas(20)
 
-    const diff = this.environment.block.header.number - number
+    const diff = this.environment.block.number - number
     let hash
 
     if (diff > 256 || diff <= 0) {
@@ -251,7 +251,7 @@ module.exports = class Interface {
   getBlockCoinbase (offset) {
     this.takeGas(2)
 
-    this.setMemory(offset, constants.ADDRESS_SIZE_BYTES, this.environment.block.header.coinbase)
+    this.setMemory(offset, constants.ADDRESS_SIZE_BYTES, this.environment.block.coinbase)
   }
 
   /**
@@ -261,7 +261,7 @@ module.exports = class Interface {
   getBlockTimestamp () {
     this.takeGas(2)
 
-    return this.environment.block.header.timestamp
+    return this.environment.block.timestamp
   }
 
   /**
@@ -271,7 +271,7 @@ module.exports = class Interface {
   getBlockNumber () {
     this.takeGas(2)
 
-    return this.environment.block.header.number
+    return this.environment.block.number
   }
 
   /**
@@ -281,7 +281,7 @@ module.exports = class Interface {
   getBlockDifficulty () {
     this.takeGas(2)
 
-    return this.environment.block.header.difficulty
+    return this.environment.block.difficulty
   }
 
   /**
@@ -291,7 +291,7 @@ module.exports = class Interface {
   getBlockGasLimit () {
     this.takeGas(2)
 
-    return this.environment.block.header.gasLimit
+    return this.environment.block.gasLimit
   }
 
   /**
@@ -415,7 +415,7 @@ module.exports = class Interface {
     const oldValue = this.environment.state.get(path)
     const valIsZero = value.every((i) => i === 0)
 
-    // FIXME: gas counting has more cases then the below
+    this.takeGas(5000)
 
     // write
     if (!valIsZero && !oldValue) {

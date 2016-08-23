@@ -28,7 +28,6 @@ module.exports = class Environment {
     }
 
     this.state = new Map()
-
     Object.assign(this, defaults, data || {})
   }
 
@@ -38,8 +37,7 @@ module.exports = class Environment {
     account.set('balance', trie.balance || new U256(0))
     account.set('code', trie.code || new Uint8Array())
     account.set('storage', trie.storage || new Map())
-
-    this.state.set(address.toString(), account)
+    this.state.set(address.toString('hex'), account)
   }
 
   getBalance (address) {
@@ -47,7 +45,12 @@ module.exports = class Environment {
   }
 
   getCode (address) {
-    return this.state.get(address.toString())['code']
+    const account = this.state.get(address.toString('hex'))
+    if (account) {
+      return new Buffer(account.get('code').slice(2), 'hex')
+    } else {
+      return []
+    }
   }
 
   getBlockHash (height) {

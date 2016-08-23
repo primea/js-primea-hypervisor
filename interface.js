@@ -102,7 +102,7 @@ module.exports = class Interface {
     const address = new Address(this.getMemory(addressOffset, constants.ADDRESS_SIZE_BYTES))
     // call the parent contract and ask for the balance of one of its child contracts
     const balance = this.environment.getBalance(address)
-    this.setMemory(offset, constants.BALANCE_SIZE_BYTES, balance.toBuffer(constants.BALANCE_SIZE_BYTES))
+    this.setMemory(offset, constants.BALANCE_SIZE_BYTES, balance.toBuffer())
   }
 
   /**
@@ -118,7 +118,7 @@ module.exports = class Interface {
   }
 
   /**
-   * Gets caller address and loads it into memory at the given offset. This is
+   * Gets caller address and loads it into memory at the given offset. This i
    * the address of the account that is directly responsible for this execution.
    * @param {integer} offset
    */
@@ -136,7 +136,7 @@ module.exports = class Interface {
   getCallValue (offset) {
     this.takeGas(2)
 
-    this.setMemory(offset, constants.BALANCE_SIZE_BYTES, this.environment.callValue.toBuffer(constants.BALANCE_SIZE_BYTES))
+    this.setMemory(offset, constants.BALANCE_SIZE_BYTES, this.environment.callValue.toBuffer())
   }
 
   /**
@@ -169,7 +169,6 @@ module.exports = class Interface {
    * the input data passed with the message call instruction or transaction.
    * @param {integer} offset the offset in memory to load into
    * @param {integer} dataOffset the offset in the input data
-   * @param {integer} length the length of data to copy
    */
   callDataCopy256 (offset, dataOffset) {
     this.takeGas(3)
@@ -474,11 +473,15 @@ module.exports = class Interface {
     this.environment.gasRefund += 24000
   }
 
+  // gets a segment of little endian memory and returns it as big endian
   getMemory (offset, length) {
-    return new Uint8Array(this.module.exports.memory, offset, length)
+    // we must copy via slice else the `reverse` changes the location in memory
+    return new Uint8Array(this.module.exports.memory, offset, length).slice(0).reverse()
   }
 
+  // sets a segment of little endian memory given a big endian value
   setMemory (offset, length, value) {
+    value = value.slice(-length).reverse()
     const memory = new Uint8Array(this.module.exports.memory, offset, length)
     memory.set(value)
   }

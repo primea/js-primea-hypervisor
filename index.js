@@ -128,22 +128,7 @@ module.exports = class Kernel {
 
   // run tx; the tx message handler
   runTx (tx, environment = new Environment()) {
-    // verify tx then send to call Handler
-    // - from account has enough balance
-    // - check nonce
-    // - ecrecover
-    // new ethTx(tx).validate(tx)
-    // - reduce balance
-
     this.environment = environment
-
-    //
-    // environment.state - the merkle tree
-    // key: address (20 byte, hex string, without 0x prefix)
-    // every path has an account
-    //
-    // { balance, codeHash, stateRoot }
-    //
 
     if (Buffer.isBuffer(tx) || typeof tx === 'string') {
       tx = new Transaction(tx)

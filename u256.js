@@ -1,12 +1,12 @@
 const BN = require('bn.js')
-const ethUtils = require('ethereumjs-util')
+const ethUtil = require('ethereumjs-util')
 
 module.exports = class U256 {
   constructor (value) {
     // This is the case when data is copied from WASM
     if (value instanceof Uint8Array) {
       this._value = new BN(value, 16, 'le')
-    } else if ((typeof value === 'string') && ethUtils.isHexPrefixed(value)) {
+    } else if ((typeof value === 'string') && ethUtil.isHexPrefixed(value)) {
       this._value = new BN(value, 16)
     } else {
       this._value = new BN(value, 10)

@@ -1,4 +1,4 @@
-const ethUtils = require('ethereumjs-util')
+const ethUtil = require('ethereumjs-util')
 
 module.exports = class Address extends Buffer {
   constructor (value) {
@@ -6,10 +6,10 @@ module.exports = class Address extends Buffer {
       super(value)
     } else if (typeof value !== 'string') {
       throw new Error('Invalid input to address')
-    } else if (!ethUtils.isHexPrefixed(value)) {
+    } else if (!ethUtil.isHexPrefixed(value)) {
       throw new Error('Invalid address format')
     } else {
-      super(ethUtils.stripHexPrefix(value), 'hex')
+      super(ethUtil.stripHexPrefix(value), 'hex')
     }
 
     if (this.length !== 20) {

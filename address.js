@@ -1,31 +1,41 @@
 const ethUtil = require('ethereumjs-util')
 
-module.exports = class Address extends Buffer {
+module.exports = class Address {
   constructor (value) {
-    if (value instanceof Address || value instanceof Uint8Array) {
-      super(value)
+    // Special case: duplicate
+    if (value instanceof Address) {
+      this._value = new Buffer(value._value)
+      return
+    }
+
+    if (value instanceof Uint8Array) {
+      this._value = new Buffer(value)
     } else if (typeof value !== 'string') {
       throw new Error('Invalid input to address')
     } else if (!ethUtil.isHexPrefixed(value)) {
       throw new Error('Invalid address format')
     } else {
-      super(ethUtil.stripHexPrefix(value), 'hex')
+      this._value = new Buffer(ethUtil.stripHexPrefix(value), 'hex')
     }
 
-    if (this.length !== 20) {
+    if (this._value.length !== 20) {
       throw new Error('Invalid address length')
     }
   }
 
+  toBuffer () {
+    return this._value
+  }
+
   toString () {
-    return '0x' + this.toString('hex')
+    return '0x' + this._value.toString('hex')
   }
 
   isZero () {
-    return this.every((el) => el === 0)
+    return this._value.equals(ethUtil.zeros(20))
   }
 
   equals (address) {
-    return this.toString('hex') === address.toBuffer().toString('hex')
+    return this._value.toString('hex') === address.toBuffer().toString('hex')
   }
 }

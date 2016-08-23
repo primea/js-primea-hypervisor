@@ -87,7 +87,7 @@ module.exports = class Interface {
   getAddress (offset) {
     this.takeGas(2)
 
-    this.setMemory(offset, constants.ADDRESS_SIZE_BYTES, this.environment.address)
+    this.setMemory(offset, constants.ADDRESS_SIZE_BYTES, this.environment.address.toBuffer())
   }
 
   /**
@@ -114,7 +114,7 @@ module.exports = class Interface {
   getTxOrigin (offset) {
     this.takeGas(2)
 
-    this.setMemory(offset, constants.ADDRESS_SIZE_BYTES, this.environment.origin)
+    this.setMemory(offset, constants.ADDRESS_SIZE_BYTES, this.environment.origin.toBuffer())
   }
 
   /**
@@ -125,7 +125,7 @@ module.exports = class Interface {
   getCaller (offset) {
     this.takeGas(2)
 
-    this.setMemory(offset, constants.ADDRESS_SIZE_BYTES, this.environment.caller)
+    this.setMemory(offset, constants.ADDRESS_SIZE_BYTES, this.environment.caller.toBuffer())
   }
 
   /**
@@ -265,7 +265,7 @@ module.exports = class Interface {
   getBlockCoinbase (offset) {
     this.takeGas(2)
 
-    this.setMemory(offset, constants.ADDRESS_SIZE_BYTES, this.environment.block.coinbase)
+    this.setMemory(offset, constants.ADDRESS_SIZE_BYTES, this.environment.block.coinbase.toBuffer())
   }
 
   /**

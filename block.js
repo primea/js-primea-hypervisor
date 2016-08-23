@@ -9,6 +9,12 @@ const OldBlock = require('ethereumjs-block')
 const U256 = require('./u256.js')
 
 module.exports = class Block extends OldBlock {
+  constructor (data) {
+    super(data)
+    // set reasonable gas limit
+    this.header.gasLimit = 1000000
+  }
+
   get number () {
     return ethUtil.bufferToInt(this.header.number)
   }

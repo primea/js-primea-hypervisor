@@ -6,12 +6,11 @@ const blockChain = require('./fakeBlockChain.js')
 module.exports = class Environment {
   constructor (data) {
     const block = new Block()
-
     const defaults = {
       block: block,
       // gas tank
       gasPrice: 0,
-      gasLeft: 1000000,
+      gasLeft: block.gasLimit, // The gas limit for the block
       gasRefund: 0,
       // call infromation
       address: new Address('0x0000000000000000000000000000000000000000'),
@@ -29,7 +28,6 @@ module.exports = class Environment {
     }
 
     this.state = new Map()
-
     Object.assign(this, defaults, data || {})
   }
 

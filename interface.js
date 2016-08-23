@@ -65,7 +65,6 @@ module.exports = class Interface {
     if (amount < 0) {
       throw new Error('Negative gas deduction requested')
     }
-
     this.takeGas(amount)
   }
 
@@ -75,7 +74,6 @@ module.exports = class Interface {
    */
   getGasLeft () {
     this.takeGas(2)
-
     return this.environment.gasLeft
   }
 
@@ -86,7 +84,6 @@ module.exports = class Interface {
    */
   getAddress (offset) {
     this.takeGas(2)
-
     this.setMemory(offset, constants.ADDRESS_SIZE_BYTES, this.environment.address)
   }
 
@@ -98,7 +95,6 @@ module.exports = class Interface {
    */
   getBalance (addressOffset, offset) {
     this.takeGas(20)
-
     const address = new Address(this.getMemory(addressOffset, constants.ADDRESS_SIZE_BYTES))
     // call the parent contract and ask for the balance of one of its child contracts
     const balance = this.environment.parent.environment.getBalance(address)
@@ -113,7 +109,6 @@ module.exports = class Interface {
    */
   getTxOrigin (offset) {
     this.takeGas(2)
-
     this.setMemory(offset, constants.ADDRESS_SIZE_BYTES, this.environment.origin)
   }
 
@@ -124,7 +119,6 @@ module.exports = class Interface {
    */
   getCaller (offset) {
     this.takeGas(2)
-
     this.setMemory(offset, constants.ADDRESS_SIZE_BYTES, this.environment.caller)
   }
 
@@ -135,7 +129,6 @@ module.exports = class Interface {
    */
   getCallValue (offset) {
     this.takeGas(2)
-
     this.setMemory(offset, constants.BALANCE_SIZE_BYTES, this.environment.callValue.toBuffer(constants.BALANCE_SIZE_BYTES))
   }
 
@@ -146,7 +139,6 @@ module.exports = class Interface {
    */
   getCallDataSize () {
     this.takeGas(2)
-
     return this.environment.callData.length
   }
 
@@ -159,7 +151,6 @@ module.exports = class Interface {
    */
   callDataCopy (offset, dataOffset, length) {
     this.takeGas(3 + ((length / 32) * 3))
-
     const callData = this.environment.callData.slice(dataOffset, dataOffset + length)
     this.setMemory(offset, length, callData)
   }
@@ -195,7 +186,6 @@ module.exports = class Interface {
    */
   codeCopy (resultOffset, codeOffset, length) {
     this.takeGas(3 + ((length / 32) * 3))
-
     const code = new Uint8Array(this.environment.code, codeOffset, length)
     this.setMemory(resultOffset, length, code)
   }
@@ -207,7 +197,6 @@ module.exports = class Interface {
    */
   getExternalCodeSize (addressOffset) {
     this.takeGas(20)
-
     const address = new Address(this.getMemory(addressOffset, constants.ADDRESS_SIZE_BYTES))
     const code = this.environment.getCode(address)
     return code.length
@@ -235,7 +224,6 @@ module.exports = class Interface {
    */
   getTxGasPrice () {
     this.takeGas(2)
-
     return this.environment.gasPrice
   }
 
@@ -249,7 +237,6 @@ module.exports = class Interface {
 
     const diff = this.environment.block.number - number
     let hash
-
     if (diff > 256 || diff <= 0) {
       hash = new U256(0)
     } else {
@@ -317,7 +304,6 @@ module.exports = class Interface {
   log (dataOffset, length, topic1, topic2, topic3, topic4, topic5) {
     // FIXME: calculate gas for topics set
     this.takeGas(375 + length * 8)
-
     const data = this.getMemory(dataOffset, length)
     this.environment.logs.push({
       data: data,
@@ -382,7 +368,6 @@ module.exports = class Interface {
   callCode (gas, addressOffset, valueOffset, dataOffset, dataLength, resultOffset, resultLength) {
     // FIXME: count properly
     this.takeGas(40)
-
     // Load the params from mem
     const address = new Address(this.getMemory(addressOffset, constants.ADDRESS_SIZE_BYTES))
     const value = new U256(this.getMemory(valueOffset, constants.BALANCE_SIZE_BYTES))

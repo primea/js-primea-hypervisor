@@ -39,7 +39,7 @@ module.exports = class Kernel {
   // handles running code.
   // NOTE: it assumes that wasm will raise an exception if something went wrong,
   //       otherwise execution succeeded
-  codeHandler (code, ethInterface = new Interface(new Environment())) {
+  static codeHandler (code, ethInterface = new Interface(new Environment())) {
     const debugInterface = new DebugInterface(ethInterface.environment)
 
     const instance = Wasm.instantiateModule(code, {

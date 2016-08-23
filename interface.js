@@ -76,7 +76,7 @@ module.exports = class Interface {
   getGasLeft () {
     this.takeGas(2)
 
-    return this.environment.gasLimit
+    return this.environment.gasLeft
   }
 
   /**
@@ -491,10 +491,10 @@ module.exports = class Interface {
    * because every caller of this method is trusted.
    */
   takeGas (amount) {
-    if (this.environment.gasLimit < amount) {
+    if (this.environment.gasLeft < amount) {
       throw new Error('Ran out of gas')
     }
-    this.environment.gasLimit -= amount
+    this.environment.gasLeft -= amount
   }
 }
 

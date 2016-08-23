@@ -49,8 +49,8 @@ module.exports = class TestEnvironment extends Environment {
       self.gasPrice = data.gasPrice
     }
 
-    if (data.gasLimit) {
-      self.gasLimit = data.gasLimit
+    if (data.gasLeft) {
+      self.gasLeft = data.gasLeft
     }
   }
 }

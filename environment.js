@@ -11,7 +11,7 @@ module.exports = class Environment {
       block: block,
       // gas tank
       gasPrice: 0,
-      gasLimit: 1000000, // The gas limit for the block
+      gasLeft: 1000000,
       gasRefund: 0,
       // call infromation
       address: new Address('0x0000000000000000000000000000000000000000'),

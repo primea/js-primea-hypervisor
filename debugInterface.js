@@ -32,7 +32,7 @@ module.exports = class DebugInterface {
         if (opcode.number) {
           opcode.name += opcode.number
         }
-        console.error(`op: ${opcode.name} gas: ${this.environment.gasLimit}`)
+        console.error(`op: ${opcode.name} gas: ${this.environment.gasLeft}`)
         console.log('-------------stack--------------')
         for (let i = sp; i >= 0; i -= 32) {
           console.log(`${(sp - i) / 32} ${this.getMemoryBuffer(i).toString('hex')}`)

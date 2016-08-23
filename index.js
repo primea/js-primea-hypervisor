@@ -106,7 +106,7 @@ module.exports = class Kernel {
     environment.caller = call.from
     environment.callData = call.data
     environment.callValue = call.value
-    environment.gasLimit = call.gasLimit
+    environment.gasLeft = call.gasLimit
 
     //environment.setCallHandler(callHandler)
 
@@ -118,7 +118,7 @@ module.exports = class Kernel {
 
     return {
       executionOutcome: 1, // success
-      gasLeft: new U256(environment.gasLimit),  // this starts as the limit and results as the gas left
+      gasLeft: new U256(environment.gasLeft),
       gasRefund: new U256(environment.gasRefund),
       returnValue: environment.returnValue,
       selfDestructAddress: environment.selfDestructAddress,

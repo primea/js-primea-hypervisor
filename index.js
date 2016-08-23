@@ -27,8 +27,8 @@ const Utils = require('./utils.js')
 const Transaction = require('./transaction.js')
 const Precompile = require('./precompile.js')
 
-const meteringContract = new Address("0x000000000000000000000000000000000000000A")
-const transcompilerContract = new Address("0x000000000000000000000000000000000000000B")
+const meteringContract = new Address('0x000000000000000000000000000000000000000A')
+const transcompilerContract = new Address('0x000000000000000000000000000000000000000B')
 
 module.exports = class Kernel {
   // runs some code in the VM
@@ -82,7 +82,7 @@ module.exports = class Kernel {
       throw new Error('Account not found: ' + call.to.toString())
     }
 
-    const code = Uint8Array.from(account.get('code'))
+    let code = Uint8Array.from(account.get('code'))
     if (code.length === 0) {
       throw new Error('Contract not found')
     }
@@ -108,13 +108,13 @@ module.exports = class Kernel {
     environment.callValue = call.value
     environment.gasLeft = call.gasLimit
 
-    //environment.setCallHandler(callHandler)
+    // environment.setCallHandler(callHandler)
 
     const kernel = new Kernel(this, environment)
     kernel.codeHandler(code, new Interface(environment))
 
     // generate new stateroot
-    //this.environment.state.set(address, { stateRoot: stateRoot })
+    // this.environment.state.set(address, { stateRoot: stateRoot })
 
     return {
       executionOutcome: 1, // success

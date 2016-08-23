@@ -354,9 +354,6 @@ module.exports = class Interface {
     // FIXME: count properly
     this.takeGas(40)
 
-    if (gas === undefined) {
-      gas = this.gasLeft()
-    }
     // Load the params from mem
     const address = new Address(this.getMemory(addressOffset, constants.ADDRESS_SIZE_BYTES))
     const value = new U256(this.getMemory(valueOffset, constants.BALANCE_SIZE_BYTES))

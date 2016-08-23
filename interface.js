@@ -169,7 +169,6 @@ module.exports = class Interface {
    * the input data passed with the message call instruction or transaction.
    * @param {integer} offset the offset in memory to load into
    * @param {integer} dataOffset the offset in the input data
-   * @param {integer} length the length of data to copy
    */
   callDataCopy256 (offset, dataOffset) {
     this.takeGas(3)

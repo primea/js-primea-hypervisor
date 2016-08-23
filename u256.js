@@ -4,9 +4,7 @@ const ethUtil = require('ethereumjs-util')
 module.exports = class U256 {
   constructor (value) {
     // This is the case when data is copied from WASM
-    if (value instanceof Uint8Array) {
-      this._value = new BN(value, 16, 'le')
-    } else if ((typeof value === 'string') && ethUtil.isHexPrefixed(value)) {
+    if (value instanceof Uint8Array || ((typeof value === 'string') && ethUtil.isHexPrefixed(value))) {
       this._value = new BN(value, 16)
     } else {
       this._value = new BN(value, 10)
@@ -20,11 +18,8 @@ module.exports = class U256 {
     return this._value.toString(radix)
   }
 
-  toBuffer (width) {
-    if (width <= 0 || width > 32) {
-      throw new Error('Invalid U256 width')
-    }
-    return this._value.toBuffer('le', width || 32)
+  toBuffer () {
+    return ethUtil.setLength(this._value.toBuffer(), 32)
   }
 
   sub (u256) {

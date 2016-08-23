@@ -74,7 +74,7 @@ module.exports = class Interface {
    */
   getGasLeft () {
     this.takeGas(2)
-    return this.environment.gasLimit
+    return this.environment.gasLeft
   }
 
   /**
@@ -234,6 +234,7 @@ module.exports = class Interface {
    */
   getBlockHash (number, offset) {
     this.takeGas(20)
+
     const diff = this.environment.block.number - number
     let hash
     if (diff > 256 || diff <= 0) {
@@ -250,6 +251,7 @@ module.exports = class Interface {
    */
   getBlockCoinbase (offset) {
     this.takeGas(2)
+
     this.setMemory(offset, constants.ADDRESS_SIZE_BYTES, this.environment.block.coinbase)
   }
 
@@ -259,6 +261,7 @@ module.exports = class Interface {
    */
   getBlockTimestamp () {
     this.takeGas(2)
+
     return this.environment.block.timestamp
   }
 
@@ -268,6 +271,7 @@ module.exports = class Interface {
    */
   getBlockNumber () {
     this.takeGas(2)
+
     return this.environment.block.number
   }
 
@@ -277,6 +281,7 @@ module.exports = class Interface {
    */
   getBlockDifficulty (offset) {
     this.takeGas(2)
+
     this.setMemory(offset, 32, this.environment.block.difficulty.toBuffer())
   }
 
@@ -286,6 +291,7 @@ module.exports = class Interface {
    */
   getBlockGasLimit () {
     this.takeGas(2)
+
     return this.environment.block.gasLimit
   }
 
@@ -470,10 +476,10 @@ module.exports = class Interface {
    * because every caller of this method is trusted.
    */
   takeGas (amount) {
-    if (this.environment.gasLimit < amount) {
+    if (this.environment.gasLeft < amount) {
       throw new Error('Ran out of gas')
     }
-    this.environment.gasLimit -= amount
+    this.environment.gasLeft -= amount
   }
 }
 

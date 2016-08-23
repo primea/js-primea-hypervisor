@@ -2,12 +2,14 @@
 const tape = require('tape')
 const fs = require('fs')
 const cp = require('child_process')
+const path = require('path')
 
 const Kernel = require('../index.js')
 const TestEnvironment = require('../testEnvironment.js')
 const Interface = require('../interface.js')
 const DebugInterface = require('../debugInterface.js')
-const dir = __dirname + '/interface'
+
+const dir = path.join(__dirname, '/interface')
 // get the test names
 let tests = fs.readdirSync(dir).filter((file) => file.endsWith('.wast'))
 // tests = ['balance.wast']

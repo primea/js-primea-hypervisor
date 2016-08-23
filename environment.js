@@ -1,7 +1,7 @@
 const U256 = require('./u256.js')
+const Address = require('./address.js')
 const Block = require('./block.js')
 const blockChain = require('./fakeBlockChain.js')
-const Address = require('./address.js')
 
 module.exports = class Environment {
   constructor (data) {
@@ -10,7 +10,7 @@ module.exports = class Environment {
       block: block,
       // gas tank
       gasPrice: 0,
-      gasLimit: block.gasLimit, // The gas limit for the block
+      gasLeft: block.gasLimit, // The gas limit for the block
       gasRefund: 0,
       // call infromation
       address: new Address('0x0000000000000000000000000000000000000000'),
@@ -31,12 +31,22 @@ module.exports = class Environment {
     Object.assign(this, defaults, data || {})
   }
 
+  addAccount (address, trie) {
+    let account = new Map()
+    account.set('nonce', trie.nonce || new U256(0))
+    account.set('balance', trie.balance || new U256(0))
+    account.set('code', trie.code || new Uint8Array())
+    account.set('storage', trie.storage || new Map())
+
+    this.state.set(address.toString(), account)
+  }
+
   getBalance (address) {
-    return this.state.get(address.toString()).balance
+    return this.state.get(address.toString())['balance']
   }
 
   getCode (address) {
-    return this.state.get(address.toString()).code
+    return this.state.get(address.toString())['code']
   }
 
   getBlockHash (height) {

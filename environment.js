@@ -1,14 +1,13 @@
 const U256 = require('./u256.js')
 const Address = require('./address.js')
 const Block = require('./block.js')
-const blockChain = require('./fakeBlockChain.js')
+const fakeBlockChain = require('./fakeBlockChain.js')
 
 module.exports = class Environment {
   constructor (data) {
-    const block = new Block()
-
     const defaults = {
-      block: block,
+      block: new Block(),
+      blockchain: fakeBlockChain,
       // gas tank
       gasPrice: 0,
       gasLeft: 1000000,
@@ -52,7 +51,7 @@ module.exports = class Environment {
   }
 
   getBlockHash (height) {
-    return blockChain.getBlock(height).hash()
+    return this.blockchain.getBlock(height).hash()
   }
 
   // kernal

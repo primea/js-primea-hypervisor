@@ -7,7 +7,7 @@ module.exports = class U256 {
     if (value instanceof Uint8Array) {
       this._value = new BN(value, 16, 'le')
     } else if ((typeof value === 'string') && ethUtil.isHexPrefixed(value)) {
-      this._value = new BN(value, 16)
+      this._value = new BN(ethUtil.stripHexPrefix(value), 16)
     } else {
       this._value = new BN(value, 10)
     }

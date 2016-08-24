@@ -1,41 +1,26 @@
-const ethUtil = require('ethereumjs-util')
+const U256 = require('./u256.js')
 
-module.exports = class Address {
+module.exports = class Address extends U256 {
   constructor (value) {
-    // Special case: duplicate
-    if (value instanceof Address) {
-      this._value = new Buffer(value._value)
-      return
-    }
-
-    if (value instanceof Uint8Array) {
-      this._value = new Buffer(value)
-    } else if (typeof value !== 'string') {
-      throw new Error('Invalid input to address')
-    } else if (!ethUtil.isHexPrefixed(value)) {
-      throw new Error('Invalid address format')
-    } else {
-      this._value = new Buffer(ethUtil.stripHexPrefix(value), 'hex')
-    }
-
-    if (this._value.length !== 20) {
-      throw new Error('Invalid address length')
+    super(value)
+    if (this._value.byteLength() > 20) {
+      throw new Error('Invalid address length: ' + this._value.byteLength() + ' for ' + value)
     }
   }
 
   toBuffer () {
-    return this._value
+    return super.toBuffer(20)
   }
 
   toString () {
-    return '0x' + this._value.toString('hex')
+    return '0x' + this._value.toString('hex', 40)
   }
 
   isZero () {
-    return this._value.equals(ethUtil.zeros(20))
+    return this._value.isZero()
   }
 
   equals (address) {
-    return this._value.toString('hex') === address.toBuffer().toString('hex')
+    return this.toString() === address.toString()
   }
 }

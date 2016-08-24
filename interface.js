@@ -311,16 +311,37 @@ module.exports = class Interface {
    * Creates a new log in the current environment
    * @param {integer} dataOffset the offset in memory to load the memory
    * @param {integer} length the data length
-   * TODO: replace with variadic
+   * @param {integer} number of topics
    */
-  log (dataOffset, length, topic1, topic2, topic3, topic4, topic5) {
-    // FIXME: calculate gas for topics set
-    this.takeGas(375 + length * 8)
+  log (dataOffset, length, numberOfTopics, topic1, topic2, topic3, topic4) {
+    if (numberOfTopics < 0 || numberOfTopics > 4) {
+      throw new Error('Invalid numberOfTopics')
+    }
+
+    this.takeGas(375 + length * 8 + numberOfTopics * 375)
 
     const data = this.getMemory(dataOffset, length)
+    let topics = []
+
+    if (numberOfTopics > 0) {
+      topics.push(U256.fromMemory(this.getMemory(topic1, constants.U256_SIZE_BYTES)))
+    }
+
+    if (numberOfTopics > 1) {
+      topics.push(U256.fromMemory(this.getMemory(topic2, constants.U256_SIZE_BYTES)))
+    }
+
+    if (numberOfTopics > 2) {
+      topics.push(U256.fromMemory(this.getMemory(topic3, constants.U256_SIZE_BYTES)))
+    }
+
+    if (numberOfTopics > 3) {
+      topics.push(U256.fromMemory(this.getMemory(topic4, constants.U256_SIZE_BYTES)))
+    }
+
     this.environment.logs.push({
       data: data,
-      topics: [topic1, topic2, topic3, topic4, topic5]
+      topics: topics
     })
   }
 

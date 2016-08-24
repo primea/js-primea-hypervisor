@@ -173,7 +173,7 @@ module.exports = class Interface {
   callDataCopy256 (offset, dataOffset) {
     this.takeGas(3)
     const callData = this.environment.callData.slice(dataOffset, dataOffset + 32)
-    this.setMemory(offset, 32, callData)
+    this.setMemory(offset, constants.U256_SIZE_BYTES, callData)
   }
 
   /**
@@ -254,7 +254,7 @@ module.exports = class Interface {
     } else {
       hash = new U256(this.environment.getBlockHash(number))
     }
-    this.setMemory(offset, 32, hash.toMemory())
+    this.setMemory(offset, constants.U256_SIZE_BYTES, hash.toMemory())
   }
 
   /**
@@ -294,7 +294,7 @@ module.exports = class Interface {
   getBlockDifficulty (offset) {
     this.takeGas(2)
 
-    this.setMemory(offset, 32, this.environment.block.difficulty.toMemory())
+    this.setMemory(offset, constants.U256_SIZE_BYTES, this.environment.block.difficulty.toMemory())
   }
 
   /**
@@ -419,9 +419,9 @@ module.exports = class Interface {
    * @param {interger} valueOffset the memory offset to load the value from
    */
   storageStore (pathOffset, valueOffset) {
-    const path = new Buffer(this.getMemory(pathOffset, 32)).toString('hex')
+    const path = new Buffer(this.getMemory(pathOffset, constants.U256_SIZE_BYTES)).toString('hex')
     // copy the value
-    const value = this.getMemory(valueOffset, 32).slice(0)
+    const value = this.getMemory(valueOffset, constants.U256_SIZE_BYTES).slice(0)
     const oldValue = this.environment.state.get(path)
     const valIsZero = value.every((i) => i === 0)
 
@@ -449,9 +449,9 @@ module.exports = class Interface {
   storageLoad (pathOffset, resultOffset) {
     this.takeGas(50)
 
-    const path = new Buffer(this.getMemory(pathOffset, 32)).toString('hex')
+    const path = new Buffer(this.getMemory(pathOffset, constants.U256_SIZE_BYTES)).toString('hex')
     const result = this.environment.state.get(path)
-    this.setMemory(resultOffset, 32, result)
+    this.setMemory(resultOffset, constants.U256_SIZE_BYTES, result)
   }
 
   /**

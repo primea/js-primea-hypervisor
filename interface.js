@@ -87,7 +87,7 @@ module.exports = class Interface {
   getAddress (offset) {
     this.takeGas(2)
 
-    this.setMemory(offset, constants.ADDRESS_SIZE_BYTES, this.environment.address.toBuffer())
+    this.setMemory(offset, constants.ADDRESS_SIZE_BYTES, this.environment.address.toMemory())
   }
 
   /**
@@ -99,10 +99,10 @@ module.exports = class Interface {
   getBalance (addressOffset, offset) {
     this.takeGas(20)
 
-    const address = new Address(this.getMemory(addressOffset, constants.ADDRESS_SIZE_BYTES))
+    const address = Address.fromMemory(this.getMemory(addressOffset, constants.ADDRESS_SIZE_BYTES))
     // call the parent contract and ask for the balance of one of its child contracts
     const balance = this.environment.getBalance(address)
-    this.setMemory(offset, constants.BALANCE_SIZE_BYTES, balance.toBuffer(constants.BALANCE_SIZE_BYTES))
+    this.setMemory(offset, constants.BALANCE_SIZE_BYTES, balance.toMemory(constants.BALANCE_SIZE_BYTES))
   }
 
   /**
@@ -114,7 +114,7 @@ module.exports = class Interface {
   getTxOrigin (offset) {
     this.takeGas(2)
 
-    this.setMemory(offset, constants.ADDRESS_SIZE_BYTES, this.environment.origin.toBuffer())
+    this.setMemory(offset, constants.ADDRESS_SIZE_BYTES, this.environment.origin.toMemory())
   }
 
   /**
@@ -125,7 +125,7 @@ module.exports = class Interface {
   getCaller (offset) {
     this.takeGas(2)
 
-    this.setMemory(offset, constants.ADDRESS_SIZE_BYTES, this.environment.caller.toBuffer())
+    this.setMemory(offset, constants.ADDRESS_SIZE_BYTES, this.environment.caller.toMemory())
   }
 
   /**
@@ -136,7 +136,7 @@ module.exports = class Interface {
   getCallValue (offset) {
     this.takeGas(2)
 
-    this.setMemory(offset, constants.BALANCE_SIZE_BYTES, this.environment.callValue.toBuffer(constants.BALANCE_SIZE_BYTES))
+    this.setMemory(offset, constants.BALANCE_SIZE_BYTES, this.environment.callValue.toMemory(constants.BALANCE_SIZE_BYTES))
   }
 
   /**
@@ -207,7 +207,7 @@ module.exports = class Interface {
   getExternalCodeSize (addressOffset) {
     this.takeGas(20)
 
-    const address = new Address(this.getMemory(addressOffset, constants.ADDRESS_SIZE_BYTES))
+    const address = Address.fromMemory(this.getMemory(addressOffset, constants.ADDRESS_SIZE_BYTES))
     const code = this.environment.getCode(address)
     return code.length
   }
@@ -222,7 +222,7 @@ module.exports = class Interface {
   externalCodeCopy (addressOffset, resultOffset, codeOffset, length) {
     this.takeGas(20 + ((length / 32) * 3))
 
-    const address = new Address(this.getMemory(addressOffset, constants.ADDRESS_SIZE_BYTES))
+    const address = Address.fromMemory(this.getMemory(addressOffset, constants.ADDRESS_SIZE_BYTES))
     let code = this.environment.getCode(address)
     code = new Uint8Array(code, codeOffset, length)
     this.setMemory(resultOffset, length, code)
@@ -254,7 +254,7 @@ module.exports = class Interface {
     } else {
       hash = new U256(this.environment.getBlockHash(number))
     }
-    this.setMemory(offset, 32, hash.toBuffer())
+    this.setMemory(offset, 32, hash.toMemory())
   }
 
   /**
@@ -264,7 +264,7 @@ module.exports = class Interface {
   getBlockCoinbase (offset) {
     this.takeGas(2)
 
-    this.setMemory(offset, constants.ADDRESS_SIZE_BYTES, this.environment.block.coinbase.toBuffer())
+    this.setMemory(offset, constants.ADDRESS_SIZE_BYTES, this.environment.block.coinbase.toMemory())
   }
 
   /**
@@ -294,7 +294,7 @@ module.exports = class Interface {
   getBlockDifficulty (offset) {
     this.takeGas(2)
 
-    this.setMemory(offset, 32, this.environment.block.difficulty.toBuffer())
+    this.setMemory(offset, 32, this.environment.block.difficulty.toMemory())
   }
 
   /**
@@ -333,7 +333,7 @@ module.exports = class Interface {
   create (valueOffset, dataOffset, length) {
     this.takeGas(32000)
 
-    const value = new U256(this.getMemory(valueOffset, constants.BALANCE_SIZE_BYTES))
+    const value = U256.fromMemory(this.getMemory(valueOffset, constants.BALANCE_SIZE_BYTES))
     const data = this.getMemory(dataOffset, length)
     const result = this.environment.create(value, data)
     return result
@@ -355,8 +355,8 @@ module.exports = class Interface {
     this.takeGas(40)
 
     // Load the params from mem
-    const address = new Address(this.getMemory(addressOffset, constants.ADDRESS_SIZE_BYTES))
-    const value = new U256(this.getMemory(valueOffset, constants.BALANCE_SIZE_BYTES))
+    const address = Address.fromMemory(this.getMemory(addressOffset, constants.ADDRESS_SIZE_BYTES))
+    const value = U256.fromMemory(this.getMemory(valueOffset, constants.BALANCE_SIZE_BYTES))
     const data = this.getMemory(dataOffset, dataLength)
     // Run the call
     const [result, errorCode] = this.environment.call(gas, address, value, data)
@@ -380,8 +380,8 @@ module.exports = class Interface {
     this.takeGas(40)
 
     // Load the params from mem
-    const address = new Address(this.getMemory(addressOffset, constants.ADDRESS_SIZE_BYTES))
-    const value = new U256(this.getMemory(valueOffset, constants.BALANCE_SIZE_BYTES))
+    const address = Address.fromMemory(this.getMemory(addressOffset, constants.ADDRESS_SIZE_BYTES))
+    const value = U256.fromMemory(this.getMemory(valueOffset, constants.BALANCE_SIZE_BYTES))
     const data = this.getMemory(dataOffset, dataLength)
     // Run the call
     const [result, errorCode] = this.environment.callCode(gas, address, value, data)
@@ -406,7 +406,7 @@ module.exports = class Interface {
     this.takeGas(40)
 
     const data = this.getMemory(dataOffset, dataLength)
-    const address = new Address(this.getMemory(addressOffset, constants.ADDRESS_SIZE_BYTES))
+    const address = Address.fromMemory(this.getMemory(addressOffset, constants.ADDRESS_SIZE_BYTES))
     const [result, errorCode] = this.environment.callDelegate(gas, address, data)
     this.setMemory(resultOffset, resultLength, result)
     return errorCode
@@ -469,7 +469,7 @@ module.exports = class Interface {
    * @param {integer} offset the offset to load the address from
    */
   selfDestruct (addressOffset) {
-    this.environment.suicideAddress = new Address(this.getMemory(addressOffset, constants.ADDRESS_SIZE_BYTES))
+    this.environment.suicideAddress = Address.fromMemory(this.getMemory(addressOffset, constants.ADDRESS_SIZE_BYTES))
     this.environment.gasRefund += 24000
   }
 

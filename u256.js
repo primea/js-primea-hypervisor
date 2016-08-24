@@ -1,16 +1,24 @@
 const BN = require('bn.js')
 const ethUtil = require('ethereumjs-util')
 
-module.exports = class U256 {
+const U256 = module.exports = class U256 {
   constructor (value) {
-    // This is the case when data is copied from WASM
-    if (value instanceof Uint8Array) {
-      this._value = new BN(value, 16, 'le')
-    } else if ((typeof value === 'string') && ethUtil.isHexPrefixed(value)) {
+    // bn.js still doesn't support hex prefixes...
+    if ((typeof value === 'string') && ethUtil.isHexPrefixed(value)) {
       this._value = new BN(ethUtil.stripHexPrefix(value), 16)
     } else {
       this._value = new BN(value, 10)
     }
+  }
+
+  // This assumes Uint8Array in LSB (WASM code)
+  static fromMemory (value) {
+    return new U256(new BN(value, 16, 'le'))
+  }
+
+  // This assumes Uint8Array in LSB (WASM code)
+  toMemory (width) {
+    return this._value.toBuffer('le', width || 32)
   }
 
   toString (radix = 10) {
@@ -24,7 +32,7 @@ module.exports = class U256 {
     if (width <= 0 || width > 32) {
       throw new Error('Invalid U256 width')
     }
-    return this._value.toBuffer('le', width || 32)
+    return this._value.toBuffer('be', width || 32)
   }
 
   sub (u256) {

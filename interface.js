@@ -102,7 +102,7 @@ module.exports = class Interface {
     const address = Address.fromMemory(this.getMemory(addressOffset, constants.ADDRESS_SIZE_BYTES))
     // call the parent contract and ask for the balance of one of its child contracts
     const balance = this.environment.getBalance(address)
-    this.setMemory(offset, constants.BALANCE_SIZE_BYTES, balance.toMemory(constants.BALANCE_SIZE_BYTES))
+    this.setMemory(offset, constants.U128_SIZE_BYTES, balance.toMemory(constants.U128_SIZE_BYTES))
   }
 
   /**
@@ -136,7 +136,7 @@ module.exports = class Interface {
   getCallValue (offset) {
     this.takeGas(2)
 
-    this.setMemory(offset, constants.BALANCE_SIZE_BYTES, this.environment.callValue.toMemory(constants.BALANCE_SIZE_BYTES))
+    this.setMemory(offset, constants.U128_SIZE_BYTES, this.environment.callValue.toMemory(constants.U128_SIZE_BYTES))
   }
 
   /**
@@ -333,7 +333,7 @@ module.exports = class Interface {
   create (valueOffset, dataOffset, length) {
     this.takeGas(32000)
 
-    const value = U256.fromMemory(this.getMemory(valueOffset, constants.BALANCE_SIZE_BYTES))
+    const value = U256.fromMemory(this.getMemory(valueOffset, constants.U128_SIZE_BYTES))
     const data = this.getMemory(dataOffset, length)
     const result = this.environment.create(value, data)
     return result
@@ -356,7 +356,7 @@ module.exports = class Interface {
 
     // Load the params from mem
     const address = Address.fromMemory(this.getMemory(addressOffset, constants.ADDRESS_SIZE_BYTES))
-    const value = U256.fromMemory(this.getMemory(valueOffset, constants.BALANCE_SIZE_BYTES))
+    const value = U256.fromMemory(this.getMemory(valueOffset, constants.U128_SIZE_BYTES))
     const data = this.getMemory(dataOffset, dataLength)
     // Run the call
     const [result, errorCode] = this.environment.call(gas, address, value, data)
@@ -381,7 +381,7 @@ module.exports = class Interface {
 
     // Load the params from mem
     const address = Address.fromMemory(this.getMemory(addressOffset, constants.ADDRESS_SIZE_BYTES))
-    const value = U256.fromMemory(this.getMemory(valueOffset, constants.BALANCE_SIZE_BYTES))
+    const value = U256.fromMemory(this.getMemory(valueOffset, constants.U128_SIZE_BYTES))
     const data = this.getMemory(dataOffset, dataLength)
     // Run the call
     const [result, errorCode] = this.environment.callCode(gas, address, value, data)

@@ -18,9 +18,7 @@ const Interface = require('./interface.js')
 // The Kernel Stores all of its state in the Environment. The Interface is used
 // to by the VM to retrive infromation from the Environment.
 const Environment = require('./environment.js')
-
 const DebugInterface = require('./debugInterface.js')
-
 const Address = require('./address.js')
 const U256 = require('./u256.js')
 const Utils = require('./utils.js')

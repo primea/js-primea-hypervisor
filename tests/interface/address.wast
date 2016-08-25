@@ -9,7 +9,7 @@
     (block
       ;; loads the address into memory
       (call_import $address (i32.const 0))
-      (if (i64.eq (i64.load (i32.const 0)) (i64.const 0x72a1048901c1485d)) ;; big enden
+      (if (i64.eq (i64.load (i32.const 0)) (i64.const 0xbd9c6f4a2d06c47b))
         (return)
       )
       (unreachable)

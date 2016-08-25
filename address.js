@@ -1,41 +1,38 @@
-const ethUtil = require('ethereumjs-util')
+const BN = require('bn.js')
+const U256 = require('./u256.js')
 
-module.exports = class Address {
+module.exports = class Address extends U256 {
   constructor (value) {
-    // Special case: duplicate
-    if (value instanceof Address) {
-      this._value = new Buffer(value._value)
-      return
+    super(value)
+    if (this._value.byteLength() > 20) {
+      throw new Error('Invalid address length: ' + this._value.byteLength() + ' for ' + value)
     }
+  }
 
-    if (value instanceof Uint8Array) {
-      this._value = new Buffer(value)
-    } else if (typeof value !== 'string') {
-      throw new Error('Invalid input to address')
-    } else if (!ethUtil.isHexPrefixed(value)) {
-      throw new Error('Invalid address format')
-    } else {
-      this._value = new Buffer(ethUtil.stripHexPrefix(value), 'hex')
-    }
+  // This assumes Uint8Array in LSB (WASM code)
+  static fromMemory (value) {
+    return new Address(new BN(value, 16, 'le'))
+  }
 
-    if (this._value.length !== 20) {
-      throw new Error('Invalid address length')
-    }
+  // This assumes Uint8Array in LSB (WASM code)
+  toMemory () {
+    return this._value.toBuffer('le', 20)
   }
 
   toBuffer () {
-    return this._value
+    return super.toBuffer(20)
   }
 
+  // Needs to be displayed as a hex always
   toString () {
-    return '0x' + this._value.toString('hex')
+    return '0x' + this._value.toString('hex', 40)
   }
 
   isZero () {
-    return this._value.equals(ethUtil.zeros(20))
+    return this._value.isZero()
   }
 
   equals (address) {
-    return this._value.toString('hex') === address.toBuffer().toString('hex')
+    return this.toString() === address.toString()
   }
 }

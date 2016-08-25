@@ -38,7 +38,6 @@ module.exports = class Environment {
     account.set('balance', trie.balance || new U256(0))
     account.set('code', trie.code || new Uint8Array())
     account.set('storage', trie.storage || new Map())
-
     this.state.set(address.toString(), account)
   }
 

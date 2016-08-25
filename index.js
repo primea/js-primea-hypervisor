@@ -127,7 +127,7 @@ module.exports = class Kernel {
 
   createHandler (create) {
     // Inject metering
-    const code = this.callHandler({ to: meteringContract, data: create.data }).returnValue
+    const code = this.callHandler({ to: meteringContract, data: code }).returnValue
 
     let address = Utils.newAccountAddress(create.from, code)
 
@@ -135,6 +135,11 @@ module.exports = class Kernel {
       balance: create.value,
       code: code
     })
+
+    // Run code and take return value as contract code
+    code = this.callHandler({ from: create.from, to: address, gasLimit: create.gasLimit }).returnValue
+
+    this.environment.state.get(address.toString()).set('code', code)
 
     return {
       accountCreated: address
@@ -175,7 +180,7 @@ module.exports = class Kernel {
           from: tx.from,
           gasLimit: tx.gasLimit,
           value: tx.value,
-          data: txdata
+          data: tx.data
         })
       }
     }

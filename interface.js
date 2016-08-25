@@ -158,7 +158,7 @@ module.exports = class Interface {
    * @param {integer} length the length of data to copy
    */
   callDataCopy (offset, dataOffset, length) {
-    this.takeGas(3 + ((length / 32) * 3))
+    this.takeGas(3 + Math.ceil(length / 32) * 3)
 
     const callData = this.environment.callData.slice(dataOffset, dataOffset + length)
     this.setMemory(offset, length, callData)
@@ -193,7 +193,7 @@ module.exports = class Interface {
    * @param {integer} length the length of code to copy
    */
   codeCopy (resultOffset, codeOffset, length) {
-    this.takeGas(3 + ((length / 32) * 3))
+    this.takeGas(3 + Math.ceil(length / 32) * 3)
 
     const code = new Uint8Array(this.environment.code, codeOffset, length)
     this.setMemory(resultOffset, length, code)
@@ -220,7 +220,7 @@ module.exports = class Interface {
    * @param {integer} length the length of code to copy
    */
   externalCodeCopy (addressOffset, resultOffset, codeOffset, length) {
-    this.takeGas(20 + ((length / 32) * 3))
+    this.takeGas(20 + Math.ceil(length / 32) * 3)
 
     const address = Address.fromMemory(this.getMemory(addressOffset, constants.ADDRESS_SIZE_BYTES))
     let code = this.environment.getCode(address)

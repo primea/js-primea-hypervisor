@@ -42,11 +42,21 @@ module.exports = class Environment {
   }
 
   getBalance (address) {
-    return this.state.get(address.toString())['balance']
+    const account = this.state.get(address.toString())
+    if (account) {
+      return account['balance']
+    } else {
+      return new U256()
+    }
   }
 
   getCode (address) {
-    return this.state.get(address.toString())['code']
+    const account = this.state.get(address.toString())
+    if (account) {
+      return account['code']
+    } else {
+      return Uint8Array.from(new Buffer([]))
+    }
   }
 
   getBlockHash (height) {

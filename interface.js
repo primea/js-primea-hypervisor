@@ -320,7 +320,7 @@ module.exports = class Interface {
 
     this.takeGas(375 + length * 8 + numberOfTopics * 375)
 
-    const data = this.getMemory(dataOffset, length)
+    const data = this.getMemory(dataOffset, length).slice(0)
     let topics = []
 
     if (numberOfTopics > 0) {
@@ -355,7 +355,7 @@ module.exports = class Interface {
     this.takeGas(32000)
 
     const value = U256.fromMemory(this.getMemory(valueOffset, constants.U128_SIZE_BYTES))
-    const data = this.getMemory(dataOffset, length)
+    const data = this.getMemory(dataOffset, length).slice(0)
     const result = this.environment.create(value, data)
     return result
   }
@@ -378,7 +378,7 @@ module.exports = class Interface {
     // Load the params from mem
     const address = Address.fromMemory(this.getMemory(addressOffset, constants.ADDRESS_SIZE_BYTES))
     const value = U256.fromMemory(this.getMemory(valueOffset, constants.U128_SIZE_BYTES))
-    const data = this.getMemory(dataOffset, dataLength)
+    const data = this.getMemory(dataOffset, dataLength).slice(0)
     // Run the call
     const [result, errorCode] = this.environment.call(gas, address, value, data)
     this.setMemory(resultOffset, resultLength, result)
@@ -403,7 +403,7 @@ module.exports = class Interface {
     // Load the params from mem
     const address = Address.fromMemory(this.getMemory(addressOffset, constants.ADDRESS_SIZE_BYTES))
     const value = U256.fromMemory(this.getMemory(valueOffset, constants.U128_SIZE_BYTES))
-    const data = this.getMemory(dataOffset, dataLength)
+    const data = this.getMemory(dataOffset, dataLength).slice(0)
     // Run the call
     const [result, errorCode] = this.environment.callCode(gas, address, value, data)
     this.setMemory(resultOffset, resultLength, result)
@@ -426,7 +426,7 @@ module.exports = class Interface {
     // FIXME: count properly
     this.takeGas(40)
 
-    const data = this.getMemory(dataOffset, dataLength)
+    const data = this.getMemory(dataOffset, dataLength).slice(0)
     const address = Address.fromMemory(this.getMemory(addressOffset, constants.ADDRESS_SIZE_BYTES))
     const [result, errorCode] = this.environment.callDelegate(gas, address, data)
     this.setMemory(resultOffset, resultLength, result)
@@ -481,7 +481,7 @@ module.exports = class Interface {
    * @param {integer} length the length of the output data.
    */
   return (offset, length) {
-    this.environment.returnValue = this.getMemory(offset, length)
+    this.environment.returnValue = this.getMemory(offset, length).slice(0)
   }
 
   /**

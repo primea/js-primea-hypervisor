@@ -26,6 +26,6 @@ module.exports = class Block extends OldBlock {
   }
 
   get coinbase () {
-    return new Address('0x' + this.header.coinbase.toString('hex'))
+    return new Address(this.header.coinbase)
   }
 }

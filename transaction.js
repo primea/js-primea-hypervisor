@@ -37,14 +37,14 @@ module.exports = class Transaction {
   }
 
   get from () {
-    return new Address('0x' + this._tx.getSenderAddress().toString('hex'))
+    return new Address(this._tx.getSenderAddress())
   }
 
   get to () {
     if (this._tx.to.length === 0) {
       return new Address('0x0000000000000000000000000000000000000000')
     }
-    return new Address('0x' + this._tx.to.toString('hex'))
+    return new Address(this._tx.to)
   }
 
   get isSend () {

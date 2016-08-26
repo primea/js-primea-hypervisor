@@ -28,7 +28,7 @@ module.exports = class Address extends U256 {
     return '0x' + this._value.toString('hex', 40)
   }
 
-  static zero() {
+  static zero () {
     return new Address('0x0000000000000000000000000000000000000000')
   }
 

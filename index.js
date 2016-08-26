@@ -126,8 +126,12 @@ module.exports = class Kernel {
   }
 
   createHandler (create) {
+    let code = create.data
+
     // Inject metering
-    const code = this.callHandler({ to: meteringContract, data: code }).returnValue
+    if (Utils.isWASMCode(code)) {
+      code = this.callHandler({ to: meteringContract, data: code }).returnValue
+    }
 
     let address = Utils.newAccountAddress(create.from, code)
 

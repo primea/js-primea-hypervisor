@@ -201,7 +201,7 @@ module.exports = class Interface {
   codeCopy (resultOffset, codeOffset, length) {
     this.takeGas(3 + Math.ceil(length / 32) * 3)
 
-    const code = new Uint8Array(this.environment.code, codeOffset, length)
+    const code = ethUtil.setLengthRight(Buffer.from(this.environment.code, codeOffset, length), length)
     this.setMemory(resultOffset, length, code)
   }
 

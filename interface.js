@@ -4,6 +4,7 @@
  */
 const Address = require('./address.js')
 const U256 = require('./u256.js')
+const ethUtil = require('ethereumjs-util')
 
 const U128_SIZE_BYTES = 16
 const ADDRESS_SIZE_BYTES = 20
@@ -65,6 +66,7 @@ module.exports = class Interface {
    * @param {integer} amount the amount to subtract to the gas counter
    */
   useGas (amount) {
+    // console.log('use Gas: ' + amount );
     if (amount < 0) {
       throw new Error('Negative gas deduction requested')
     }
@@ -163,7 +165,7 @@ module.exports = class Interface {
   callDataCopy (offset, dataOffset, length) {
     this.takeGas(3 + Math.ceil(length / 32) * 3)
 
-    const callData = this.environment.callData.slice(dataOffset, dataOffset + length)
+    const callData = ethUtil.setLengthRight(Buffer.from(this.environment.callData.slice(dataOffset, dataOffset + length)), length)
     this.setMemory(offset, length, callData)
   }
 
@@ -175,7 +177,8 @@ module.exports = class Interface {
    */
   callDataCopy256 (offset, dataOffset) {
     this.takeGas(3)
-    const callData = this.environment.callData.slice(dataOffset, dataOffset + 32)
+
+    const callData = ethUtil.setLengthRight(Buffer.from(this.environment.callData.slice(dataOffset, dataOffset + 32)), U256_SIZE_BYTES)
     this.setMemory(offset, U256_SIZE_BYTES, callData)
   }
 

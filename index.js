@@ -89,7 +89,8 @@ module.exports = class Kernel {
       // throw new Error('Not an eWASM contract')
 
       // Transcompile code
-      code = this.callHandler({ to: transcompilerContract, data: code }).returnValue
+      // FIXME: decide if these are the right values here: from: 0, gasLimit: 0, value: 0
+      code = this.callHandler({ from: Address.zero(), to: transcompilerContract, gasLimit: 0, value: new U256(0), data: code }).returnValue
     }
 
     // creats a new Kernel
@@ -130,7 +131,8 @@ module.exports = class Kernel {
 
     // Inject metering
     if (Utils.isWASMCode(code)) {
-      code = this.callHandler({ to: meteringContract, data: code }).returnValue
+      // FIXME: decide if these are the right values here: from: 0, gasLimit: 0, value: 0
+      code = this.callHandler({ from: Address.zero(), to: meteringContract, gasLimit: 0, value: new U256(0), data: code }).returnValue
     }
 
     let address = Utils.newAccountAddress(create.from, code)
@@ -141,7 +143,8 @@ module.exports = class Kernel {
     })
 
     // Run code and take return value as contract code
-    code = this.callHandler({ from: create.from, to: address, gasLimit: create.gasLimit }).returnValue
+    // FIXME: decide if these are the right values here: value: 0, data: ''
+    code = this.callHandler({ from: create.from, to: address, gasLimit: create.gasLimit, value: new U256(0), data: new Uint8Array() }).returnValue
 
     this.environment.state.get(address.toString()).set('code', code)
 

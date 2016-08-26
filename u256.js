@@ -1,7 +1,7 @@
 const BN = require('bn.js')
 const ethUtil = require('ethereumjs-util')
 
-const U256 = module.exports = class U256 {
+module.exports = class U256 {
   constructor (value) {
     // bn.js still doesn't support hex prefixes...
     if ((typeof value === 'string') && ethUtil.isHexPrefixed(value)) {

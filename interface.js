@@ -198,11 +198,11 @@ module.exports = class Interface {
    * @param {integer} codeOffset the code offset
    * @param {integer} length the length of code to copy
    */
-  codeCopy (resultOffset, codeOffset, length) {
+  codeCopy (offset, dataOffset, length) {
     this.takeGas(3 + Math.ceil(length / 32) * 3)
 
-    const code = ethUtil.setLengthRight(Buffer.from(this.environment.code, codeOffset, length), length)
-    this.setMemory(resultOffset, length, code)
+    const code = ethUtil.setLengthRight(Buffer.from(this.environment.code.slice(dataOffset, dataOffset + length)), length)
+    this.setMemory(offset, length, code)
   }
 
   /**

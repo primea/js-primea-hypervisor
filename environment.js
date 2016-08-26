@@ -44,7 +44,7 @@ module.exports = class Environment {
   getBalance (address) {
     const account = this.state.get(address.toString())
     if (account) {
-      return account['balance']
+      return account.get('balance')
     } else {
       return new U256()
     }
@@ -53,7 +53,7 @@ module.exports = class Environment {
   getCode (address) {
     const account = this.state.get(address.toString())
     if (account) {
-      return account['code']
+      return account.get('code')
     } else {
       return Uint8Array.from(new Buffer([]))
     }

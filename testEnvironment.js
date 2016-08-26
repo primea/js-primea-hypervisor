@@ -17,9 +17,9 @@ module.exports = class TestEnvironment extends Environment {
     if (data.accounts) {
       data.accounts.forEach((account) => {
         let tmp = account[1]
-        self.state.set(new Address(account[0]).toString(), new Map(
-          [['balance', new U256(tmp.balance)]]
-        ))
+        self.addAccount(new Address(account[0]), {
+          balance: new U256(tmp.balance)
+        })
       })
     }
 

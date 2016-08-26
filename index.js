@@ -89,7 +89,8 @@ module.exports = class Kernel {
       // throw new Error('Not an eWASM contract')
 
       // Transcompile code
-      code = this.callHandler({ to: transcompilerContract, data: code }).returnValue
+      // FIXME: decide if these are the right values here: from: 0, gasLimit: 0, value: 0
+      code = this.callHandler({ from: Address.zero(), to: transcompilerContract, gasLimit: 0, value: new U256(0), data: code }).returnValue
     }
 
     // creats a new Kernel
@@ -106,7 +107,8 @@ module.exports = class Kernel {
     environment.callValue = call.value
     environment.gasLeft = call.gasLimit
 
-    // environment.setCallHandler(callHandler)
+    // environment.setCallHandler(this.callHandler)
+    // environment.setCreateHandler(this.createHandler)
 
     const kernel = new Kernel(this, environment)
     kernel.codeHandler(code, new Interface(environment))
@@ -121,6 +123,33 @@ module.exports = class Kernel {
       returnValue: environment.returnValue,
       selfDestructAddress: environment.selfDestructAddress,
       logs: environment.logs
+    }
+  }
+
+  createHandler (create) {
+    let code = create.data
+
+    // Inject metering
+    if (Utils.isWASMCode(code)) {
+      // FIXME: decide if these are the right values here: from: 0, gasLimit: 0, value: 0
+      code = this.callHandler({ from: Address.zero(), to: meteringContract, gasLimit: 0, value: new U256(0), data: code }).returnValue
+    }
+
+    let address = Utils.newAccountAddress(create.from, code)
+
+    this.environment.addAccount(address.toString(), {
+      balance: create.value,
+      code: code
+    })
+
+    // Run code and take return value as contract code
+    // FIXME: decide if these are the right values here: value: 0, data: ''
+    code = this.callHandler({ from: create.from, to: address, gasLimit: create.gasLimit, value: new U256(0), data: new Uint8Array() }).returnValue
+
+    this.environment.state.get(address.toString()).set('code', code)
+
+    return {
+      accountCreated: address
     }
   }
 
@@ -152,21 +181,14 @@ module.exports = class Kernel {
       if (tx.data.length !== 0) {
         console.log('This is a contract deployment transaction')
 
-        // Inject metering
-        const code = this.callHandler({ to: meteringContract, data: tx.data }).returnValue
-
-        let address = Utils.newAccountAddress(tx.from, code)
-
-        this.environment.addAccount(address.toString(), {
-          balance: tx.value,
-          code: code
-        })
-
         // FIXME: deduct fees
 
-        return {
-          accountCreated: address
-        }
+        return this.createHandler({
+          from: tx.from,
+          gasLimit: tx.gasLimit,
+          value: tx.value,
+          data: tx.data
+        })
       }
     }
 

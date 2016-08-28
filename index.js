@@ -206,10 +206,20 @@ module.exports = class Kernel {
 
     fromAccount.set('balance', fromAccount.get('balance').sub(tx.gasLimit.mul(tx.gasPrice)))
 
+    // This cost will not be refunded
+    let txCost = 21000
+    tx.data.forEach((item) => {
+      if (item === 0) {
+        txCost += 4
+      } else {
+        txCost += 68
+      }
+    })
+
     let ret = this.callHandler({
       to: tx.to,
       from: tx.from,
-      gasLimit: tx.gasLimit,
+      gasLimit: tx.gasLimit - txCost,
       value: tx.value,
       data: tx.data
     })

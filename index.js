@@ -183,24 +183,19 @@ module.exports = class Kernel {
 
     fromAccount.set('nonce', fromAccount.get('nonce').add(new U256(1)))
 
+    let isCreation = false
+
     // Special case: contract deployment
     if (tx.to.isZero()) {
       if (tx.data.length !== 0) {
         console.log('This is a contract deployment transaction')
 
-        // FIXME: deduct fees
-
-        return this.createHandler({
-          from: tx.from,
-          gasLimit: tx.gasLimit,
-          value: tx.value,
-          data: tx.data
-        })
+        isCreation = true
       }
     }
 
     // This cost will not be refunded
-    let txCost = 21000
+    let txCost = 21000 + (isCreation ? 32000 : 0)
     tx.data.forEach((item) => {
       if (item === 0) {
         txCost += 4
@@ -220,7 +215,8 @@ module.exports = class Kernel {
     // deduct gasLimit * gasPrice from sender
     fromAccount.set('balance', fromAccount.get('balance').sub(tx.gasLimit.mul(tx.gasPrice)))
 
-    let ret = this.callHandler({
+    const handler = isCreation ? this.createHandler.bind(this) : this.callHandler.bind(this)
+    let ret = handler({
       to: tx.to,
       from: tx.from,
       gasLimit: tx.gasLimit - txCost,
@@ -236,7 +232,8 @@ module.exports = class Kernel {
     // save new state?
 
     return {
-      returnValue: ret.returnValue,
+      accountCreated: isCreation ? ret.accountCreated : undefined,
+      returnValue: isCreation ? undefined : ret.returnValue,
       gasLeft: ret.gasLeft,
       logs: ret.logs
     }

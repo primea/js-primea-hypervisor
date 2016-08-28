@@ -156,7 +156,11 @@ module.exports = class Kernel {
     this.environment.state.get(address.toString()).set('code', code)
 
     return {
-      accountCreated: address
+      executionOutcome: 1, // success
+      gasLeft: new U256(this.environment.gasLeft),
+      gasRefund: new U256(this.environment.gasRefund),
+      accountCreated: address,
+      logs: this.environment.logs
     }
   }
 
@@ -229,6 +233,7 @@ module.exports = class Kernel {
     // save new state?
 
     return {
+      executionOutcome: ret.executionOutcome,
       accountCreated: isCreation ? ret.accountCreated : undefined,
       returnValue: isCreation ? undefined : ret.returnValue,
       gasLeft: ret.gasLeft,

@@ -353,14 +353,17 @@ module.exports = class Interface {
    * @param {integer} valueOffset the offset in memory to the value from
    * @param {integer} dataOffset the offset to load the code for the new contract from
    * @param {integer} length the data length
+   * @param (integer} resultOffset the offset to write the new contract address to
+   * @return {integer} Return 1 or 0 depending on if the VM trapped on the message or not
    */
-  create (valueOffset, dataOffset, length) {
+  create (valueOffset, dataOffset, length, resultOffset) {
     this.takeGas(32000)
 
     const value = U256.fromMemory(this.getMemory(valueOffset, U128_SIZE_BYTES))
     const data = this.getMemory(dataOffset, length).slice(0)
-    const result = this.environment.create(value, data)
-    return result
+    const [result, errorCode] = this.environment.create(value, data)
+    this.setMemory(resultOffset, ADDRESS_SIZE_BYTES, result)
+    return errorCode
   }
 
   /**

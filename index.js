@@ -186,12 +186,9 @@ module.exports = class Kernel {
     let isCreation = false
 
     // Special case: contract deployment
-    if (tx.to.isZero()) {
-      if (tx.data.length !== 0) {
-        console.log('This is a contract deployment transaction')
-
-        isCreation = true
-      }
+    if (tx.to.isZero() && (tx.data.length !== 0)) {
+      console.log('This is a contract deployment transaction')
+      isCreation = true
     }
 
     // This cost will not be refunded

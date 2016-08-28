@@ -46,13 +46,4 @@ module.exports = class Transaction {
     }
     return new Address(this._tx.to)
   }
-
-  get isSend () {
-  }
-
-  get isContractCall () {
-  }
-
-  get isContractDeployment () {
-  }
 }

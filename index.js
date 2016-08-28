@@ -120,6 +120,14 @@ module.exports = class Kernel {
     const kernel = new Kernel(environment)
     kernel.codeHandler(code, new Interface(environment))
 
+    // self destructed
+    if (environment.selfDestruct) {
+      const balance = this.state.get(call.to.toString()).get('balance')
+      const beneficiary = this.state.get(environment.selfDestructAddress)
+      beneficiary.set('balance', beneficiary.get('balance').add(balance))
+      this.state.delete(call.to.toString())
+    }
+
     // generate new stateroot
     // this.environment.state.set(address, { stateRoot: stateRoot })
 
@@ -128,6 +136,7 @@ module.exports = class Kernel {
       gasLeft: new U256(environment.gasLeft),
       gasRefund: new U256(environment.gasRefund),
       returnValue: environment.returnValue,
+      selfDestruct: environment.selfDestruct,
       selfDestructAddress: environment.selfDestructAddress,
       logs: environment.logs
     }
@@ -153,10 +162,16 @@ module.exports = class Kernel {
     // FIXME: decide if these are the right values here: value: 0, data: ''
     code = this.callHandler({ from: create.from, to: address, gasLimit: create.gasLimit, value: new U256(0), data: new Uint8Array() }).returnValue
 
+    // FIXME: special handling for selfdestruct
+
     this.environment.state.get(address.toString()).set('code', code)
 
     return {
-      accountCreated: address
+      executionOutcome: 1, // success
+      gasLeft: new U256(this.environment.gasLeft),
+      gasRefund: new U256(this.environment.gasRefund),
+      accountCreated: address,
+      logs: this.environment.logs
     }
   }
 
@@ -183,31 +198,16 @@ module.exports = class Kernel {
 
     fromAccount.set('nonce', fromAccount.get('nonce').add(new U256(1)))
 
+    let isCreation = false
+
     // Special case: contract deployment
-    if (tx.to.isZero()) {
-      if (tx.data.length !== 0) {
-        console.log('This is a contract deployment transaction')
-
-        // FIXME: deduct fees
-
-        return this.createHandler({
-          from: tx.from,
-          gasLimit: tx.gasLimit,
-          value: tx.value,
-          data: tx.data
-        })
-      }
+    if (tx.to.isZero() && (tx.data.length !== 0)) {
+      console.log('This is a contract deployment transaction')
+      isCreation = true
     }
-
-    // deduct gasLimit * gasPrice from sender
-    if (fromAccount.get('balance').lt(tx.gasLimit.mul(tx.gasPrice))) {
-      throw new Error(`Insufficient account balance: ${fromAccount.get('balance').toString()} < ${tx.gasLimit.mul(tx.gasPrice).toString()}`)
-    }
-
-    fromAccount.set('balance', fromAccount.get('balance').sub(tx.gasLimit.mul(tx.gasPrice)))
 
     // This cost will not be refunded
-    let txCost = 21000
+    let txCost = 21000 + (isCreation ? 32000 : 0)
     tx.data.forEach((item) => {
       if (item === 0) {
         txCost += 4
@@ -216,7 +216,19 @@ module.exports = class Kernel {
       }
     })
 
-    let ret = this.callHandler({
+    if (tx.gasLimit.lt(new U256(txCost))) {
+      throw new Error(`Minimum transaction gas limit not met: ${txCost}`)
+    }
+
+    if (fromAccount.get('balance').lt(tx.gasLimit.mul(tx.gasPrice))) {
+      throw new Error(`Insufficient account balance: ${fromAccount.get('balance').toString()} < ${tx.gasLimit.mul(tx.gasPrice).toString()}`)
+    }
+
+    // deduct gasLimit * gasPrice from sender
+    fromAccount.set('balance', fromAccount.get('balance').sub(tx.gasLimit.mul(tx.gasPrice)))
+
+    const handler = isCreation ? this.createHandler.bind(this) : this.callHandler.bind(this)
+    let ret = handler({
       to: tx.to,
       from: tx.from,
       gasLimit: tx.gasLimit - txCost,
@@ -224,7 +236,7 @@ module.exports = class Kernel {
       data: tx.data
     })
 
-    // refund gas
+    // refund unused gas
     if (ret.executionOutcome === 1) {
       fromAccount.set('balance', fromAccount.get('balance').add(tx.gasPrice.mul(ret.gasLeft.add(ret.gasRefund))))
     }
@@ -232,7 +244,9 @@ module.exports = class Kernel {
     // save new state?
 
     return {
-      returnValue: ret.returnValue,
+      executionOutcome: ret.executionOutcome,
+      accountCreated: isCreation ? ret.accountCreated : undefined,
+      returnValue: isCreation ? undefined : ret.returnValue,
       gasLeft: ret.gasLeft,
       logs: ret.logs
     }

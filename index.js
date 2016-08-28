@@ -117,7 +117,7 @@ module.exports = class Kernel {
     environment.callHandler = this.callHandler.bind(this)
     environment.createHandler = this.createHandler.bind(this)
 
-    const kernel = new Kernel(this, environment)
+    const kernel = new Kernel(environment)
     kernel.codeHandler(code, new Interface(environment))
 
     // generate new stateroot

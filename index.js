@@ -33,6 +33,10 @@ module.exports = class Kernel {
   // runs some code in the VM
   constructor (environment = new Environment()) {
     this.environment = environment
+
+    this.environment.addAccount(identityContract, {})
+    this.environment.addAccount(meteringContract, {})
+    this.environment.addAccount(transcompilerContract, {})
   }
 
   // handles running code.

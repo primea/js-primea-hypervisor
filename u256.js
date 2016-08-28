@@ -35,6 +35,10 @@ module.exports = class U256 {
     return this._value.toBuffer('be', width || 32)
   }
 
+  isZero () {
+    return this._value.isZero()
+  }
+
   sub (u256) {
     return new U256(this._value.sub(u256._value))
   }

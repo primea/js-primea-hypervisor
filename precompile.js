@@ -16,3 +16,9 @@ module.exports.transcompiler = function (call) {
     returnValue: call.data.slice(0)
   }
 }
+
+module.exports.identity = function (call) {
+  return {
+    returnValue: call.data.slice(0)
+  }
+}

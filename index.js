@@ -25,6 +25,7 @@ const Utils = require('./utils.js')
 const Transaction = require('./transaction.js')
 const Precompile = require('./precompile.js')
 
+const identityContract = new Address('0x0000000000000000000000000000000000000004')
 const meteringContract = new Address('0x000000000000000000000000000000000000000A')
 const transcompilerContract = new Address('0x000000000000000000000000000000000000000B')
 
@@ -73,6 +74,8 @@ module.exports = class Kernel {
       return Precompile.meteringInjector(call)
     } else if (call.to.equals(transcompilerContract)) {
       return Precompile.transcompiler(call)
+    } else if (call.to.equals(identityContract)) {
+      return Precompile.identity(call)
     }
 
     let account = this.environment.state.get(call.to.toString())

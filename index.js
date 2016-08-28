@@ -107,8 +107,8 @@ module.exports = class Kernel {
     environment.callValue = call.value
     environment.gasLeft = call.gasLimit
 
-    // environment.setCallHandler(this.callHandler)
-    // environment.setCreateHandler(this.createHandler)
+    environment.callHandler = this.callHandler.bind(this)
+    environment.createHandler = this.createHandler.bind(this)
 
     const kernel = new Kernel(this, environment)
     kernel.codeHandler(code, new Interface(environment))

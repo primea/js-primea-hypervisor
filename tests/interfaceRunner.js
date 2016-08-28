@@ -29,6 +29,7 @@ for (let testName of tests) {
     const testContract = new Kernel(environment)
     const ethInterface = new Interface(environment, testContract)
     const debugInterface = new DebugInterface()
+    environment.callHandler = testContract.callHandler.bind(testContract)
 
     try {
       const mod = Wasm.instantiateModule(buffer, {

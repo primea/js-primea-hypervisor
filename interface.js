@@ -393,7 +393,7 @@ module.exports = class Interface {
     // Special case for non-zero value
     if (!value.isZero()) {
       this.takeGas(9000)
-      gas += 2300;
+      gas += 2300
     }
 
     const [errorCode, result] = this.environment.call(gas, address, value, data)
@@ -505,7 +505,8 @@ module.exports = class Interface {
    * @param {integer} offset the offset to load the address from
    */
   selfDestruct (addressOffset) {
-    this.environment.suicideAddress = Address.fromMemory(this.getMemory(addressOffset, ADDRESS_SIZE_BYTES))
+    this.environment.selfDestruct = true
+    this.environment.selfDestructAddress = Address.fromMemory(this.getMemory(addressOffset, ADDRESS_SIZE_BYTES))
     this.environment.gasRefund += 24000
   }
 

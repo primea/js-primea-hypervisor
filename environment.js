@@ -22,6 +22,7 @@ module.exports = class Environment {
       code: new Uint8Array(), // the current running code
       // output calls
       logs: [],
+      selfDestruct: false,
       selfDestructAddress: new Address('0x0000000000000000000000000000000000000000'),
       // more output calls
       returnValue: new Uint8Array()

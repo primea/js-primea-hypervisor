@@ -120,6 +120,14 @@ module.exports = class Kernel {
     const kernel = new Kernel(environment)
     kernel.codeHandler(code, new Interface(environment))
 
+    // self destructed
+    if (environment.selfDestruct) {
+      const balance = this.state.get(call.to.toString()).get('balance')
+      const beneficiary = this.state.get(environment.selfDestructAddress)
+      beneficiary.set('balance', beneficiary.get('balance').add(balance))
+      this.state.delete(call.to.toString())
+    }
+
     // generate new stateroot
     // this.environment.state.set(address, { stateRoot: stateRoot })
 
@@ -128,6 +136,7 @@ module.exports = class Kernel {
       gasLeft: new U256(environment.gasLeft),
       gasRefund: new U256(environment.gasRefund),
       returnValue: environment.returnValue,
+      selfDestruct: environment.selfDestruct,
       selfDestructAddress: environment.selfDestructAddress,
       logs: environment.logs
     }
@@ -152,6 +161,8 @@ module.exports = class Kernel {
     // Run code and take return value as contract code
     // FIXME: decide if these are the right values here: value: 0, data: ''
     code = this.callHandler({ from: create.from, to: address, gasLimit: create.gasLimit, value: new U256(0), data: new Uint8Array() }).returnValue
+
+    // FIXME: special handling for selfdestruct
 
     this.environment.state.get(address.toString()).set('code', code)
 

@@ -199,13 +199,6 @@ module.exports = class Kernel {
       }
     }
 
-    // deduct gasLimit * gasPrice from sender
-    if (fromAccount.get('balance').lt(tx.gasLimit.mul(tx.gasPrice))) {
-      throw new Error(`Insufficient account balance: ${fromAccount.get('balance').toString()} < ${tx.gasLimit.mul(tx.gasPrice).toString()}`)
-    }
-
-    fromAccount.set('balance', fromAccount.get('balance').sub(tx.gasLimit.mul(tx.gasPrice)))
-
     // This cost will not be refunded
     let txCost = 21000
     tx.data.forEach((item) => {
@@ -216,6 +209,17 @@ module.exports = class Kernel {
       }
     })
 
+    if (tx.gasLimit.lt(new U256(txCost))) {
+      throw new Error(`Minimum transaction gas limit not met: ${txCost}`)
+    }
+
+    if (fromAccount.get('balance').lt(tx.gasLimit.mul(tx.gasPrice))) {
+      throw new Error(`Insufficient account balance: ${fromAccount.get('balance').toString()} < ${tx.gasLimit.mul(tx.gasPrice).toString()}`)
+    }
+
+    // deduct gasLimit * gasPrice from sender
+    fromAccount.set('balance', fromAccount.get('balance').sub(tx.gasLimit.mul(tx.gasPrice)))
+
     let ret = this.callHandler({
       to: tx.to,
       from: tx.from,
@@ -224,7 +228,7 @@ module.exports = class Kernel {
       data: tx.data
     })
 
-    // refund gas
+    // refund unused gas
     if (ret.executionOutcome === 1) {
       fromAccount.set('balance', fromAccount.get('balance').add(tx.gasPrice.mul(ret.gasLeft.add(ret.gasRefund))))
     }

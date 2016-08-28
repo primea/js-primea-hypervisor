@@ -41,6 +41,15 @@ module.exports = class Environment {
     this.state.set(address.toString(), account)
   }
 
+  isAccountPresent (address) {
+    const account = this.state.get(address.toString())
+    if (account) {
+      return true
+    } else {
+      return false
+    }
+  }
+
   getBalance (address) {
     const account = this.state.get(address.toString())
     if (account) {

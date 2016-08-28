@@ -361,7 +361,7 @@ module.exports = class Interface {
 
     const value = U256.fromMemory(this.getMemory(valueOffset, U128_SIZE_BYTES))
     const data = this.getMemory(dataOffset, length).slice(0)
-    const [address, errorCode] = this.environment.create(value, data)
+    const [errorCode, address] = this.environment.create(value, data)
     this.setMemory(resultOffset, ADDRESS_SIZE_BYTES, address.toMemory())
     return errorCode
   }
@@ -385,8 +385,7 @@ module.exports = class Interface {
     const address = Address.fromMemory(this.getMemory(addressOffset, ADDRESS_SIZE_BYTES))
     const value = U256.fromMemory(this.getMemory(valueOffset, U128_SIZE_BYTES))
     const data = this.getMemory(dataOffset, dataLength).slice(0)
-    // Run the call
-    const [result, errorCode] = this.environment.call(gas, address, value, data)
+    const [errorCode, result] = this.environment.call(gas, address, value, data)
     this.setMemory(resultOffset, resultLength, result)
     return errorCode
   }
@@ -410,8 +409,7 @@ module.exports = class Interface {
     const address = Address.fromMemory(this.getMemory(addressOffset, ADDRESS_SIZE_BYTES))
     const value = U256.fromMemory(this.getMemory(valueOffset, U128_SIZE_BYTES))
     const data = this.getMemory(dataOffset, dataLength).slice(0)
-    // Run the call
-    const [result, errorCode] = this.environment.callCode(gas, address, value, data)
+    const [errorCode, result] = this.environment.callCode(gas, address, value, data)
     this.setMemory(resultOffset, resultLength, result)
     return errorCode
   }
@@ -434,7 +432,7 @@ module.exports = class Interface {
 
     const data = this.getMemory(dataOffset, dataLength).slice(0)
     const address = Address.fromMemory(this.getMemory(addressOffset, ADDRESS_SIZE_BYTES))
-    const [result, errorCode] = this.environment.callDelegate(gas, address, data)
+    const [errorCode, result] = this.environment.callDelegate(gas, address, data)
     this.setMemory(resultOffset, resultLength, result)
     return errorCode
   }

@@ -41,6 +41,15 @@ module.exports = class Environment {
     this.state.set(address.toString(), account)
   }
 
+  isAccountPresent (address) {
+    const account = this.state.get(address.toString())
+    if (account) {
+      return true
+    } else {
+      return false
+    }
+  }
+
   getBalance (address) {
     const account = this.state.get(address.toString())
     if (account) {
@@ -63,6 +72,14 @@ module.exports = class Environment {
     return this.blockchain.getBlock(height).hash()
   }
 
+  set createHandler (value) {
+    this.createhandler = value
+  }
+
+  set callHandler (value) {
+    this.callhandler = value
+  }
+
   // kernal
   create (code, value) {
     // STUB
@@ -70,8 +87,15 @@ module.exports = class Environment {
   }
 
   call (gas, address, value, data) {
-    // STUB
-    return [ 1, new Uint8Array() ]
+    // FIXME: create a child environment here
+    const ret = this.callhandler({
+      from: this.address,
+      to: address,
+      gasLimit: gas,
+      value: value,
+      data: data
+    })
+    return [ !!ret.executionOutcome, ret.returnValue ]
   }
 
   callCode (gas, address, value, data) {

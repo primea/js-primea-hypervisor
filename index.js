@@ -25,6 +25,7 @@ const Utils = require('./utils.js')
 const Transaction = require('./transaction.js')
 const Precompile = require('./precompile.js')
 
+const identityContract = new Address('0x0000000000000000000000000000000000000004')
 const meteringContract = new Address('0x000000000000000000000000000000000000000A')
 const transcompilerContract = new Address('0x000000000000000000000000000000000000000B')
 
@@ -32,6 +33,10 @@ module.exports = class Kernel {
   // runs some code in the VM
   constructor (environment = new Environment()) {
     this.environment = environment
+
+    this.environment.addAccount(identityContract, {})
+    this.environment.addAccount(meteringContract, {})
+    this.environment.addAccount(transcompilerContract, {})
   }
 
   // handles running code.
@@ -73,6 +78,8 @@ module.exports = class Kernel {
       return Precompile.meteringInjector(call)
     } else if (call.to.equals(transcompilerContract)) {
       return Precompile.transcompiler(call)
+    } else if (call.to.equals(identityContract)) {
+      return Precompile.identity(call)
     }
 
     let account = this.environment.state.get(call.to.toString())
@@ -107,10 +114,10 @@ module.exports = class Kernel {
     environment.callValue = call.value
     environment.gasLeft = call.gasLimit
 
-    // environment.setCallHandler(this.callHandler)
-    // environment.setCreateHandler(this.createHandler)
+    environment.callHandler = this.callHandler.bind(this)
+    environment.createHandler = this.createHandler.bind(this)
 
-    const kernel = new Kernel(this, environment)
+    const kernel = new Kernel(environment)
     kernel.codeHandler(code, new Interface(environment))
 
     // generate new stateroot
@@ -199,10 +206,20 @@ module.exports = class Kernel {
 
     fromAccount.set('balance', fromAccount.get('balance').sub(tx.gasLimit.mul(tx.gasPrice)))
 
+    // This cost will not be refunded
+    let txCost = 21000
+    tx.data.forEach((item) => {
+      if (item === 0) {
+        txCost += 4
+      } else {
+        txCost += 68
+      }
+    })
+
     let ret = this.callHandler({
       to: tx.to,
       from: tx.from,
-      gasLimit: tx.gasLimit,
+      gasLimit: tx.gasLimit - txCost,
       value: tx.value,
       data: tx.data
     })

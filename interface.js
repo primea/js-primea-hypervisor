@@ -361,8 +361,8 @@ module.exports = class Interface {
 
     const value = U256.fromMemory(this.getMemory(valueOffset, U128_SIZE_BYTES))
     const data = this.getMemory(dataOffset, length).slice(0)
-    const [result, errorCode] = this.environment.create(value, data)
-    this.setMemory(resultOffset, ADDRESS_SIZE_BYTES, result)
+    const [address, errorCode] = this.environment.create(value, data)
+    this.setMemory(resultOffset, ADDRESS_SIZE_BYTES, address.toMemory())
     return errorCode
   }
 

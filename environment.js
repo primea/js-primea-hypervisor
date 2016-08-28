@@ -66,20 +66,21 @@ module.exports = class Environment {
   // kernal
   create (code, value) {
     // STUB
+    return [ 1, Address.zero() ]
   }
 
   call (gas, address, value, data) {
     // STUB
-    return // result
+    return [ 1, new Uint8Array() ]
   }
 
   callCode (gas, address, value, data) {
     // STUB
-    return // result
+    return [ 1, new Uint8Array() ]
   }
 
   delegateCall (gas, address, data) {
     // STUB
-    return // result
+    return [ 1, new Uint8Array() ]
   }
 }

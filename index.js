@@ -98,6 +98,12 @@ module.exports = class Kernel {
       // Transcompile code
       // FIXME: decide if these are the right values here: from: 0, gasLimit: 0, value: 0
       code = this.callHandler({ from: Address.zero(), to: transcompilerContract, gasLimit: 0, value: new U256(0), data: code }).returnValue
+
+      if (code[0] === 0) {
+        code = code.slice(1)
+      } else {
+        throw new Error('Transcompilation failed: ' + Buffer.from(code).slice(1).toString())
+      }
     }
 
     // creats a new Kernel
@@ -149,6 +155,12 @@ module.exports = class Kernel {
     if (Utils.isWASMCode(code)) {
       // FIXME: decide if these are the right values here: from: 0, gasLimit: 0, value: 0
       code = this.callHandler({ from: Address.zero(), to: meteringContract, gasLimit: 0, value: new U256(0), data: code }).returnValue
+
+      if (code[0] === 0) {
+        code = code.slice(1)
+      } else {
+        throw new Error('Metering injection failed: ' + Buffer.from(code).slice(1).toString())
+      }
     }
 
     let address = Utils.newAccountAddress(create.from, code)

@@ -150,7 +150,7 @@ module.exports = class Interface {
   getCallDataSize () {
     this.takeGas(2)
 
-    return this.environment.callData.length
+    return this.environment.callData.byteLength
   }
 
   /**
@@ -163,7 +163,7 @@ module.exports = class Interface {
   callDataCopy (offset, dataOffset, length) {
     this.takeGas(3 + Math.ceil(length / 32) * 3)
 
-    const callData = this.environment.callData.slice(dataOffset, dataOffset + length)
+    const callData = new Uint8Array(this.environment.callData.slice(dataOffset, dataOffset + length))
     this.setMemory(offset, length, callData)
   }
 
@@ -175,7 +175,7 @@ module.exports = class Interface {
    */
   callDataCopy256 (offset, dataOffset) {
     this.takeGas(3)
-    const callData = this.environment.callData.slice(dataOffset, dataOffset + 32)
+    const callData = new Uint8Array(this.environment.callData.slice(dataOffset, dataOffset + 32))
     this.setMemory(offset, U256_SIZE_BYTES, callData)
   }
 
@@ -186,7 +186,7 @@ module.exports = class Interface {
   getCodeSize () {
     this.takeGas(2)
 
-    return this.environment.code.length
+    return this.environment.code.byteLength
   }
 
   /**
@@ -198,7 +198,7 @@ module.exports = class Interface {
   codeCopy (resultOffset, codeOffset, length) {
     this.takeGas(3 + Math.ceil(length / 32) * 3)
 
-    const code = new Uint8Array(this.environment.code, codeOffset, length)
+    const code = new Uint8Array(this.environment.code.slice(codeOffset, codeOffset + length))
     this.setMemory(resultOffset, length, code)
   }
 
@@ -212,7 +212,7 @@ module.exports = class Interface {
 
     const address = Address.fromMemory(this.getMemory(addressOffset, ADDRESS_SIZE_BYTES))
     const code = this.environment.getCode(address)
-    return code.length
+    return code.byteLength
   }
 
   /**
@@ -227,7 +227,7 @@ module.exports = class Interface {
 
     const address = Address.fromMemory(this.getMemory(addressOffset, ADDRESS_SIZE_BYTES))
     let code = this.environment.getCode(address)
-    code = new Uint8Array(code, codeOffset, length)
+    code = new Uint8Array(code.slice(codeOffset, codeOffset + length))
     this.setMemory(resultOffset, length, code)
   }
 

@@ -198,7 +198,7 @@ module.exports = class Interface {
   codeCopy (resultOffset, codeOffset, length) {
     this.takeGas(3 + Math.ceil(length / 32) * 3)
 
-    const code = new Uint8Array(this.environment.code, codeOffset, length)
+    const code = this.environment.code.slice(codeOffset, codeOffset + length)
     this.setMemory(resultOffset, length, code)
   }
 
@@ -227,7 +227,7 @@ module.exports = class Interface {
 
     const address = Address.fromMemory(this.getMemory(addressOffset, ADDRESS_SIZE_BYTES))
     let code = this.environment.getCode(address)
-    code = new Uint8Array(code, codeOffset, length)
+    code = code.slice(codeOffset, codeOffset + length)
     this.setMemory(resultOffset, length, code)
   }
 

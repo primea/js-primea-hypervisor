@@ -487,7 +487,7 @@ module.exports = class Interface {
     this.takeGas(50)
 
     const path = new Buffer(this.getMemory(pathOffset, U256_SIZE_BYTES)).toString('hex')
-    const result = this.environment.state.get(path)
+    const result = this.environment.state.get(path) || new Uint8Array(32)
     this.setMemory(resultOffset, U256_SIZE_BYTES, result)
   }
 

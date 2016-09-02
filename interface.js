@@ -4,6 +4,8 @@
  */
 const Address = require('./address.js')
 const U256 = require('./u256.js')
+const fs = require('fs')
+const path = require('path')
 
 const U128_SIZE_BYTES = 16
 const ADDRESS_SIZE_BYTES = 20
@@ -13,6 +15,15 @@ const U256_SIZE_BYTES = 32
 module.exports = class Interface {
   constructor (environment) {
     this.environment = environment
+    const shimBin = fs.readFileSync(path.join(__dirname, '/wasm/interface.wasm'))
+    const shimMod = WebAssembly.Module(shimBin)
+    const shim = WebAssembly.Instance(shimMod, {
+      'interface': {
+        'useGas': this._useGas.bind(this)
+      }
+    })
+    this.useGas = shim.exports.useGas
+    // this.useGas = this._useGas
   }
 
   get exportTable () {
@@ -64,11 +75,18 @@ module.exports = class Interface {
    * Subtracts an amount to the gas counter
    * @param {integer} amount the amount to subtract to the gas counter
    */
-  useGas (amount) {
-    if (amount < 0) {
+  _useGas (high, low) {
+    if (high < 0) {
       // convert from a 32-bit two's compliment
-      amount = 0x100000000 - amount
+      high = 0x100000000 - high
     }
+
+    if (low < 0) {
+      // convert from a 32-bit two's compliment
+      low = 0x100000000 - low
+    }
+
+    const amount = (high << 32) + low
 
     this.takeGas(amount)
   }

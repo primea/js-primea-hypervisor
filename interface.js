@@ -66,7 +66,8 @@ module.exports = class Interface {
    */
   useGas (amount) {
     if (amount < 0) {
-      throw new Error('Negative gas deduction requested')
+      // convert from a 32-bit two's compliment
+      amount = 0x100000000 - amount
     }
 
     this.takeGas(amount)

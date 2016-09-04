@@ -516,8 +516,10 @@ module.exports = class Interface {
   }
 
   setMemory (offset, length, value) {
-    const memory = new Uint8Array(this.module.exports.memory, offset, length)
-    memory.set(value)
+    if (value.length) {
+      const memory = new Uint8Array(this.module.exports.memory, offset, length)
+      memory.set(value)
+    }
   }
 
   /*

@@ -164,8 +164,10 @@ module.exports = class Interface {
   callDataCopy (offset, dataOffset, length) {
     this.takeGas(3 + Math.ceil(length / 32) * 3)
 
-    const callData = this.environment.callData.slice(dataOffset, dataOffset + length)
-    this.setMemory(offset, length, callData)
+    if (length) {
+      const callData = this.environment.callData.slice(dataOffset, dataOffset + length)
+      this.setMemory(offset, length, callData)
+    }
   }
 
   /**
@@ -199,8 +201,10 @@ module.exports = class Interface {
   codeCopy (resultOffset, codeOffset, length) {
     this.takeGas(3 + Math.ceil(length / 32) * 3)
 
-    const code = this.environment.code.slice(codeOffset, codeOffset + length)
-    this.setMemory(resultOffset, length, code)
+    if (length) {
+      const code = this.environment.code.slice(codeOffset, codeOffset + length)
+      this.setMemory(resultOffset, length, code)
+    }
   }
 
   /**
@@ -226,10 +230,12 @@ module.exports = class Interface {
   externalCodeCopy (addressOffset, resultOffset, codeOffset, length) {
     this.takeGas(20 + Math.ceil(length / 32) * 3)
 
-    const address = Address.fromMemory(this.getMemory(addressOffset, ADDRESS_SIZE_BYTES))
-    let code = this.environment.getCode(address)
-    code = code.slice(codeOffset, codeOffset + length)
-    this.setMemory(resultOffset, length, code)
+    if (length) {
+      const address = Address.fromMemory(this.getMemory(addressOffset, ADDRESS_SIZE_BYTES))
+      let code = this.environment.getCode(address)
+      code = code.slice(codeOffset, codeOffset + length)
+      this.setMemory(resultOffset, length, code)
+    }
   }
 
   /**
@@ -516,10 +522,8 @@ module.exports = class Interface {
   }
 
   setMemory (offset, length, value) {
-    if (value.length) {
-      const memory = new Uint8Array(this.module.exports.memory, offset, length)
-      memory.set(value)
-    }
+    const memory = new Uint8Array(this.module.exports.memory, offset, length)
+    memory.set(value)
   }
 
   /*

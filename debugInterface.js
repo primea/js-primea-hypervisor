@@ -37,7 +37,6 @@ module.exports = class DebugInterface {
         for (let i = sp; i >= 0; i -= 32) {
           console.log(`${(sp - i) / 32} ${this.getMemoryBuffer(i).reverse().toString('hex')}`)
         }
-        return sp
       }.bind(this)
     }
   }

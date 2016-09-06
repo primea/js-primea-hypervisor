@@ -330,8 +330,8 @@ module.exports = class Interface {
 
     this.takeGas(375 + length * 8 + numberOfTopics * 375)
 
-    const data = this.getMemory(dataOffset, length).slice(0)
-    let topics = []
+    const data = length ? this.getMemory(dataOffset, length).slice(0) : new Uint8Array([])
+    const topics = []
 
     if (numberOfTopics > 0) {
       topics.push(U256.fromMemory(this.getMemory(topic1, U256_SIZE_BYTES)))

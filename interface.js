@@ -539,33 +539,3 @@ module.exports = class Interface {
     this.environment.gasLeft -= amount
   }
 }
-
-//
-// Polyfill required unless this is sorted: https://bugs.chromium.org/p/chromium/issues/detail?id=633895
-//
-// Polyfill from: https://developer.mozilla.org/en/docs/Web/JavaScript/Reference/Global_objects/Function/bind
-//
-Function.prototype.bind = function (oThis) { // eslint-disable-line
-  if (typeof this !== 'function') {
-    // closest thing possible to the ECMAScript 5
-    // internal IsCallable function
-    throw new TypeError('Function.prototype.bind - what is trying to be bound is not callable')
-  }
-
-  var aArgs = Array.prototype.slice.call(arguments, 1)
-  var fToBind = this
-  var fNOP = function () {}
-  var fBound = function () {
-    return fToBind.apply(this instanceof fNOP ? this : oThis,
-     aArgs.concat(Array.prototype.slice.call(arguments)))
-  }
-
-  if (this.prototype) {
-    // Function.prototype doesn't have a prototype property
-    fNOP.prototype = this.prototype
-  }
-
-  fBound.prototype = new fNOP() // eslint-disable-line new-cap
-
-  return fBound
-}

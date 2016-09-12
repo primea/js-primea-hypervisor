@@ -182,8 +182,10 @@ module.exports = class Interface {
   callDataCopy (offset, dataOffset, length) {
     this.takeGas(3 + Math.ceil(length / 32) * 3)
 
-    const callData = this.environment.callData.slice(dataOffset, dataOffset + length)
-    this.setMemory(offset, length, callData)
+    if (length) {
+      const callData = this.environment.callData.slice(dataOffset, dataOffset + length)
+      this.setMemory(offset, length, callData)
+    }
   }
 
   /**
@@ -217,8 +219,10 @@ module.exports = class Interface {
   codeCopy (resultOffset, codeOffset, length) {
     this.takeGas(3 + Math.ceil(length / 32) * 3)
 
-    const code = this.environment.code.slice(codeOffset, codeOffset + length)
-    this.setMemory(resultOffset, length, code)
+    if (length) {
+      const code = this.environment.code.slice(codeOffset, codeOffset + length)
+      this.setMemory(resultOffset, length, code)
+    }
   }
 
   /**
@@ -244,10 +248,12 @@ module.exports = class Interface {
   externalCodeCopy (addressOffset, resultOffset, codeOffset, length) {
     this.takeGas(20 + Math.ceil(length / 32) * 3)
 
-    const address = Address.fromMemory(this.getMemory(addressOffset, ADDRESS_SIZE_BYTES))
-    let code = this.environment.getCode(address)
-    code = code.slice(codeOffset, codeOffset + length)
-    this.setMemory(resultOffset, length, code)
+    if (length) {
+      const address = Address.fromMemory(this.getMemory(addressOffset, ADDRESS_SIZE_BYTES))
+      let code = this.environment.getCode(address)
+      code = code.slice(codeOffset, codeOffset + length)
+      this.setMemory(resultOffset, length, code)
+    }
   }
 
   /**
@@ -342,8 +348,8 @@ module.exports = class Interface {
 
     this.takeGas(375 + length * 8 + numberOfTopics * 375)
 
-    const data = this.getMemory(dataOffset, length).slice(0)
-    let topics = []
+    const data = length ? this.getMemory(dataOffset, length).slice(0) : new Uint8Array([])
+    const topics = []
 
     if (numberOfTopics > 0) {
       topics.push(U256.fromMemory(this.getMemory(topic1, U256_SIZE_BYTES)))
@@ -505,7 +511,7 @@ module.exports = class Interface {
     this.takeGas(50)
 
     const path = new Buffer(this.getMemory(pathOffset, U256_SIZE_BYTES)).toString('hex')
-    const result = this.environment.state.get(path)
+    const result = this.environment.state.get(path) || new Uint8Array(32)
     this.setMemory(resultOffset, U256_SIZE_BYTES, result)
   }
 
@@ -515,7 +521,9 @@ module.exports = class Interface {
    * @param {integer} length the length of the output data.
    */
   return (offset, length) {
-    this.environment.returnValue = this.getMemory(offset, length).slice(0)
+    if (length) {
+      this.environment.returnValue = this.getMemory(offset, length).slice(0)
+    }
   }
 
   /**
@@ -548,34 +556,4 @@ module.exports = class Interface {
     }
     this.environment.gasLeft -= amount
   }
-}
-
-//
-// Polyfill required unless this is sorted: https://bugs.chromium.org/p/chromium/issues/detail?id=633895
-//
-// Polyfill from: https://developer.mozilla.org/en/docs/Web/JavaScript/Reference/Global_objects/Function/bind
-//
-Function.prototype.bind = function (oThis) { // eslint-disable-line
-  if (typeof this !== 'function') {
-    // closest thing possible to the ECMAScript 5
-    // internal IsCallable function
-    throw new TypeError('Function.prototype.bind - what is trying to be bound is not callable')
-  }
-
-  var aArgs = Array.prototype.slice.call(arguments, 1)
-  var fToBind = this
-  var fNOP = function () {}
-  var fBound = function () {
-    return fToBind.apply(this instanceof fNOP ? this : oThis,
-     aArgs.concat(Array.prototype.slice.call(arguments)))
-  }
-
-  if (this.prototype) {
-    // Function.prototype doesn't have a prototype property
-    fNOP.prototype = this.prototype
-  }
-
-  fBound.prototype = new fNOP() // eslint-disable-line new-cap
-
-  return fBound
 }

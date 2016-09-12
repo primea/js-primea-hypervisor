@@ -32,7 +32,7 @@
       "/tools/sexpr-wasm-prototype/"
     ],
     "globals": [
-      "Wasm"
+      "WebAssembly"
     ]
   },
   "dependencies": {

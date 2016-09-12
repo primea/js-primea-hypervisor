@@ -503,7 +503,9 @@ module.exports = class Interface {
    * @param {integer} length the length of the output data.
    */
   return (offset, length) {
-    this.environment.returnValue = this.getMemory(offset, length).slice(0)
+    if (length) {
+      this.environment.returnValue = this.getMemory(offset, length).slice(0)
+    }
   }
 
   /**

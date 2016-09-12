@@ -44,8 +44,8 @@ module.exports = class Kernel {
   //       otherwise execution succeeded
   codeHandler (code, ethInterface = new Interface(new Environment())) {
     const debugInterface = new DebugInterface(ethInterface.environment)
-    const module = WebAessembly.Module(code)
-    const instance = WebAessembly.Instance(module, {
+    const module = WebAssembly.Module(code)
+    const instance = WebAssembly.Instance(module, {
       'ethereum': ethInterface.exportTable,
       'debug': debugInterface.exportTable,
 

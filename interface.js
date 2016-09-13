@@ -22,7 +22,7 @@ module.exports = class Interface {
         'useGas': this._useGas.bind(this),
         'getGasLeftHigh': this._getGasLeftHigh.bind(this),
         'getGasLeftLow': this._getGasLeftLow.bind(this),
-        'call': this._getGasLeftLow.bind(this)
+        'call': this._call.bind(this)
       }
     })
   }

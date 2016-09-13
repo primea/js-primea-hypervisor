@@ -4,6 +4,8 @@
  */
 const Address = require('./address.js')
 const U256 = require('./u256.js')
+const fs = require('fs')
+const path = require('path')
 
 const U128_SIZE_BYTES = 16
 const ADDRESS_SIZE_BYTES = 20
@@ -13,12 +15,18 @@ const U256_SIZE_BYTES = 32
 module.exports = class Interface {
   constructor (environment) {
     this.environment = environment
+    const shimBin = fs.readFileSync(path.join(__dirname, '/wasm/interface.wasm'))
+    const shimMod = WebAssembly.Module(shimBin)
+    this.shims = WebAssembly.Instance(shimMod, {
+      'interface': {
+        'useGas': this._useGas.bind(this)
+      }
+    })
   }
 
   get exportTable () {
     let exportMethods = [
       // include all the public methods according to the Ethereum Environment Interface (EEI) r1
-      'useGas',
       'getGasLeft',
       'getAddress',
       'getBalance',
@@ -64,12 +72,19 @@ module.exports = class Interface {
    * Subtracts an amount to the gas counter
    * @param {integer} amount the amount to subtract to the gas counter
    */
-  useGas (amount) {
-    if (amount < 0) {
+  _useGas (high, low) {
+    if (high < 0) {
       // convert from a 32-bit two's compliment
-      amount = 0x100000000 - amount
+      high = 0x100000000 - high
     }
 
+    if (low < 0) {
+      // convert from a 32-bit two's compliment
+      low = 0x100000000 - low
+    }
+
+    // JS only bitshift 32bits, so instead of high << 32 we have high * 2 ^ 32
+    const amount = (high * 4294967296) + low
     this.takeGas(amount)
   }
 
@@ -563,34 +578,4 @@ module.exports = class Interface {
     }
     this.environment.gasLeft -= amount
   }
-}
-
-//
-// Polyfill required unless this is sorted: https://bugs.chromium.org/p/chromium/issues/detail?id=633895
-//
-// Polyfill from: https://developer.mozilla.org/en/docs/Web/JavaScript/Reference/Global_objects/Function/bind
-//
-Function.prototype.bind = function (oThis) { // eslint-disable-line
-  if (typeof this !== 'function') {
-    // closest thing possible to the ECMAScript 5
-    // internal IsCallable function
-    throw new TypeError('Function.prototype.bind - what is trying to be bound is not callable')
-  }
-
-  var aArgs = Array.prototype.slice.call(arguments, 1)
-  var fToBind = this
-  var fNOP = function () {}
-  var fBound = function () {
-    return fToBind.apply(this instanceof fNOP ? this : oThis,
-     aArgs.concat(Array.prototype.slice.call(arguments)))
-  }
-
-  if (this.prototype) {
-    // Function.prototype doesn't have a prototype property
-    fNOP.prototype = this.prototype
-  }
-
-  fBound.prototype = new fNOP() // eslint-disable-line new-cap
-
-  return fBound
 }

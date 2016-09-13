@@ -45,7 +45,7 @@ module.exports = class Kernel {
   codeHandler (code, ethInterface = new Interface(new Environment())) {
     const debugInterface = new DebugInterface(ethInterface.environment)
     const module = WebAssembly.Module(code)
-    const instance = WebAssembly.Instance(module, {
+    const imports = {
       'ethereum': ethInterface.exportTable,
       'debug': debugInterface.exportTable,
 
@@ -56,7 +56,10 @@ module.exports = class Kernel {
       // export this for Binaryen
       // FIXME: remove once C has proper imports, see https://github.com/ethereum/evm2.0-design/issues/16
       'env': ethInterface.exportTable
-    })
+    }
+    // add shims
+    imports.ethereum.useGas = ethInterface.shims.exports.useGas
+    const instance = WebAssembly.Instance(module, imports)
 
     ethInterface.setModule(instance)
     debugInterface.setModule(instance)

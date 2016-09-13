@@ -17,19 +17,17 @@ module.exports = class Interface {
     this.environment = environment
     const shimBin = fs.readFileSync(path.join(__dirname, '/wasm/interface.wasm'))
     const shimMod = WebAssembly.Module(shimBin)
-    const shim = WebAssembly.Instance(shimMod, {
+    const shims = WebAssembly.Instance(shimMod, {
       'interface': {
         'useGas': this._useGas.bind(this)
       }
     })
-    this.useGas = shim.exports.useGas
-    // this.useGas = this._useGas
+    this.shims = shims
   }
 
   get exportTable () {
     let exportMethods = [
       // include all the public methods according to the Ethereum Environment Interface (EEI) r1
-      'useGas',
       'getGasLeft',
       'getAddress',
       'getBalance',

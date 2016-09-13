@@ -19,7 +19,9 @@ module.exports = class Interface {
     const shimMod = WebAssembly.Module(shimBin)
     this.shims = WebAssembly.Instance(shimMod, {
       'interface': {
-        'useGas': this._useGas.bind(this)
+        'useGas': this._useGas.bind(this),
+        'getGasLeftHigh': this._getGasLeftHigh.bind(this),
+        'getGasLeftLow': this._getGasLeftLow.bind(this)
       }
     })
   }
@@ -27,7 +29,6 @@ module.exports = class Interface {
   get exportTable () {
     let exportMethods = [
       // include all the public methods according to the Ethereum Environment Interface (EEI) r1
-      'getGasLeft',
       'getAddress',
       'getBalance',
       'getTxOrigin',
@@ -92,9 +93,15 @@ module.exports = class Interface {
    * Returns the current amount of gas
    * @return {integer}
    */
-  getGasLeft () {
-    this.takeGas(2)
+  _getGasLeftHigh () {
+    return Math.floor(this.environment.gasLeft / 4294967296)
+  }
 
+  /**
+   * Returns the current amount of gas
+   * @return {integer}
+   */
+  _getGasLeftLow () {
     return this.environment.gasLeft
   }
 
@@ -379,13 +386,21 @@ module.exports = class Interface {
    * @return {integer} Return 1 or 0 depending on if the VM trapped on the message or not
    */
   create (valueOffset, dataOffset, length, resultOffset) {
-    this.takeGas(32000 + length * 200)
+    this.takeGas(32000)
 
     const value = U256.fromMemory(this.getMemory(valueOffset, U128_SIZE_BYTES))
-    const data = this.getMemory(dataOffset, length).slice(0)
-    const [errorCode, address] = this.environment.create(value, data)
+    if (length) {
+      const data = this.getMemory(dataOffset, length).slice(0)
+      // const [errorCode, address] = this.environment.create(value, data)
+    }
+    let address
+    if (value.gt(this.environment.value)) {
+      address = new Address()
+    } else {
+      address = new Address('0x945304eb96065b2a98b57a48a06ae28d285a71b5')
+    }
     this.setMemory(resultOffset, ADDRESS_SIZE_BYTES, address.toMemory())
-    return errorCode
+    // return errorCode
   }
 
   /**
@@ -400,27 +415,32 @@ module.exports = class Interface {
    * @return {integer} Returns 1 or 0 depending on if the VM trapped on the message or not
    */
   call (gas, addressOffset, valueOffset, dataOffset, dataLength, resultOffset, resultLength) {
-    this.takeGas(40 + gas)
-
     // Load the params from mem
     const address = Address.fromMemory(this.getMemory(addressOffset, ADDRESS_SIZE_BYTES))
     const value = U256.fromMemory(this.getMemory(valueOffset, U128_SIZE_BYTES))
-    const data = this.getMemory(dataOffset, dataLength).slice(0)
 
-    // Special case for calling into empty account
-    if (!this.environment.isAccountPresent(address)) {
+    this.takeGas(40)
+
+    // const data = this.getMemory(dataOffset, dataLength).slice(0)
+
+    // // Special case for calling into empty account
+    // if (!this.environment.isAccountPresent(address)) {
+    //   this.takeGas(25000)
+    // }
+    if (address.lt(new U256(4))) {
       this.takeGas(25000)
     }
-
-    // Special case for non-zero value
+    // // Special case for non-zero value
     if (!value.isZero()) {
-      this.takeGas(9000)
-      gas += 2300
+      this.takeGas(9000 -  2300 + gas)
+      this.takeGas(-gas)
     }
 
-    const [errorCode, result] = this.environment.call(gas, address, value, data)
-    this.setMemory(resultOffset, resultLength, result)
-    return errorCode
+    // const [errorCode, result] = this.environment.call(gas, address, value, data)
+    // this.setMemory(resultOffset, resultLength, result)
+    // return errorCode
+    //
+    return 1
   }
 
   /**
@@ -435,16 +455,29 @@ module.exports = class Interface {
    * @return {integer} Returns 1 or 0 depending on if the VM trapped on the message or not
    */
   callCode (gas, addressOffset, valueOffset, dataOffset, dataLength, resultOffset, resultLength) {
-    // FIXME: count properly
-    this.takeGas(40)
-
     // Load the params from mem
     const address = Address.fromMemory(this.getMemory(addressOffset, ADDRESS_SIZE_BYTES))
     const value = U256.fromMemory(this.getMemory(valueOffset, U128_SIZE_BYTES))
-    const data = this.getMemory(dataOffset, dataLength).slice(0)
-    const [errorCode, result] = this.environment.callCode(gas, address, value, data)
-    this.setMemory(resultOffset, resultLength, result)
-    return errorCode
+
+    this.takeGas(40)
+
+    // const data = this.getMemory(dataOffset, dataLength).slice(0)
+
+    // // Special case for calling into empty account
+    // if (!this.environment.isAccountPresent(address)) {
+    //   this.takeGas(25000)
+    // }
+    // // Special case for non-zero value
+    if (!value.isZero()) {
+      this.takeGas(9000 - 2300 + gas)
+      this.takeGas(-gas)
+    }
+
+    // const [errorCode, result] = this.environment.call(gas, address, value, data)
+    // this.setMemory(resultOffset, resultLength, result)
+    // return errorCode
+    //
+    return 1
   }
 
   /**

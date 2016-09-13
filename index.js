@@ -60,6 +60,7 @@ module.exports = class Kernel {
     // add shims
     imports.ethereum.useGas = ethInterface.shims.exports.useGas
     imports.ethereum.getGasLeft = ethInterface.shims.exports.getGasLeft
+    imports.ethereum.call = ethInterface.shims.exports.call
 
     const instance = WebAssembly.Instance(module, imports)
 

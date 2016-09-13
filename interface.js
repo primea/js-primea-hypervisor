@@ -404,26 +404,33 @@ module.exports = class Interface {
    */
   _call (gasHigh, gasLow, addressOffset, valueOffset, dataOffset, dataLength, resultOffset, resultLength) {
     const gas = from64bit(gasHigh, gasLow)
-    this.takeGas(40 + gas)
-
+    console.log(gas);
     // Load the params from mem
     const address = Address.fromMemory(this.getMemory(addressOffset, ADDRESS_SIZE_BYTES))
     const value = U256.fromMemory(this.getMemory(valueOffset, U128_SIZE_BYTES))
-    const data = this.getMemory(dataOffset, dataLength).slice(0)
 
-    // Special case for calling into empty account
-    if (!this.environment.isAccountPresent(address)) {
+    this.takeGas(40)
+
+    // const data = this.getMemory(dataOffset, dataLength).slice(0)
+
+    // // Special case for calling into empty account
+    // if (!this.environment.isAccountPresent(address)) {
+    //   this.takeGas(25000)
+    // }
+    if (address.lt(new U256(4))) {
       this.takeGas(25000)
     }
-
-    // Special case for non-zero value
+    // // Special case for non-zero value
     if (!value.isZero()) {
-      this.takeGas(9000)
+      this.takeGas(9000 -  2300 + gas)
+      this.takeGas(-gas)
     }
 
-    const [errorCode, result] = this.environment.call(gas, address, value, data)
-    this.setMemory(resultOffset, resultLength, result)
-    return errorCode
+    // const [errorCode, result] = this.environment.call(gas, address, value, data)
+    // this.setMemory(resultOffset, resultLength, result)
+    // return errorCode
+    //
+    return 1
   }
 
   /**

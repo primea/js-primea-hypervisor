@@ -17,12 +17,11 @@ module.exports = class Interface {
     this.environment = environment
     const shimBin = fs.readFileSync(path.join(__dirname, '/wasm/interface.wasm'))
     const shimMod = WebAssembly.Module(shimBin)
-    const shims = WebAssembly.Instance(shimMod, {
+    this.shims = WebAssembly.Instance(shimMod, {
       'interface': {
         'useGas': this._useGas.bind(this)
       }
     })
-    this.shims = shims
   }
 
   get exportTable () {

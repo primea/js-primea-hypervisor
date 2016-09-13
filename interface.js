@@ -19,7 +19,9 @@ module.exports = class Interface {
     const shimMod = WebAssembly.Module(shimBin)
     this.shims = WebAssembly.Instance(shimMod, {
       'interface': {
-        'useGas': this._useGas.bind(this)
+        'useGas': this._useGas.bind(this),
+        'getGasLeftHigh': this._getGasLeftHigh.bind(this),
+        'getGasLeftLow': this._getGasLeftLow.bind(this)
       }
     })
   }
@@ -27,7 +29,6 @@ module.exports = class Interface {
   get exportTable () {
     let exportMethods = [
       // include all the public methods according to the Ethereum Environment Interface (EEI) r1
-      'getGasLeft',
       'getAddress',
       'getBalance',
       'getTxOrigin',
@@ -92,8 +93,15 @@ module.exports = class Interface {
    * Returns the current amount of gas
    * @return {integer}
    */
-  getGasLeft () {
-    this.takeGas(2)
+  _getGasLeftHigh () {
+    return Math.floor(this.environment.gasLeft / 4294967296)
+  }
+
+  /**
+   * Returns the current amount of gas
+   * @return {integer}
+   */
+  _getGasLeftLow () {
     return this.environment.gasLeft
   }
 

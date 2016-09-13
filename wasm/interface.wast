@@ -1,5 +1,6 @@
 (module
-  (import $useGas "interface" "useGas" (param i32  i32))
+  ;; useGas
+  (import $useGas "interface" "useGas" (param i32 i32))
   (func $useGasShim
     (param $amount i64)
     (call_import $useGas
@@ -8,4 +9,17 @@
                  (i32.wrap/i64 (get_local $amount)))
   )  
   (export "useGas" $useGasShim)
+
+  ;;  getGasLeft
+  (import $getGasLeftHigh "interface" "getGasLeftHigh" (result i32))
+  (import $getGasLeftLow "interface" "getGasLeftLow" (result i32))
+  (func $getGasLeft
+    (result i64)
+    (call_import $useGas (i32.const 0) (i32.const 2))
+    (return 
+      (i64.add
+        (i64.shl (i64.extend_u/i32 (call_import $getGasLeftHigh)) (i64.const 32)) 
+        (i64.extend_u/i32 (call_import $getGasLeftLow))))
+  )
+  (export "getGasLeft" $getGasLeft)
 )

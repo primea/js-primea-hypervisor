@@ -84,8 +84,8 @@ module.exports = class Interface {
       low = 0x100000000 - low
     }
 
-    const amount = (high << 32) + low
-
+    // JS only bitshift 32bits, so instead of high << 32 we have high * 2 ^ 32
+    const amount = (high * 4294967296) + low
     this.takeGas(amount)
   }
 

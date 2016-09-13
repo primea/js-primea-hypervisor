@@ -21,7 +21,8 @@ module.exports = class Interface {
       'interface': {
         'useGas': this._useGas.bind(this),
         'getGasLeftHigh': this._getGasLeftHigh.bind(this),
-        'getGasLeftLow': this._getGasLeftLow.bind(this)
+        'getGasLeftLow': this._getGasLeftLow.bind(this),
+        'call': this._getGasLeftLow.bind(this)
       }
     })
   }
@@ -50,7 +51,6 @@ module.exports = class Interface {
       'getBlockGasLimit',
       'log',
       'create',
-      'call',
       'callCode',
       'callDelegate',
       'storageStore',
@@ -74,19 +74,7 @@ module.exports = class Interface {
    * @param {integer} amount the amount to subtract to the gas counter
    */
   _useGas (high, low) {
-    if (high < 0) {
-      // convert from a 32-bit two's compliment
-      high = 0x100000000 - high
-    }
-
-    if (low < 0) {
-      // convert from a 32-bit two's compliment
-      low = 0x100000000 - low
-    }
-
-    // JS only bitshift 32bits, so instead of high << 32 we have high * 2 ^ 32
-    const amount = (high * 4294967296) + low
-    this.takeGas(amount)
+    this.takeGas(from64bit(high, low))
   }
 
   /**
@@ -414,33 +402,28 @@ module.exports = class Interface {
    * @param {integer} gas
    * @return {integer} Returns 1 or 0 depending on if the VM trapped on the message or not
    */
-  call (gas, addressOffset, valueOffset, dataOffset, dataLength, resultOffset, resultLength) {
+  _call (gasHigh, gasLow, addressOffset, valueOffset, dataOffset, dataLength, resultOffset, resultLength) {
+    const gas = from64bit(gasHigh, gasLow)
+    this.takeGas(40 + gas)
+
     // Load the params from mem
     const address = Address.fromMemory(this.getMemory(addressOffset, ADDRESS_SIZE_BYTES))
     const value = U256.fromMemory(this.getMemory(valueOffset, U128_SIZE_BYTES))
+    const data = this.getMemory(dataOffset, dataLength).slice(0)
 
-    this.takeGas(40)
-
-    // const data = this.getMemory(dataOffset, dataLength).slice(0)
-
-    // // Special case for calling into empty account
-    // if (!this.environment.isAccountPresent(address)) {
-    //   this.takeGas(25000)
-    // }
-    if (address.lt(new U256(4))) {
+    // Special case for calling into empty account
+    if (!this.environment.isAccountPresent(address)) {
       this.takeGas(25000)
     }
-    // // Special case for non-zero value
+
+    // Special case for non-zero value
     if (!value.isZero()) {
-      this.takeGas(9000 -  2300 + gas)
-      this.takeGas(-gas)
+      this.takeGas(9000)
     }
 
-    // const [errorCode, result] = this.environment.call(gas, address, value, data)
-    // this.setMemory(resultOffset, resultLength, result)
-    // return errorCode
-    //
-    return 1
+    const [errorCode, result] = this.environment.call(gas, address, value, data)
+    this.setMemory(resultOffset, resultLength, result)
+    return errorCode
   }
 
   /**
@@ -455,29 +438,16 @@ module.exports = class Interface {
    * @return {integer} Returns 1 or 0 depending on if the VM trapped on the message or not
    */
   callCode (gas, addressOffset, valueOffset, dataOffset, dataLength, resultOffset, resultLength) {
+    // FIXME: count properly
+    this.takeGas(40)
+
     // Load the params from mem
     const address = Address.fromMemory(this.getMemory(addressOffset, ADDRESS_SIZE_BYTES))
     const value = U256.fromMemory(this.getMemory(valueOffset, U128_SIZE_BYTES))
-
-    this.takeGas(40)
-
-    // const data = this.getMemory(dataOffset, dataLength).slice(0)
-
-    // // Special case for calling into empty account
-    // if (!this.environment.isAccountPresent(address)) {
-    //   this.takeGas(25000)
-    // }
-    // // Special case for non-zero value
-    if (!value.isZero()) {
-      this.takeGas(9000 - 2300 + gas)
-      this.takeGas(-gas)
-    }
-
-    // const [errorCode, result] = this.environment.call(gas, address, value, data)
-    // this.setMemory(resultOffset, resultLength, result)
-    // return errorCode
-    //
-    return 1
+    const data = this.getMemory(dataOffset, dataLength).slice(0)
+    const [errorCode, result] = this.environment.callCode(gas, address, value, data)
+    this.setMemory(resultOffset, resultLength, result)
+    return errorCode
   }
 
   /**
@@ -586,4 +556,18 @@ module.exports = class Interface {
     }
     this.environment.gasLeft -= amount
   }
+}
+
+// converts a 64 bit number to a JS number
+function from64bit (high, low) {
+  if (high < 0) {
+    // convert from a 32-bit two's compliment
+    high = 0x100000000 - high
+  }
+  if (low < 0) {
+    // convert from a 32-bit two's compliment
+    low = 0x100000000 - low
+  }
+  // JS only bitshift 32bits, so instead of high << 32 we have high * 2 ^ 32
+  return (high * 4294967296) + low
 }

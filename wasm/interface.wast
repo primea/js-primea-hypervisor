@@ -24,10 +24,10 @@
   (export "getGasLeft" $getGasLeft)
 
   ;; call
-  ;; (import $call "ethereum" "call" (param i32 i32 i32 i32 i32 i32 i32) (result i32))
-  (import $call "interface" "call" (param i32 i32 i32 i32 i32 i32 i32 i32) (result i32))
+  ;; (import $call "ethereum" "call" (param i32 i32 i32 i32 i32 i32 i32 i32) (result i32))
+  (import $call "interface" "call" (param i32 i32 i32 i32 i32 i32 i32 i32 i32) (result i32))
   (func $callShim
-    (param i64 i32 i32 i32 i32 i32 i32)
+    (param i64 i32 i32 i32 i32 i32 i32 i32)
     (result i32)
     (call_import $call
            (i32.wrap/i64 
@@ -39,6 +39,7 @@
            (get_local 4)
            (get_local 5)
            (get_local 6)
+           (get_local 7)
     )
   )
   (export "call" $callShim)

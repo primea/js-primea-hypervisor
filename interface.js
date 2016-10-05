@@ -445,16 +445,29 @@ module.exports = class Interface {
    * @return {integer} Returns 1 or 0 depending on if the VM trapped on the message or not
    */
   callCode (gas, addressOffset, valueOffset, dataOffset, dataLength, resultOffset, resultLength) {
-    // FIXME: count properly
-    this.takeGas(40)
-
     // Load the params from mem
     const address = Address.fromMemory(this.getMemory(addressOffset, ADDRESS_SIZE_BYTES))
     const value = U256.fromMemory(this.getMemory(valueOffset, U128_SIZE_BYTES))
-    const data = this.getMemory(dataOffset, dataLength).slice(0)
-    const [errorCode, result] = this.environment.callCode(gas, address, value, data)
-    this.setMemory(resultOffset, resultLength, result)
-    return errorCode
+
+    this.takeGas(40)
+
+    // const data = this.getMemory(dataOffset, dataLength).slice(0)
+
+    // // Special case for calling into empty account
+    // if (!this.environment.isAccountPresent(address)) {
+    //   this.takeGas(25000)
+    // }
+    // // Special case for non-zero value
+    if (!value.isZero()) {
+      this.takeGas(9000 - 2300 + gas)
+      this.takeGas(-gas)
+    }
+
+    // const [errorCode, result] = this.environment.call(gas, address, value, data)
+    // this.setMemory(resultOffset, resultLength, result)
+    // return errorCode
+    //
+    return 1
   }
 
   /**

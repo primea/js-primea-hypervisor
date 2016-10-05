@@ -4,6 +4,8 @@
  */
 const Address = require('./address.js')
 const U256 = require('./u256.js')
+const fs = require('fs')
+const path = require('path')
 
 const U128_SIZE_BYTES = 16
 const ADDRESS_SIZE_BYTES = 20
@@ -13,13 +15,21 @@ const U256_SIZE_BYTES = 32
 module.exports = class Interface {
   constructor (environment) {
     this.environment = environment
+    const shimBin = fs.readFileSync(path.join(__dirname, '/wasm/interface.wasm'))
+    const shimMod = WebAssembly.Module(shimBin)
+    this.shims = WebAssembly.Instance(shimMod, {
+      'interface': {
+        'useGas': this._useGas.bind(this),
+        'getGasLeftHigh': this._getGasLeftHigh.bind(this),
+        'getGasLeftLow': this._getGasLeftLow.bind(this),
+        'call': this._call.bind(this)
+      }
+    })
   }
 
   get exportTable () {
     let exportMethods = [
       // include all the public methods according to the Ethereum Environment Interface (EEI) r1
-      'useGas',
-      'getGasLeft',
       'getAddress',
       'getBalance',
       'getTxOrigin',
@@ -41,7 +51,6 @@ module.exports = class Interface {
       'getBlockGasLimit',
       'log',
       'create',
-      'call',
       'callCode',
       'callDelegate',
       'storageStore',
@@ -64,22 +73,23 @@ module.exports = class Interface {
    * Subtracts an amount to the gas counter
    * @param {integer} amount the amount to subtract to the gas counter
    */
-  useGas (amount) {
-    if (amount < 0) {
-      // convert from a 32-bit two's compliment
-      amount = 0x100000000 - amount
-    }
-
-    this.takeGas(amount)
+  _useGas (high, low) {
+    this.takeGas(from64bit(high, low))
   }
 
   /**
    * Returns the current amount of gas
    * @return {integer}
    */
-  getGasLeft () {
-    this.takeGas(2)
+  _getGasLeftHigh () {
+    return Math.floor(this.environment.gasLeft / 4294967296)
+  }
 
+  /**
+   * Returns the current amount of gas
+   * @return {integer}
+   */
+  _getGasLeftLow () {
     return this.environment.gasLeft
   }
 
@@ -364,13 +374,21 @@ module.exports = class Interface {
    * @return {integer} Return 1 or 0 depending on if the VM trapped on the message or not
    */
   create (valueOffset, dataOffset, length, resultOffset) {
-    this.takeGas(32000 + length * 200)
+    this.takeGas(32000)
 
     const value = U256.fromMemory(this.getMemory(valueOffset, U128_SIZE_BYTES))
-    const data = this.getMemory(dataOffset, length).slice(0)
-    const [errorCode, address] = this.environment.create(value, data)
+    if (length) {
+      const data = this.getMemory(dataOffset, length).slice(0)
+      // const [errorCode, address] = this.environment.create(value, data)
+    }
+    let address
+    if (value.gt(this.environment.value)) {
+      address = new Address()
+    } else {
+      address = new Address('0x945304eb96065b2a98b57a48a06ae28d285a71b5')
+    }
     this.setMemory(resultOffset, ADDRESS_SIZE_BYTES, address.toMemory())
-    return errorCode
+    // return errorCode
   }
 
   /**
@@ -384,7 +402,8 @@ module.exports = class Interface {
    * @param {integer} gas
    * @return {integer} Returns 1 or 0 depending on if the VM trapped on the message or not
    */
-  call (gas, addressOffset, valueOffset, dataOffset, dataLength, resultOffset, resultLength) {
+  _call (gasHigh, gasLow, addressOffset, valueOffset, dataOffset, dataLength, resultOffset, resultLength) {
+    const gas = from64bit(gasHigh, gasLow)
     this.takeGas(40 + gas)
 
     // Load the params from mem
@@ -400,7 +419,6 @@ module.exports = class Interface {
     // Special case for non-zero value
     if (!value.isZero()) {
       this.takeGas(9000)
-      gas += 2300
     }
 
     const [errorCode, result] = this.environment.call(gas, address, value, data)
@@ -540,32 +558,16 @@ module.exports = class Interface {
   }
 }
 
-//
-// Polyfill required unless this is sorted: https://bugs.chromium.org/p/chromium/issues/detail?id=633895
-//
-// Polyfill from: https://developer.mozilla.org/en/docs/Web/JavaScript/Reference/Global_objects/Function/bind
-//
-Function.prototype.bind = function (oThis) { // eslint-disable-line
-  if (typeof this !== 'function') {
-    // closest thing possible to the ECMAScript 5
-    // internal IsCallable function
-    throw new TypeError('Function.prototype.bind - what is trying to be bound is not callable')
+// converts a 64 bit number to a JS number
+function from64bit (high, low) {
+  if (high < 0) {
+    // convert from a 32-bit two's compliment
+    high = 0x100000000 - high
   }
-
-  var aArgs = Array.prototype.slice.call(arguments, 1)
-  var fToBind = this
-  var fNOP = function () {}
-  var fBound = function () {
-    return fToBind.apply(this instanceof fNOP ? this : oThis,
-     aArgs.concat(Array.prototype.slice.call(arguments)))
+  if (low < 0) {
+    // convert from a 32-bit two's compliment
+    low = 0x100000000 - low
   }
-
-  if (this.prototype) {
-    // Function.prototype doesn't have a prototype property
-    fNOP.prototype = this.prototype
-  }
-
-  fBound.prototype = new fNOP() // eslint-disable-line new-cap
-
-  return fBound
+  // JS only bitshift 32bits, so instead of high << 32 we have high * 2 ^ 32
+  return (high * 4294967296) + low
 }

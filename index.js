@@ -169,7 +169,12 @@ module.exports = class Kernel {
       }
     }
 
-    let address = Utils.newAccountAddress(create.from, code)
+    let account = this.environment.state.get(create.from.toString())
+    if (!account) {
+      throw new Error('Account not found: ' + create.from.toString())
+    }
+
+    let address = Utils.newAccountAddress(create.from, account.get('nonce'))
 
     this.environment.addAccount(address.toString(), {
       balance: create.value,

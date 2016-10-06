@@ -39,7 +39,7 @@ module.exports = class Environment {
     account.set('balance', trie.balance || new U256(0))
     account.set('code', trie.code || new Uint8Array())
     account.set('storage', trie.storage || new Map())
-    this.state.set(address.toString(), account)
+    this.parent.state.set(address.toString(), account)
   }
 
   isAccountPresent (address) {
@@ -52,7 +52,7 @@ module.exports = class Environment {
   }
 
   getBalance (address) {
-    const account = this.state.get(address.toString())
+    const account = this.parent.state.get(address.toString())
     if (account) {
       return account.get('balance')
     } else {
@@ -61,7 +61,7 @@ module.exports = class Environment {
   }
 
   getCode (address) {
-    const account = this.state.get(address.toString())
+    const account = this.parent.state.get(address.toString())
     if (account) {
       return account.get('code')
     } else {

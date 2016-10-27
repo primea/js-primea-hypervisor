@@ -1,6 +1,6 @@
-const U256 = require('./u256.js')
-const Address = require('./address.js')
-const Block = require('./block.js')
+const U256 = require('./deps/u256.js')
+const Address = require('./deps/address.js')
+const Block = require('./deps/block.js')
 const fakeBlockChain = require('./fakeBlockChain.js')
 
 module.exports = class Environment {

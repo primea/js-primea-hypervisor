@@ -2,8 +2,8 @@
  * This is the Ethereum interface that is exposed to the WASM instance which
  * enables to interact with the Ethereum Environment
  */
-const Address = require('./address.js')
-const U256 = require('./u256.js')
+const Address = require('./deps/address.js')
+const U256 = require('./deps/u256.js')
 const fs = require('fs')
 const path = require('path')
 
@@ -499,10 +499,13 @@ module.exports = class Interface {
    * @param {interger} pathOffest the memory offset to load the the path from
    * @param {interger} valueOffset the memory offset to load the value from
    */
-  storageStore (pathOffset, valueOffset) {
+  storageStore (pathOffset, valueOffset, cbDest) {
+    console.log('sstore');
     const path = new Buffer(this.getMemory(pathOffset, U256_SIZE_BYTES)).toString('hex')
     // copy the value
     const value = this.getMemory(valueOffset, U256_SIZE_BYTES).slice(0)
+    console.log('value:' + value)
+    console.log('path:' + path)
     const oldValue = this.environment.state.get(path)
     const valIsZero = value.every((i) => i === 0)
 
@@ -520,6 +523,10 @@ module.exports = class Interface {
     } else {
       this.environment.state.set(path, value)
     }
+
+    setTimeout(() => {
+      this.module.exports['0']()
+    }, 0)
   }
 
   /**
@@ -527,12 +534,17 @@ module.exports = class Interface {
    * @param {interger} pathOffest the memory offset to load the the path from
    * @param {interger} resultOffset the memory offset to load the value from
    */
-  storageLoad (pathOffset, resultOffset) {
+  storageLoad (pathOffset, resultOffset, cbDest) {
+    console.log('sload');
     this.takeGas(50)
 
     const path = new Buffer(this.getMemory(pathOffset, U256_SIZE_BYTES)).toString('hex')
+    console.log(path);
     const result = this.environment.state.get(path) || new Uint8Array(32)
     this.setMemory(resultOffset, U256_SIZE_BYTES, result)
+    setTimeout(() => {
+      this.module.exports['0']()
+    }, 0)
   }
 
   /**

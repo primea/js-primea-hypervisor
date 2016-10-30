@@ -13,7 +13,8 @@ const U256_SIZE_BYTES = 32
 
 // The interface exposed to the WebAessembly Core
 module.exports = class Interface {
-  constructor (environment) {
+  constructor (environment, kernel) {
+    this.kernel = kernel
     this.environment = environment
     const shimBin = fs.readFileSync(path.join(__dirname, '/wasm/interface.wasm'))
     const shimMod = WebAssembly.Module(shimBin)
@@ -404,7 +405,6 @@ module.exports = class Interface {
    */
   _call (gasHigh, gasLow, addressOffset, valueOffset, dataOffset, dataLength, resultOffset, resultLength) {
     const gas = from64bit(gasHigh, gasLow)
-    console.log(gas);
     // Load the params from mem
     const address = Address.fromMemory(this.getMemory(addressOffset, ADDRESS_SIZE_BYTES))
     const value = U256.fromMemory(this.getMemory(valueOffset, U128_SIZE_BYTES))
@@ -500,33 +500,37 @@ module.exports = class Interface {
    * @param {interger} valueOffset the memory offset to load the value from
    */
   storageStore (pathOffset, valueOffset, cbDest) {
-    console.log('sstore');
-    const path = new Buffer(this.getMemory(pathOffset, U256_SIZE_BYTES)).toString('hex')
+    this.takeGas(5000)
+    const path = [...this.getMemory(pathOffset, U256_SIZE_BYTES)]
     // copy the value
     const value = this.getMemory(valueOffset, U256_SIZE_BYTES).slice(0)
-    console.log('value:' + value)
-    console.log('path:' + path)
-    const oldValue = this.environment.state.get(path)
     const valIsZero = value.every((i) => i === 0)
+    const opPromise = this.environment.state.get(path)
+    .catch(() => {
+      // TODO: handle errors
+      // the value was not found
+      return null
+    })
 
-    this.takeGas(5000)
+    // wait for all the prevouse async ops to finish before running the callback
+    this.kernel._runningOps = Promise.all([this.kernel._runningOps, opPromise])
+    .then(values => {
+      const oldValue = values.pop()
+      if (valIsZero && oldValue) {
+        // delete a value
+        this.environment.gasRefund += 15000
+        this.environment.state.del(path)
+      } else {
+        if (!valIsZero && !oldValue) {
+          // creating a new value
+          this.takeGas(15000)
+        }
+        // update
+        this.environment.state.set(path, value)
+      }
 
-    // write
-    if (!valIsZero && !oldValue) {
-      this.takeGas(15000)
-    }
-
-    // delete
-    if (valIsZero && oldValue) {
-      this.environment.gasRefund += 15000
-      this.environment.state.delete(path)
-    } else {
-      this.environment.state.set(path, value)
-    }
-
-    setTimeout(() => {
-      this.module.exports['0']()
-    }, 0)
+      this.module.exports[cbDest.toString()]()
+    })
   }
 
   /**
@@ -535,16 +539,25 @@ module.exports = class Interface {
    * @param {interger} resultOffset the memory offset to load the value from
    */
   storageLoad (pathOffset, resultOffset, cbDest) {
-    console.log('sload');
     this.takeGas(50)
 
-    const path = new Buffer(this.getMemory(pathOffset, U256_SIZE_BYTES)).toString('hex')
-    console.log(path);
-    const result = this.environment.state.get(path) || new Uint8Array(32)
-    this.setMemory(resultOffset, U256_SIZE_BYTES, result)
-    setTimeout(() => {
-      this.module.exports['0']()
-    }, 0)
+    // convert the path to an array
+    const path = [...this.getMemory(pathOffset, U256_SIZE_BYTES)]
+    const opPromise = this.environment.state.get(path)
+    .catch(() => {
+      // TODO: handle other possible errors
+      // if the value was not found return a empty array
+      return new Uint8Array(32)
+    })
+
+    // wait for all the prevouse async ops to finish before running the callback
+    this.kernel._runningOps = Promise
+    .all([this.kernel._runningOps, opPromise])
+    .then(values => {
+      const result = values.pop()
+      this.setMemory(resultOffset, U256_SIZE_BYTES, result)
+      this.module.exports[cbDest.toString()]()
+    })
   }
 
   /**

@@ -33,16 +33,19 @@ module.exports = class Kernel {
   // runs some code in the VM
   constructor (environment = new Environment()) {
     this.environment = environment
+    this._runningOps = Promise.resolve()
 
-    this.environment.addAccount(identityContract, {})
-    this.environment.addAccount(meteringContract, {})
-    this.environment.addAccount(transcompilerContract, {})
+    // this.environment.addAccount(identityContract, {})
+    // this.environment.addAccount(meteringContract, {})
+    // this.environment.addAccount(transcompilerContract, {})
   }
 
   // handles running code.
   // NOTE: it assumes that wasm will raise an exception if something went wrong,
   //       otherwise execution succeeded
-  codeHandler (code, ethInterface = new Interface(new Environment())) {
+  codeHandler (code, ethInterface = new Interface(new Environment(), this)) {
+    // TODO remove
+    ethInterface.kernel = this
     const debugInterface = new DebugInterface(ethInterface.environment)
     const module = WebAssembly.Module(code)
     const imports = {
@@ -62,7 +65,7 @@ module.exports = class Kernel {
     imports.ethereum.getGasLeft = ethInterface.shims.exports.getGasLeft
     imports.ethereum.call = ethInterface.shims.exports.call
 
-    const instance = WebAssembly.Instance(module, imports)
+    const instance = this.instance = WebAssembly.Instance(module, imports)
 
     ethInterface.setModule(instance)
     debugInterface.setModule(instance)
@@ -70,14 +73,23 @@ module.exports = class Kernel {
     if (instance.exports.main) {
       instance.exports.main()
     }
-    return instance
+    return this.onDone()
+  }
+
+  // returns a promise that resolves when the wasm instance is done running
+  async onDone () {
+    let prevOps
+    while (prevOps !== this._runningOps) {
+      prevOps = this._runningOps
+      await this._runningOps
+    }
   }
 
   // loads code from the merkle trie and delegates the message
   // Detects if code is EVM or WASM
   // Detects if the code injection is needed
   // Detects if transcompilation is needed
-  callHandler (call) {
+  messageHandler (call) {
     // FIXME: this is here until these two contracts are compiled to WASM
     // The two special contracts (precompiles now, but will be real ones later)
     if (call.to.equals(meteringContract)) {

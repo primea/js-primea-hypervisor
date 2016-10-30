@@ -115,7 +115,7 @@ module.exports = class Kernel {
 
       // Transcompile code
       // FIXME: decide if these are the right values here: from: 0, gasLimit: 0, value: 0
-      code = this.callHandler({ from: Address.zero(), to: transcompilerContract, gasLimit: 0, value: new U256(0), data: code }).returnValue
+      code = this.messageHandler({ from: Address.zero(), to: transcompilerContract, gasLimit: 0, value: new U256(0), data: code }).returnValue
 
       if (code[0] === 0) {
         code = code.slice(1)

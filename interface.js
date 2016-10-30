@@ -422,7 +422,7 @@ module.exports = class Interface {
     }
     // // Special case for non-zero value
     if (!value.isZero()) {
-      this.takeGas(9000 -  2300 + gas)
+      this.takeGas(9000 - 2300 + gas)
       this.takeGas(-gas)
     }
 

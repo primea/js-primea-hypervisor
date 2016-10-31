@@ -70,9 +70,10 @@ module.exports = class Environment {
     // }
   }
 
-  getBlockHash (height) {
+  async getBlockHash (height) {
     // return this.blockchain.getBlock(height).hash()
-    return this.root.getBlockAt(height).then(block => block.hash())
+    const block = await this.root.getBlockAt(height)
+    return block.hash()
   }
 
   set createHandler (value) {

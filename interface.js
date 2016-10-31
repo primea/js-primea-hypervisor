@@ -264,18 +264,25 @@ module.exports = class Interface {
    * @param {integer} number which block to load
    * @param {integer} offset the offset to load the hash into
    */
-  getBlockHash (number, offset) {
+  getBlockHash (number, offset, cbOffset) {
     this.takeGas(20)
 
     const diff = this.environment.block.number - number
-    let hash
+    let opPromise
 
     if (diff > 256 || diff <= 0) {
-      hash = new U256(0)
+      opPromise = Promise.resolve(new U256(0))
     } else {
-      hash = new U256(this.environment.getBlockHash(number))
+      opPromise = this.environment.getBlockHash(number)
     }
-    this.setMemory(offset, U256_SIZE_BYTES, hash.toMemory())
+
+    // wait for all the prevouse async ops to finish before running the callback
+    this.kernel._runningOps = Promise.all([this.kernel._runningOps, opPromise])
+    .then(values => {
+      const hash = values.pop()
+      this.setMemory(offset, U256_SIZE_BYTES, hash.toMemory())
+      this.module.exports[cbOffset.toString()]()
+    })
   }
 
   /**

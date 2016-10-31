@@ -277,7 +277,7 @@ module.exports = class Interface {
     }
 
     // wait for all the prevouse async ops to finish before running the callback
-    this.kernel._runningOps = Promise.all([this.kernel._runningOps, opPromise])
+    this.kernel._addOperation(opPromise)
     .then(values => {
       const hash = values.pop()
       this.setMemory(offset, U256_SIZE_BYTES, hash.toMemory())
@@ -519,8 +519,7 @@ module.exports = class Interface {
       return null
     })
 
-    // wait for all the prevouse async ops to finish before running the callback
-    this.kernel._runningOps = Promise.all([this.kernel._runningOps, opPromise])
+    this.kernel._addOperation(opPromise)
     .then(values => {
       const oldValue = values.pop()
       if (valIsZero && oldValue) {
@@ -557,9 +556,7 @@ module.exports = class Interface {
       return new Uint8Array(32)
     })
 
-    // wait for all the prevouse async ops to finish before running the callback
-    this.kernel._runningOps = Promise
-    .all([this.kernel._runningOps, opPromise])
+    this.kernel._addOperation(opPromise)
     .then(values => {
       const result = values.pop()
       this.setMemory(resultOffset, U256_SIZE_BYTES, result)

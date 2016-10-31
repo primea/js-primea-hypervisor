@@ -85,6 +85,11 @@ module.exports = class Kernel {
     }
   }
 
+  _addOperation (op) {
+    this._runningOps = Promise.all([this._runningOps, op])
+    return this._runningOps
+  }
+
   // loads code from the merkle trie and delegates the message
   // Detects if code is EVM or WASM
   // Detects if the code injection is needed

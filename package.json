@@ -24,7 +24,7 @@
   "contributors": "Alex Beregszaszi <alex@rtfs.hu>",
   "license": "MPL-2.0",
   "devDependencies": {
-    "standard": "^7.1.2",
+    "standard": "^8.5.0",
     "tape": "^4.5.1"
   },
   "standard": {

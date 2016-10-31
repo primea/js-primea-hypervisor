@@ -277,11 +277,8 @@ module.exports = class Interface {
     }
 
     // wait for all the prevouse async ops to finish before running the callback
-    this.kernel._addOperation(opPromise)
-    .then(values => {
-      const hash = values.pop()
+    this.kernel._addOperation(opPromise, cbOffset, hash => {
       this.setMemory(offset, U256_SIZE_BYTES, hash.toMemory())
-      this.module.exports[cbOffset.toString()]()
     })
   }
 
@@ -519,9 +516,7 @@ module.exports = class Interface {
       return null
     })
 
-    this.kernel._addOperation(opPromise)
-    .then(values => {
-      const oldValue = values.pop()
+    this.kernel._addOperation(opPromise, cbDest, oldValue => {
       if (valIsZero && oldValue) {
         // delete a value
         this.environment.gasRefund += 15000
@@ -534,8 +529,6 @@ module.exports = class Interface {
         // update
         this.environment.state.set(path, value)
       }
-
-      this.module.exports[cbDest.toString()]()
     })
   }
 
@@ -556,11 +549,8 @@ module.exports = class Interface {
       return new Uint8Array(32)
     })
 
-    this.kernel._addOperation(opPromise)
-    .then(values => {
-      const result = values.pop()
+    this.kernel._addOperation(opPromise, cbDest, result => {
       this.setMemory(resultOffset, U256_SIZE_BYTES, result)
-      this.module.exports[cbDest.toString()]()
     })
   }
 

@@ -85,9 +85,11 @@ module.exports = class Kernel {
     }
   }
 
-  _addOperation (op) {
-    this._runningOps = Promise.all([this._runningOps, op])
-    return this._runningOps
+  _addOperation (promise, callbackIndex, intefaceCallback) {
+    this._runningOps = Promise.all([this._runningOps, promise]).then(values => {
+      intefaceCallback(values.pop())
+      this.instance.exports[callbackIndex.toString()]()
+    })
   }
 
   // loads code from the merkle trie and delegates the message

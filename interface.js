@@ -13,9 +13,9 @@ const U256_SIZE_BYTES = 32
 
 // The interface exposed to the WebAessembly Core
 module.exports = class Interface {
-  constructor (environment, kernel) {
+  constructor (kernel) {
     this.kernel = kernel
-    this.environment = environment
+    this.environment = kernel.environment
     const shimBin = fs.readFileSync(path.join(__dirname, '/wasm/interface.wasm'))
     const shimMod = WebAssembly.Module(shimBin)
     this.shims = WebAssembly.Instance(shimMod, {
@@ -28,7 +28,11 @@ module.exports = class Interface {
     })
   }
 
-  get exportTable () {
+  static get name () {
+    return 'ethereum'
+  }
+
+  get exports () {
     let exportMethods = [
       // include all the public methods according to the Ethereum Environment Interface (EEI) r1
       'getAddress',
@@ -63,6 +67,11 @@ module.exports = class Interface {
     exportMethods.forEach((method) => {
       ret[method] = this[method].bind(this)
     })
+
+    // add shims
+    ret.useGas = this.shims.exports.useGas
+    ret.getGasLeft = this.shims.exports.getGasLeft
+    ret.call = this.shims.exports.call
     return ret
   }
 
@@ -277,7 +286,7 @@ module.exports = class Interface {
     }
 
     // wait for all the prevouse async ops to finish before running the callback
-    this.kernel._addOperation(opPromise, cbOffset, hash => {
+    this.kernel.pushOpsQueue(opPromise, cbOffset, hash => {
       this.setMemory(offset, U256_SIZE_BYTES, hash.toMemory())
     })
   }
@@ -516,7 +525,7 @@ module.exports = class Interface {
       return null
     })
 
-    this.kernel._addOperation(opPromise, cbDest, oldValue => {
+    this.kernel.pushOpsQueue(opPromise, cbDest, oldValue => {
       if (valIsZero && oldValue) {
         // delete a value
         this.environment.gasRefund += 15000
@@ -549,7 +558,7 @@ module.exports = class Interface {
       return new Uint8Array(32)
     })
 
-    this.kernel._addOperation(opPromise, cbDest, result => {
+    this.kernel.pushOpsQueue(opPromise, cbDest, result => {
       this.setMemory(resultOffset, U256_SIZE_BYTES, result)
     })
   }
@@ -577,11 +586,11 @@ module.exports = class Interface {
   }
 
   getMemory (offset, length) {
-    return new Uint8Array(this.module.exports.memory, offset, length)
+    return new Uint8Array(this.kernel.memory, offset, length)
   }
 
   setMemory (offset, length, value) {
-    const memory = new Uint8Array(this.module.exports.memory, offset, length)
+    const memory = new Uint8Array(this.kernel.memory, offset, length)
     memory.set(value)
   }
 

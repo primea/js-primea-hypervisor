@@ -31,6 +31,10 @@ module.exports = class Environment {
       state: new Vertex({store: new Store()})
     }
 
+    // this.environment.addAccount(identityContract, {})
+    // this.environment.addAccount(meteringContract, {})
+    // this.environment.addAccount(transcompilerContract, {})
+
     Object.assign(this, defaults, data)
   }
 

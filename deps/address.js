@@ -23,6 +23,10 @@ module.exports = class Address extends U256 {
     return super.toBuffer(20)
   }
 
+  toArray () {
+    return [...this.toBuffer()]
+  }
+
   // Needs to be displayed as a hex always
   toString () {
     return '0x' + this._value.toString('hex', 40)

@@ -9,10 +9,12 @@ module.exports = class Kernel {
     this.state = opts.state || new Vertex()
     this.parent = opts.parent
 
+    // if code is bound to this kernel then create the interfaceAPI and the
+    // imports
     if (opts.code) {
       this.interfaceAPI = new InterfaceAPI(opts.code)
+      this.imports = this.buildImports(opts.interfaces)
     }
-    this.imports = this.buildImports(opts.interfaces)
   }
 
   /**

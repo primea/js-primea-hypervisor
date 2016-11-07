@@ -6,15 +6,15 @@ const opcodes = require('./opcodes.js')
  */
 
 module.exports = class DebugInterface {
-  constructor (environment) {
-    this.environment = environment
+  constructor (kernel) {
+    this.kernel = kernel
   }
 
-  setModule (mod) {
-    this.module = mod
+  static get name () {
+    return 'debug'
   }
 
-  get exportTable () {
+  get exports () {
     return {
       'print': function (a) {
         console.log(a)
@@ -32,7 +32,7 @@ module.exports = class DebugInterface {
         if (opcode.number) {
           opcode.name += opcode.number
         }
-        console.error(`op: ${opcode.name} gas: ${this.environment.gasLeft}`)
+        console.error(`op: ${opcode.name} gas: ${this.kernel.environment.gasLeft}`)
         console.log('-------------stack--------------')
         for (let i = sp; i >= 0; i -= 32) {
           console.log(`${(sp - i) / 32} ${this.getMemoryBuffer(i).reverse().toString('hex')}`)
@@ -42,6 +42,6 @@ module.exports = class DebugInterface {
   }
 
   getMemoryBuffer (offset) {
-    return new Buffer(this.module.exports.memory.slice(offset, offset + 32))
+    return new Buffer(this.kernel.memory.slice(offset, offset + 32))
   }
 }

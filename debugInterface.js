@@ -32,7 +32,7 @@ module.exports = class DebugInterface {
         if (opcode.number) {
           opcode.name += opcode.number
         }
-        console.error(`op: ${opcode.name} gas: ${this.kernel.environment.gasLeft}`)
+        console.error(`op: ${opcode.name} gas: ${this.kernel.environment.gasLeft} sp: ${sp}`)
         console.log('-------------stack--------------')
         for (let i = sp; i >= 0; i -= 32) {
           console.log(`${(sp - i) / 32} ${this.getMemoryBuffer(i).reverse().toString('hex')}`)
@@ -41,7 +41,8 @@ module.exports = class DebugInterface {
     }
   }
 
-  getMemoryBuffer (offset) {
-    return new Buffer(this.kernel.memory.slice(offset, offset + 32))
+  getMemoryBuffer (offset, length = 32) {
+    const mem = this.kernel.memory.slice(offset, offset + length)
+    return Buffer.from(mem)
   }
 }

@@ -456,30 +456,39 @@ module.exports = class Interface {
    * @param {integer} gas
    * @return {integer} Returns 1 or 0 depending on if the VM trapped on the message or not
    */
-  callCode (gas, addressOffset, valueOffset, dataOffset, dataLength, resultOffset, resultLength) {
+  callCode (gas, addressOffset, valueOffset, dataOffset, dataLength, resultOffset, resultLength, cbIndex) {
+    this.takeGas(40)
     // Load the params from mem
-    const address = Address.fromMemory(this.getMemory(addressOffset, ADDRESS_SIZE_BYTES))
+    const path = [...this.getMemory(addressOffset, ADDRESS_SIZE_BYTES), 'code']
     const value = U256.fromMemory(this.getMemory(valueOffset, U128_SIZE_BYTES))
 
-    this.takeGas(40)
-
-    // const data = this.getMemory(dataOffset, dataLength).slice(0)
-
-    // // Special case for calling into empty account
-    // if (!this.environment.isAccountPresent(address)) {
-    //   this.takeGas(25000)
-    // }
-    // // Special case for non-zero value
+    // Special case for non-zero value
     if (!value.isZero()) {
-      this.takeGas(9000 - 2300 + gas)
-      this.takeGas(-gas)
+      this.takeGas(6700)
     }
 
-    // const [errorCode, result] = this.environment.call(gas, address, value, data)
-    // this.setMemory(resultOffset, resultLength, result)
-    // return errorCode
-    //
-    return 1
+    // TODO: should be message?
+    const opPromise = this.kernel.environment.state.root.get(path)
+    .catch(() => {
+      // TODO: handle errors
+      // the value was not found
+      return null
+    })
+
+    this.kernel.pushOpsQueue(opPromise, cbIndex, oldValue => {
+      //TODO
+      // const data = this.getMemory(dataOffset, dataLength).slice(0)
+
+      // // Special case for calling into empty account
+      // if (!this.environment.isAccountPresent(address)) {
+      //   this.takeGas(25000)
+      // }
+
+      // const [errorCode, result] = this.environment.call(gas, address, value, data)
+      // this.setMemory(resultOffset, resultLength, result)
+      // return errorCode
+      //
+    })
   }
 
   /**
@@ -511,7 +520,7 @@ module.exports = class Interface {
    * @param {interger} pathOffest the memory offset to load the the path from
    * @param {interger} valueOffset the memory offset to load the value from
    */
-  storageStore (pathOffset, valueOffset, cbDest) {
+  storageStore (pathOffset, valueOffset, cbIndex) {
     this.takeGas(5000)
     const path = [...this.getMemory(pathOffset, U256_SIZE_BYTES)]
     // copy the value
@@ -524,7 +533,7 @@ module.exports = class Interface {
       return null
     })
 
-    this.kernel.pushOpsQueue(opPromise, cbDest, oldValue => {
+    this.kernel.pushOpsQueue(opPromise, cbIndex, oldValue => {
       if (valIsZero && oldValue) {
         // delete a value
         this.kernel.environment.gasRefund += 15000
@@ -545,8 +554,9 @@ module.exports = class Interface {
    * @param {interger} pathOffest the memory offset to load the the path from
    * @param {interger} resultOffset the memory offset to load the value from
    */
-  storageLoad (pathOffset, resultOffset, cbDest) {
+  storageLoad (pathOffset, resultOffset, cbIndex) {
     this.takeGas(50)
+    console.log('offset: ' + resultOffset);
 
     // convert the path to an array
     const path = [...this.getMemory(pathOffset, U256_SIZE_BYTES)]
@@ -557,7 +567,7 @@ module.exports = class Interface {
       return new Uint8Array(32)
     })
 
-    this.kernel.pushOpsQueue(opPromise, cbDest, result => {
+    this.kernel.pushOpsQueue(opPromise, cbIndex, result => {
       this.setMemory(resultOffset, U256_SIZE_BYTES, result)
     })
   }

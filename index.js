@@ -1,6 +1,6 @@
 const Vertex = require('./deps/kernelVertex')
 // The Kernel Exposes this Interface to VM instances it makes
-const Interface = require('./interface.js')
+const Interface = require('./EVMinterface.js')
 const InterfaceAPI = require('./interfaceAPI.js')
 const Environment = require('./environment.js')
 

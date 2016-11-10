@@ -3,6 +3,7 @@ const Store = require('merkle-trie/store')
 const U256 = require('./deps/u256.js')
 const Address = require('./deps/address.js')
 const Block = require('./deps/block.js')
+// TODO remove fakeblockchain
 const fakeBlockChain = require('./fakeBlockChain.js')
 
 module.exports = class Environment {
@@ -30,7 +31,6 @@ module.exports = class Environment {
       returnValue: new Uint8Array(),
       state: new Vertex({store: new Store()})
     }
-
     // this.environment.addAccount(identityContract, {})
     // this.environment.addAccount(meteringContract, {})
     // this.environment.addAccount(transcompilerContract, {})
@@ -75,8 +75,7 @@ module.exports = class Environment {
   }
 
   async getBlockHash (height) {
-    // return this.blockchain.getBlock(height).hash()
-    const block = await this.root.getBlockAt(height)
+    const block = await this.blockchain.getBlock(height)
     return block.hash()
   }
 

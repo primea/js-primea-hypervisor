@@ -2,6 +2,8 @@
  * This is the Ethereum interface that is exposed to the WASM instance which
  * enables to interact with the Ethereum Environment
  */
+
+const Vertex = require('merkle-trie')
 const Address = require('./deps/address.js')
 const U256 = require('./deps/u256.js')
 const fs = require('fs')
@@ -231,12 +233,17 @@ module.exports = class Interface {
    * @param {integer} addressOffset the offset in memory to load the address from
    * @return {integer}
    */
-  getExternalCodeSize (addressOffset) {
+  getExternalCodeSize (addressOffset, cbOffset) {
     this.takeGas(20)
 
-    const address = Address.fromMemory(this.getMemory(addressOffset, ADDRESS_SIZE_BYTES))
-    const code = this.kernel.environment.getCode(address)
-    return code.length
+    const address = Address.fromMemory(this.getMemory(addressOffset, ADDRESS_SIZE_BYTES)).toArray()
+    address.push('code')
+    const opPromise = this.kernel.environment.state.root.get(address)
+      .then(vertex => vertex.value.length)
+      .catch(() => 0)
+
+    // wait for all the prevouse async ops to finish before running the callback
+    this.kernel.pushOpsQueue(opPromise, cbOffset, length => length)
   }
 
   /**
@@ -522,16 +529,13 @@ module.exports = class Interface {
    */
   storageStore (pathOffset, valueOffset, cbIndex) {
     this.takeGas(5000)
-    const path = [...this.getMemory(pathOffset, U256_SIZE_BYTES)]
+    const path = ['storage', ...this.getMemory(pathOffset, U256_SIZE_BYTES)]
     // copy the value
     const value = this.getMemory(valueOffset, U256_SIZE_BYTES).slice(0)
     const valIsZero = value.every((i) => i === 0)
     const opPromise = this.kernel.environment.state.get(path)
-    .catch(() => {
-      // TODO: handle errors
-      // the value was not found
-      return null
-    })
+      .then(vertex => vertex.value)
+      .catch(() => null)
 
     this.kernel.pushOpsQueue(opPromise, cbIndex, oldValue => {
       if (valIsZero && oldValue) {
@@ -544,7 +548,9 @@ module.exports = class Interface {
           this.takeGas(15000)
         }
         // update
-        this.kernel.environment.state.set(path, value)
+        this.kernel.environment.state.set(path, new Vertex({
+          value: value
+        }))
       }
     })
   }
@@ -556,19 +562,16 @@ module.exports = class Interface {
    */
   storageLoad (pathOffset, resultOffset, cbIndex) {
     this.takeGas(50)
-    console.log('offset: ' + resultOffset);
 
     // convert the path to an array
-    const path = [...this.getMemory(pathOffset, U256_SIZE_BYTES)]
+    const path = ['storage', ...this.getMemory(pathOffset, U256_SIZE_BYTES)]
+    // get the value from the state
     const opPromise = this.kernel.environment.state.get(path)
-    .catch(() => {
-      // TODO: handle other possible errors
-      // if the value was not found return a empty array
-      return new Uint8Array(32)
-    })
+      .then(vertex => vertex.value)
+      .catch(() => new Uint8Array(32))
 
-    this.kernel.pushOpsQueue(opPromise, cbIndex, result => {
-      this.setMemory(resultOffset, U256_SIZE_BYTES, result)
+    this.kernel.pushOpsQueue(opPromise, cbIndex, value => {
+      this.setMemory(resultOffset, U256_SIZE_BYTES, value)
     })
   }
 

@@ -28,8 +28,8 @@ module.exports = class interfaceAPI {
 
   pushOpsQueue (promise, callbackIndex, intefaceCallback) {
     this._opsQueue = Promise.all([this._opsQueue, promise]).then(values => {
-      intefaceCallback(values.pop())
-      this._instance.exports[callbackIndex.toString()]()
+      const result = intefaceCallback(values.pop())
+      this._instance.exports[callbackIndex.toString()](result)
     })
   }
 

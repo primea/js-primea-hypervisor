@@ -2,7 +2,6 @@
  * This is the Ethereum interface that is exposed to the WASM instance which
  * enables to interact with the Ethereum Environment
  */
-
 const Vertex = require('merkle-trie')
 const Address = require('./deps/address.js')
 const U256 = require('./deps/u256.js')
@@ -223,13 +222,23 @@ module.exports = class Interface {
    * @param {integer} codeOffset the code offset
    * @param {integer} length the length of code to copy
    */
-  codeCopy (resultOffset, codeOffset, length) {
+  codeCopy (resultOffset, codeOffset, length, cbIndex) {
     this.takeGas(3 + Math.ceil(length / 32) * 3)
 
+    let opPromise
+
     if (length) {
-      const code = this.kernel.environment.code.slice(codeOffset, codeOffset + length)
-      this.setMemory(resultOffset, length, code)
+      opPromise = this.kernel.environment.state.get('code')
+        .then(vertex => vertex.value)
+    } else {
+      opPromise = Promise.resolve([])
     }
+
+    // wait for all the prevouse async ops to finish before running the callback
+    this.kernel.pushOpsQueue(opPromise, cbIndex, code => {
+      code = code.slice(codeOffset, codeOffset + length)
+      this.setMemory(resultOffset, length, code)
+    })
   }
 
   /**

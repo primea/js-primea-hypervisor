@@ -121,13 +121,17 @@ module.exports = class Interface {
    * @param {integer} addressOffset the memory offset to laod the address
    * @param {integer} resultOffset
    */
-  getBalance (addressOffset, offset) {
+  getBalance (addressOffset, offset, cbIndex) {
     this.takeGas(20)
 
-    const address = Address.fromMemory(this.getMemory(addressOffset, ADDRESS_SIZE_BYTES))
-    // call the parent contract and ask for the balance of one of its child contracts
-    const balance = this.kernel.environment.getBalance(address)
-    this.setMemory(offset, U128_SIZE_BYTES, balance.toMemory(U128_SIZE_BYTES))
+    const path = [...this.getMemory(addressOffset, ADDRESS_SIZE_BYTES), 'balance']
+    const opPromise = this.kernel.environment.state.get(path)
+      .then(vertex => new U256(vertex.value))
+      .catch(() => new U256(0))
+
+    this.kernel.pushOpsQueue(opPromise, cbIndex, balance => {
+      this.setMemory(offset, U128_SIZE_BYTES, balance.toMemory(U128_SIZE_BYTES))
+    })
   }
 
   /**
@@ -235,9 +239,7 @@ module.exports = class Interface {
    */
   getExternalCodeSize (addressOffset, cbOffset) {
     this.takeGas(20)
-
-    const address = Address.fromMemory(this.getMemory(addressOffset, ADDRESS_SIZE_BYTES)).toArray()
-    address.push('code')
+    const address = [...this.getMemory(addressOffset, ADDRESS_SIZE_BYTES), 'code']
     const opPromise = this.kernel.environment.state.root.get(address)
       .then(vertex => vertex.value.length)
       .catch(() => 0)

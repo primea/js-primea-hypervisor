@@ -28,11 +28,15 @@ module.exports = class U256 {
     return this._value.toString(radix)
   }
 
-  toBuffer (width) {
+  toBuffer (width = 32) {
     if (width <= 0 || width > 32) {
       throw new Error('Invalid U256 width')
     }
-    return this._value.toBuffer('be', width || 32)
+    return this._value.toBuffer('be', width)
+  }
+
+  toArray () {
+    return [...this.toBuffer()]
   }
 
   isZero () {

@@ -427,7 +427,7 @@ module.exports = class Interface {
   _call (gasHigh, gasLow, addressOffset, valueOffset, dataOffset, dataLength, resultOffset, resultLength) {
     const gas = from64bit(gasHigh, gasLow)
     // Load the params from mem
-    const address = Address.fromMemory(this.getMemory(addressOffset, ADDRESS_SIZE_BYTES))
+    const address = [...this.getMemory(addressOffset, ADDRESS_SIZE_BYTES)]
     const value = U256.fromMemory(this.getMemory(valueOffset, U128_SIZE_BYTES))
 
     this.takeGas(40)
@@ -517,7 +517,7 @@ module.exports = class Interface {
     this.takeGas(40)
 
     const data = this.getMemory(dataOffset, dataLength).slice(0)
-    const address = Address.fromMemory(this.getMemory(addressOffset, ADDRESS_SIZE_BYTES))
+    const address = [...this.getMemory(addressOffset, ADDRESS_SIZE_BYTES)]
     const [errorCode, result] = this.environment.callDelegate(gas, address, data)
     this.setMemory(resultOffset, resultLength, result)
     return errorCode

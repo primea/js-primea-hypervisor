@@ -13,12 +13,12 @@ module.exports = class U256 {
 
   // This assumes Uint8Array in LSB (WASM code)
   static fromMemory (value) {
-    return new U256(new BN(value, 16, 'le'))
+    return new U256(new BN(value, 16, 'be'))
   }
 
   // This assumes Uint8Array in LSB (WASM code)
   toMemory (width) {
-    return this._value.toBuffer('le', width || 32)
+    return this._value.toBuffer('be', width || 32)
   }
 
   toString (radix = 10) {

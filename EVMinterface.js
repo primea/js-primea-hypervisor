@@ -125,7 +125,7 @@ module.exports = class Interface {
     this.takeGas(20)
 
     const path = [...this.getMemory(addressOffset, ADDRESS_SIZE_BYTES), 'balance']
-    const opPromise = this.kernel.environment.state.get(path)
+    const opPromise = this.kernel.environment.state.root.get(path)
       .then(vertex => new U256(vertex.value))
       .catch(() => new U256(0))
 

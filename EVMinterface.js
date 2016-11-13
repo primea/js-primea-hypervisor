@@ -2,11 +2,13 @@
  * This is the Ethereum interface that is exposed to the WASM instance which
  * enables to interact with the Ethereum Environment
  */
+
+const fs = require('fs')
+const path = require('path')
+const ethUtil = require('ethereumjs-util')
 const Vertex = require('merkle-trie')
 const Address = require('./deps/address.js')
 const U256 = require('./deps/u256.js')
-const fs = require('fs')
-const path = require('path')
 
 const U128_SIZE_BYTES = 16
 const ADDRESS_SIZE_BYTES = 20
@@ -210,10 +212,14 @@ module.exports = class Interface {
    * Gets the size of code running in current environment.
    * @return {interger}
    */
-  getCodeSize () {
+  getCodeSize (cbIndex) {
     this.takeGas(2)
 
-    return this.kernel.environment.code.length
+    const opPromise = this.kernel.environment.state.get('code')
+      .then(vertex => vertex.value.length)
+
+    // wait for all the prevouse async ops to finish before running the callback
+    this.kernel.pushOpsQueue(opPromise, cbIndex, length => length)
   }
 
   /**
@@ -264,15 +270,26 @@ module.exports = class Interface {
    * @param {integer} codeOffset the code offset
    * @param {integer} length the length of code to copy
    */
-  externalCodeCopy (addressOffset, resultOffset, codeOffset, length) {
+  externalCodeCopy (addressOffset, resultOffset, codeOffset, length, cbIndex) {
     this.takeGas(20 + Math.ceil(length / 32) * 3)
 
+    const address = [...this.getMemory(addressOffset, ADDRESS_SIZE_BYTES), 'code']
+    let opPromise
+
     if (length) {
-      const address = Address.fromMemory(this.getMemory(addressOffset, ADDRESS_SIZE_BYTES))
-      let code = this.kernel.environment.getCode(address)
+      opPromise = this.kernel.environment.state.root
+        .get(address)
+        .then(vertex => vertex.value)
+        .catch(() => [])
+    } else {
+      opPromise = Promise.resolve([])
+    }
+
+    // wait for all the prevouse async ops to finish before running the callback
+    this.kernel.pushOpsQueue(opPromise, cbIndex, code => {
       code = code.slice(codeOffset, codeOffset + length)
       this.setMemory(resultOffset, length, code)
-    }
+    })
   }
 
   /**
@@ -404,22 +421,24 @@ module.exports = class Interface {
    * @param (integer} resultOffset the offset to write the new contract address to
    * @return {integer} Return 1 or 0 depending on if the VM trapped on the message or not
    */
-  create (valueOffset, dataOffset, length, resultOffset) {
+  create (valueOffset, dataOffset, length, resultOffset, cbIndex) {
     this.takeGas(32000)
 
     const value = U256.fromMemory(this.getMemory(valueOffset, U128_SIZE_BYTES))
-    if (length) {
-      const data = this.getMemory(dataOffset, length).slice(0)
-      // const [errorCode, address] = this.environment.create(value, data)
-    }
-    let address
+    const code = this.getMemory(dataOffset, length).slice(0)
+    let opPromise
+
     if (value.gt(this.kernel.environment.value)) {
-      address = new Address()
+      opPromise = Promise.resolve(new Address())
     } else {
-      address = new Address('0x945304eb96065b2a98b57a48a06ae28d285a71b5')
+      // todo actully run the code
+      opPromise = Promise.resolve(ethUtil.generateAddress(this.kernel.environment.from, this.kernel.environment.nonce))
     }
-    this.setMemory(resultOffset, ADDRESS_SIZE_BYTES, address.toMemory())
-    // return errorCode
+
+    // wait for all the prevouse async ops to finish before running the callback
+    this.kernel.pushOpsQueue(opPromise, cbIndex, address => {
+      this.setMemory(resultOffset, ADDRESS_SIZE_BYTES, address)
+    })
   }
 
   /**
@@ -539,6 +558,7 @@ module.exports = class Interface {
    * @param {interger} valueOffset the memory offset to load the value from
    */
   storageStore (pathOffset, valueOffset, cbIndex) {
+    console.log('storage store');
     this.takeGas(5000)
     const path = ['storage', ...this.getMemory(pathOffset, U256_SIZE_BYTES)]
     // copy the value

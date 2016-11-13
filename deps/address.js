@@ -11,12 +11,12 @@ module.exports = class Address extends U256 {
 
   // This assumes Uint8Array in LSB (WASM code)
   static fromMemory (value) {
-    return new Address(new BN(value, 16, 'le'))
+    return new Address(new BN(value, 16, 'be'))
   }
 
   // This assumes Uint8Array in LSB (WASM code)
   toMemory () {
-    return this._value.toBuffer('le', 20)
+    return this._value.toBuffer('be', 20)
   }
 
   toBuffer () {

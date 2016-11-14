@@ -435,10 +435,10 @@ module.exports = class Interface {
     let opPromise
 
     if (value.gt(this.kernel.environment.value)) {
-      opPromise = Promise.resolve(new Address())
+      opPromise = Promise.resolve(new Buffer(20).fill(0))
     } else {
       // todo actully run the code
-      opPromise = Promise.resolve(ethUtil.generateAddress(this.kernel.environment.from, this.kernel.environment.nonce))
+      opPromise = Promise.resolve(ethUtil.generateAddress(this.kernel.environment.address, this.kernel.environment.nonce))
     }
 
     // wait for all the prevouse async ops to finish before running the callback
@@ -458,33 +458,30 @@ module.exports = class Interface {
    * @param {integer} gas
    * @return {integer} Returns 1 or 0 depending on if the VM trapped on the message or not
    */
-  _call (gasHigh, gasLow, addressOffset, valueOffset, dataOffset, dataLength, resultOffset, resultLength) {
+  _call (gasHigh, gasLow, addressOffset, valueOffset, dataOffset, dataLength, resultOffset, resultLength, cbIndex) {
     const gas = from64bit(gasHigh, gasLow)
     // Load the params from mem
     const address = [...this.getMemory(addressOffset, ADDRESS_SIZE_BYTES)]
-    const value = U256.fromMemory(this.getMemory(valueOffset, U128_SIZE_BYTES))
+    const value = new U256(this.getMemory(valueOffset, U128_SIZE_BYTES))
 
     this.takeGas(40)
 
-    // const data = this.getMemory(dataOffset, dataLength).slice(0)
-
-    // // Special case for calling into empty account
-    // if (!this.environment.isAccountPresent(address)) {
-    //   this.takeGas(25000)
-    // }
-    if (address.lt(new U256(4))) {
-      this.takeGas(25000)
-    }
-    // // Special case for non-zero value
+    // Special case for non-zero value; why does this exist?
     if (!value.isZero()) {
       this.takeGas(9000 - 2300 + gas)
       this.takeGas(-gas)
     }
 
-    // const [errorCode, result] = this.environment.call(gas, address, value, data)
-    // this.setMemory(resultOffset, resultLength, result)
-    // return errorCode
-    return 1
+    let opPromise = this.kernel.environment.state.root.get(address)
+    .catch(() => {
+      // why does this exist?
+      this.takeGas(25000)
+    })
+
+    // wait for all the prevouse async ops to finish before running the callback
+    this.kernel.pushOpsQueue(opPromise, cbIndex, () => {
+      return 1
+    })
   }
 
   /**
@@ -504,7 +501,7 @@ module.exports = class Interface {
     const path = [...this.getMemory(addressOffset, ADDRESS_SIZE_BYTES), 'code']
     const value = U256.fromMemory(this.getMemory(valueOffset, U128_SIZE_BYTES))
 
-    // Special case for non-zero value
+    // Special case for non-zero value; why does this exist?
     if (!value.isZero()) {
       this.takeGas(6700)
     }
@@ -518,18 +515,7 @@ module.exports = class Interface {
     })
 
     this.kernel.pushOpsQueue(opPromise, cbIndex, oldValue => {
-      //TODO
-      // const data = this.getMemory(dataOffset, dataLength).slice(0)
-
-      // // Special case for calling into empty account
-      // if (!this.environment.isAccountPresent(address)) {
-      //   this.takeGas(25000)
-      // }
-
-      // const [errorCode, result] = this.environment.call(gas, address, value, data)
-      // this.setMemory(resultOffset, resultLength, result)
-      // return errorCode
-      //
+      return 1
     })
   }
 

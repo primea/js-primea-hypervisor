@@ -2,7 +2,6 @@
  * This is the Ethereum interface that is exposed to the WASM instance which
  * enables to interact with the Ethereum Environment
  */
-
 const fs = require('fs')
 const path = require('path')
 const ethUtil = require('ethereumjs-util')
@@ -242,8 +241,10 @@ module.exports = class Interface {
 
     // wait for all the prevouse async ops to finish before running the callback
     this.kernel.pushOpsQueue(opPromise, cbIndex, code => {
-      code = code.slice(codeOffset, codeOffset + length)
-      this.setMemory(resultOffset, length, code)
+      if (code.length) {
+        code = code.slice(codeOffset, codeOffset + length)
+        this.setMemory(resultOffset, length, code)
+      }
     })
   }
 
@@ -287,8 +288,10 @@ module.exports = class Interface {
 
     // wait for all the prevouse async ops to finish before running the callback
     this.kernel.pushOpsQueue(opPromise, cbIndex, code => {
-      code = code.slice(codeOffset, codeOffset + length)
-      this.setMemory(resultOffset, length, code)
+      if (code.length) {
+        code = code.slice(codeOffset, codeOffset + length)
+        this.setMemory(resultOffset, length, code)
+      }
     })
   }
 
@@ -558,7 +561,6 @@ module.exports = class Interface {
    * @param {interger} valueOffset the memory offset to load the value from
    */
   storageStore (pathOffset, valueOffset, cbIndex) {
-    console.log('storage store');
     this.takeGas(5000)
     const path = ['storage', ...this.getMemory(pathOffset, U256_SIZE_BYTES)]
     // copy the value

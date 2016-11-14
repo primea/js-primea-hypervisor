@@ -428,7 +428,10 @@ module.exports = class Interface {
     this.takeGas(32000)
 
     const value = U256.fromMemory(this.getMemory(valueOffset, U128_SIZE_BYTES))
-    const code = this.getMemory(dataOffset, length).slice(0)
+    if (length) {
+      const code = this.getMemory(dataOffset, length).slice(0)
+    }
+
     let opPromise
 
     if (value.gt(this.kernel.environment.value)) {
@@ -481,7 +484,6 @@ module.exports = class Interface {
     // const [errorCode, result] = this.environment.call(gas, address, value, data)
     // this.setMemory(resultOffset, resultLength, result)
     // return errorCode
-    //
     return 1
   }
 

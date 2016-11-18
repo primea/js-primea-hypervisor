@@ -6,7 +6,6 @@ const fs = require('fs')
 const path = require('path')
 const ethUtil = require('ethereumjs-util')
 const Vertex = require('merkle-trie')
-const Address = require('./deps/address.js')
 const U256 = require('./deps/u256.js')
 
 const U128_SIZE_BYTES = 16
@@ -617,7 +616,7 @@ module.exports = class Interface {
    */
   selfDestruct (addressOffset) {
     this.kernel.environment.selfDestruct = true
-    this.kernel.environment.selfDestructAddress = Address.fromMemory(this.getMemory(addressOffset, ADDRESS_SIZE_BYTES))
+    this.kernel.environment.selfDestructAddress = this.getMemory(addressOffset, ADDRESS_SIZE_BYTES)
     this.kernel.environment.gasRefund += 24000
   }
 

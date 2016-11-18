@@ -7,6 +7,9 @@ module.exports = class interfaceAPI {
     this._module = WebAssembly.Module(code)
   }
 
+  /**
+   * Runs the core VM with a given environment and imports
+   */
   run (environment, imports) {
     this._environment = environment
     // TODO, delete the instance once done.
@@ -17,7 +20,9 @@ module.exports = class interfaceAPI {
     return this.onDone()
   }
 
-  // returns a promise that resolves when the wasm instance is done running
+  /**
+   * returns a promise that resolves when the wasm instance is done running
+   */
   async onDone () {
     let prevOps
     while (prevOps !== this._opsQueue) {
@@ -26,6 +31,9 @@ module.exports = class interfaceAPI {
     }
   }
 
+  /**
+   * addes an aync operation to the operations queue
+   */
   pushOpsQueue (promise, callbackIndex, intefaceCallback) {
     this._opsQueue = Promise.all([this._opsQueue, promise]).then(values => {
       const result = intefaceCallback(values.pop())

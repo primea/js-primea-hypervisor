@@ -214,7 +214,8 @@ module.exports = class Interface {
   getCodeSize (cbIndex) {
     this.takeGas(2)
 
-    const opPromise = this.kernel.environment.state.get('code')
+    const opPromise = this.kernel.environment.state
+      .get('code')
       .then(vertex => vertex.value.length)
 
     // wait for all the prevouse async ops to finish before running the callback
@@ -233,7 +234,8 @@ module.exports = class Interface {
     let opPromise
 
     if (length) {
-      opPromise = this.kernel.environment.state.get('code')
+      opPromise = this.kernel.environment.state
+        .get('code')
         .then(vertex => vertex.value)
     } else {
       opPromise = Promise.resolve([])
@@ -256,7 +258,8 @@ module.exports = class Interface {
   getExternalCodeSize (addressOffset, cbOffset) {
     this.takeGas(20)
     const address = [...this.getMemory(addressOffset, ADDRESS_SIZE_BYTES), 'code']
-    const opPromise = this.kernel.environment.state.root.get(address)
+    const opPromise = this.kernel.environment.state.root
+      .get(address)
       .then(vertex => vertex.value.length)
       .catch(() => 0)
 

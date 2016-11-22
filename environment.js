@@ -56,7 +56,7 @@ module.exports = class Environment {
     if (account) {
       return account.get('balance')
     } else {
-      return new U256()
+      return null
     }
   }
 

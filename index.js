@@ -1,13 +1,13 @@
-const Vertex = require('./deps/kernelVertex')
+const Vertex = require('merkle-trie')
 // The Kernel Exposes this Interface to VM instances it makes
 const Imports = require('./EVMimports.js')
 const VM = require('./vm.js')
 const Environment = require('./environment.js')
 
-module.exports = class Kernel {
+module.exports = class Kernel extends Vertex {
   constructor (opts = {}) {
-    this.state = opts.state || new Vertex()
-    this.parent = opts.parent
+    opts.code = opts.value || opts.code
+    super(opts)
 
     // if code is bound to this kernel then create the interfaceAPI and the imports
     if (opts.code) {
@@ -31,7 +31,7 @@ module.exports = class Kernel {
    * The Kernel Stores all of its state in the Environment. The Interface is used
    * to by the VM to retrive infromation from the Environment.
    */
-  async run (environment = new Environment({state: this.state}), imports = this.imports) {
+  async run (environment = new Environment({state: this}), imports = this.imports) {
     await this._vm.run(environment, imports)
   }
 

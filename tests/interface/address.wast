@@ -3,13 +3,13 @@
   (memory 1)
 
   (import $address  "ethereum" "getAddress"  (param i32))
-  (export "test" 0)
+  (export "main" 0)
   (export "a" memory)
   (func 
     (block
       ;; loads the address into memory
       (call_import $address (i32.const 0))
-      (if (i64.eq (i64.load (i32.const 0)) (i64.const 0xbd9c6f4a2d06c47b))
+      (if (i64.eq (i64.load (i32.const 0)) (i64.const 0x72a1048901c1485d))
         (return)
       )
       (unreachable)

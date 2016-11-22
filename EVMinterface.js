@@ -337,7 +337,7 @@ module.exports = class Interface {
   getBlockCoinbase (offset) {
     this.takeGas(2)
 
-    this.setMemory(offset, ADDRESS_SIZE_BYTES, this.kernel.environment.block.coinbase.toMemory())
+    this.setMemory(offset, ADDRESS_SIZE_BYTES, this.kernel.environment.coinbase.toMemory())
   }
 
   /**
@@ -461,12 +461,12 @@ module.exports = class Interface {
    * @return {integer} Returns 1 or 0 depending on if the VM trapped on the message or not
    */
   _call (gasHigh, gasLow, addressOffset, valueOffset, dataOffset, dataLength, resultOffset, resultLength, cbIndex) {
+    this.takeGas(40)
+
     const gas = from64bit(gasHigh, gasLow)
     // Load the params from mem
     const address = [...this.getMemory(addressOffset, ADDRESS_SIZE_BYTES)]
     const value = new U256(this.getMemory(valueOffset, U128_SIZE_BYTES))
-
-    this.takeGas(40)
 
     // Special case for non-zero value; why does this exist?
     if (!value.isZero()) {

@@ -5,6 +5,7 @@
   "scripts": {
     "lint": "standard",
     "test": "node --expose-wasm ./tests/interfaceRunner.js"
+    "build": "node ./tests/buildTests.js"
   },
   "repository": {
     "type": "git",

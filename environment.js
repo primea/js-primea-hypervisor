@@ -31,21 +31,8 @@ module.exports = class Environment {
       returnValue: new Uint8Array(),
       state: new Vertex({store: new Store()})
     }
-    // this.environment.addAccount(identityContract, {})
-    // this.environment.addAccount(meteringContract, {})
-    // this.environment.addAccount(transcompilerContract, {})
-
     Object.assign(this, defaults, data)
   }
-
-  // addAccount (address, trie) {
-  //   let account = new Vertex()
-  //   account.set('nonce', trie.nonce || new U256(0))
-  //   account.set('balance', trie.balance || new U256(0))
-  //   account.set('code', trie.code || new Uint8Array())
-  //   account.set('storage', trie.storage || new Map())
-  //   this.state.set(address.toString(), account)
-  // }
 
   isAccountPresent (address) {
     // const account = this.state.get(address.toString())

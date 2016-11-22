@@ -4,11 +4,10 @@
   (import $callDataCopy "ethereum" "callDataCopy" (param i32 i32 i32))
 
   (export "memory" memory)
-  (export "test" 0)
+  (export "main" 0)
   (func 
     (block
       (call_import $callDataCopy (i32.const 0) (i32.const 0) (i32.const 8))
-
       (if (i64.eq (i64.load (i32.const 0)) (i64.const 0x2065726120756f59))
         (return)
       )

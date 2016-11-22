@@ -1,7 +1,7 @@
 const Vertex = require('./deps/kernelVertex')
 // The Kernel Exposes this Interface to VM instances it makes
-const Interface = require('./EVMinterface.js')
-const InterfaceAPI = require('./interfaceAPI.js')
+const Imports = require('./EVMimports.js')
+const VM = require('./vm.js')
 const Environment = require('./environment.js')
 
 module.exports = class Kernel {
@@ -9,19 +9,18 @@ module.exports = class Kernel {
     this.state = opts.state || new Vertex()
     this.parent = opts.parent
 
-    // if code is bound to this kernel then create the interfaceAPI and the
-    // imports
+    // if code is bound to this kernel then create the interfaceAPI and the imports
     if (opts.code) {
-      this.interfaceAPI = new InterfaceAPI(opts.code)
-      this.imports = buildImports(this.interfaceAPI, opts.interfaces)
+      this._vm = new VM(opts.code)
+      this.imports = buildImports(this._vm, opts.interfaces)
     }
 
     /**
      * Builds a import map with an array of given interfaces
      */
-    function buildImports (api, interfaces = [Interface]) {
-      return interfaces.reduce((obj, Interface) => {
-        obj[Interface.name] = new Interface(api).exports
+    function buildImports (api, imports = [Imports]) {
+      return imports.reduce((obj, InterfaceConstuctor) => {
+        obj[InterfaceConstuctor.name] = new InterfaceConstuctor(api).exports
         return obj
       }, {})
     }
@@ -33,8 +32,7 @@ module.exports = class Kernel {
    * to by the VM to retrive infromation from the Environment.
    */
   async run (environment = new Environment({state: this.state}), imports = this.imports) {
-    await this.interfaceAPI.run(environment, imports)
-    return environment
+    await this._vm.run(environment, imports)
   }
 
   async messageReceiver (message) {

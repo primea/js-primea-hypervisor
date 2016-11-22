@@ -1,4 +1,4 @@
-module.exports = class interfaceAPI {
+module.exports = class VM {
   /**
    * The interface API is the api the exposed to interfaces. All queries about
    * the enviroment and call to the kernel go through this API

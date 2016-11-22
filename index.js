@@ -13,18 +13,18 @@ module.exports = class Kernel {
     // imports
     if (opts.code) {
       this.interfaceAPI = new InterfaceAPI(opts.code)
-      this.imports = this.buildImports(opts.interfaces)
+      this.imports = buildImports(this.interfaceAPI, opts.interfaces)
     }
-  }
 
-  /**
-   * Builds a import map with an array of given interfaces
-   */
-  buildImports (interfaces = [Interface]) {
-    return interfaces.reduce((obj, Interface) => {
-      obj[Interface.name] = new Interface(this.interfaceAPI).exports
-      return obj
-    }, {})
+    /**
+     * Builds a import map with an array of given interfaces
+     */
+    function buildImports (api, interfaces = [Interface]) {
+      return interfaces.reduce((obj, Interface) => {
+        obj[Interface.name] = new Interface(api).exports
+        return obj
+      }, {})
+    }
   }
 
   /**

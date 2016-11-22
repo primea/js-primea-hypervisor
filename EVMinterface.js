@@ -430,9 +430,9 @@ module.exports = class Interface {
     this.takeGas(32000)
 
     const value = U256.fromMemory(this.getMemory(valueOffset, U128_SIZE_BYTES))
-    if (length) {
-      const code = this.getMemory(dataOffset, length).slice(0)
-    }
+    // if (length) {
+    //   const code = this.getMemory(dataOffset, length).slice(0)
+    // }
 
     let opPromise
 

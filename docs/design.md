@@ -1,53 +1,25 @@
 # Architecture
 
-This prototype attempts to model Ethereum as three seperate but interlocking 
-layers. Environment, Kernel, and VM.
 ```
- +------------------+
- |                  |
- | Environment      |
- |                  |
- +------------------+
-        |
- +------------------+
- |                  |
- | Kernal           |
- |                  |
- +------------------+
-        |
-   interfaces
-        |
- +------------------+
- |                  |
- | VM               |
- |                  |
- +------------------+
+                     +--------------+
+                     |              |
+                     | Environment  |
+                     |              |
+                     +--------------+        +--------------------+
+                             |               |                    +--+
+                             |          +----+   Imports          |  |
+                             |          |    +--------------------+  |
+ +------------+       +------------+    |                            |   +--------------------------+
+ |            |       |            |    |    +--------------------+  |   |                          |
+ |   Kernel   +-------+VM Container+---------+                    +------+  Sandboxed VM instance   |
+ |            |       |            |    |    |   Imports          |  |   |                          |
+ +------------+       +------------+    |    +--------------------+  |   +--------------------------+
+                                        |                            |
+                                        |    +--------------------+  |
+                                        |    |                    |  |
+                                        +----+   Imports          +--+
+                                             +--------------------+
+
 ```
-## VM
-
-The VM implements [webassembly](https://github.com/WebAssembly/design). Two
-sets of intefaces are exposed to it by the kernal. The Kernal Interface and 
-The Environment Interface.
-
-## Kernel Interface
-
-The kernel handles the following
- * Interprocess communication
- * Intializing the VM and exposes ROM containing code to the VM (codeHandler)
- * Exposing the namespace and Intializes the Environment which VM instance exists 
- (callHandler)
- * Provides some built in contracts that facilitates different run levels 
- (runTx, runBlock)
- * Provides resource sharing and limiting via gas
-
-The kernel Interface expose kernal primitives to VM which contain
- * IPC (calls)
- * Namespace Interface
-  * GET/PUT/DELETE/ROOT/NEXT - currently implemented as a `Map`
-
-## Environment Interface
-
-The Environment Interface expose the following
-* blockchain infromation
-* current block infromation
-* transaction infromation
+# Overview
+The `Kernel` is modeled to be somewhat like [actors](https://en.wikipedia.org/wiki/Actor_model). Each Kernel/Actor is bound to a segment of code and a state tree on startup. The Kernel provides the top level API. When the kernel recieves a message from another kernel or an external source (signal) it may run that code in a VM container. The container just provides a uniform way to interact with VMs. The container is given an instance of `Evironment`. The `Evironment` contains all the ephemeral state that need for the VM container and instance. Lastly the VM container start and manages the VM instance which is assumed to be sandboxed. The Sandbox communicates to VM container via `Imports` that are exposed to it on the time of creation. 

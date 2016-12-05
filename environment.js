@@ -1,10 +1,13 @@
-const U256 = require('./u256.js')
-const Address = require('./address.js')
-const Block = require('./block.js')
+const Vertex = require('merkle-trie')
+const Store = require('merkle-trie/store')
+const U256 = require('./deps/u256.js')
+const Address = require('./deps/address.js')
+const Block = require('./deps/block.js')
+// TODO remove fakeblockchain
 const fakeBlockChain = require('./fakeBlockChain.js')
 
 module.exports = class Environment {
-  constructor (data) {
+  constructor (data = {}) {
     const defaults = {
       block: new Block(),
       blockchain: fakeBlockChain,
@@ -25,52 +28,42 @@ module.exports = class Environment {
       selfDestruct: false,
       selfDestructAddress: new Address('0x0000000000000000000000000000000000000000'),
       // more output calls
-      returnValue: new Uint8Array()
+      returnValue: new Uint8Array(),
+      state: new Vertex({store: new Store()})
     }
-
-    this.state = new Map()
-
-    Object.assign(this, defaults, data || {})
-  }
-
-  addAccount (address, trie) {
-    let account = new Map()
-    account.set('nonce', trie.nonce || new U256(0))
-    account.set('balance', trie.balance || new U256(0))
-    account.set('code', trie.code || new Uint8Array())
-    account.set('storage', trie.storage || new Map())
-    this.parent.state.set(address.toString(), account)
+    Object.assign(this, defaults, data)
   }
 
   isAccountPresent (address) {
-    const account = this.state.get(address.toString())
-    if (account) {
-      return true
-    } else {
-      return false
-    }
+    // const account = this.state.get(address.toString())
+    // if (account) {
+    //   return true
+    // } else {
+    //   return false
+    // }
   }
 
   getBalance (address) {
-    const account = this.parent.state.get(address.toString())
-    if (account) {
-      return account.get('balance')
-    } else {
-      return new U256()
-    }
+    // const account = this.state.get(address.toString())
+    // if (account) {
+    //   return account.get('balance')
+    // } else {
+    //   return new U256()
+    // }
   }
 
   getCode (address) {
-    const account = this.parent.state.get(address.toString())
-    if (account) {
-      return account.get('code')
-    } else {
-      return Uint8Array.from(new Buffer([]))
-    }
+    // const account = this.state.get(address.toString())
+    // if (account) {
+    //   return account.get('code')
+    // } else {
+    //   return Uint8Array.from(new Buffer([]))
+    // }
   }
 
-  getBlockHash (height) {
-    return this.blockchain.getBlock(height).hash()
+  async getBlockHash (height) {
+    const block = await this.blockchain.getBlock(height)
+    return block.hash()
   }
 
   set createHandler (value) {
@@ -89,7 +82,7 @@ module.exports = class Environment {
 
   call (gas, address, value, data) {
     // FIXME: create a child environment here
-    const ret = this.callhandler({
+    const ret = this.root.messagehandler({
       from: this.address,
       to: address,
       gasLimit: gas,

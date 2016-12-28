@@ -1,21 +1,21 @@
 ;; starts with 1000 gas
 (module
-  (import $useGas  "ethereum" "useGas" (param i32))
-  (import $gas "ethereum" "getGasLeft" (result i32))
+  (import "ethereum" "useGas" (func $useGas (param i64)))
+  (import  "ethereum" "getGasLeft" (func $gas (result i64)))
 
-  (export "test" 0)
-  (func 
+  (export "test" (func $main))
+  (func $main
     ;; test adding gas
     (block
-      (call_import $useGas (i32.const 1))
-      (if (i32.eq  (call_import $gas) (i32.const 997))
+      (call $useGas (i64.const 1))
+      (if (i64.eq  (call $gas) (i64.const 997))
         (return)
       )
       (unreachable)
     )
     (block
-      (call_import $useGas (i32.const 1))
-      (if (i32.eq  (call_import $gas) (i32.const 996))
+      (call $useGas (i64.const 1))
+      (if (i64.eq  (call $gas) (i64.const 996))
         (return)
       )
       (unreachable)

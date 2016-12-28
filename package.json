@@ -5,7 +5,7 @@
   "scripts": {
     "lint": "standard",
     "test": "node --harmony --expose-wasm ./tests/interfaceRunner.js",
-    "build": "node ./tests/buildTests.js"
+    "build": "node ./tests/buildTests.js && ./tools/wabt/out/wast2wasm ./wasm/interface.wast -o ./wasm/interface.wasm"
   },
   "repository": {
     "type": "git",
@@ -30,7 +30,7 @@
   },
   "standard": {
     "ignore": [
-      "/tools/sexpr-wasm-prototype/"
+      "/tools/"
     ],
     "globals": [
       "WebAssembly"

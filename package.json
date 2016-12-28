@@ -30,7 +30,7 @@
   },
   "standard": {
     "ignore": [
-      "/tools/sexpr-wasm-prototype/"
+      "/tools/"
     ],
     "globals": [
       "WebAssembly"

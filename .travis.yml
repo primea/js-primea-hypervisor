@@ -1,7 +1,9 @@
 language: node_js
 before_install: 
+  - cd tools
   - wget https://storage.googleapis.com/chromium-v8/node-linux-rel/node-linux-rel-41967-121bf38bc0a2973476ba378ddd3ff3b5f97ae494.zip -O nodejs.zip
   - unzip nodejs.zip
+  - cd bin
 
 env:
   - CXX=g++-4.8
@@ -14,4 +16,4 @@ addons:
     - wget
     - unzip
 
-script: npm run lint
+script: ./npm run lint

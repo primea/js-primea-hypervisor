@@ -1,14 +1,14 @@
 ;; starts with an address of 5d48c1018904a172886829bbbd9c6f4a2d06c47b
 (module
+  (import "ethereum" "getAddress"  (func $address (param i32)))
+  
   (memory 1)
-
-  (import $address  "ethereum" "getAddress"  (param i32))
-  (export "main" 0)
-  (export "a" memory)
+  (export "main" (func 0))
+  (export "memory" (memory 0))
   (func 
     (block
       ;; loads the address into memory
-      (call_import $address (i32.const 0))
+      (call $address (i32.const 0))
       (if (i64.eq (i64.load (i32.const 0)) (i64.const 0x72a1048901c1485d))
         (return)
       )

@@ -1,11 +1,10 @@
 (module
+  (import"ethereum" "getCallDataSize" (func  $callDataSize (result i64)))
   (memory 1)
-  (import $callDataSize  "ethereum" "getCallDataSize"  (result i64))
-
-  (export "main" 0)
-  (func 
+  (export "main" (func $main))
+  (func $main
     (block
-      (if (i64.eq (call_import $callDataSize) (i64.const 277))
+      (if (i64.eq (call $callDataSize) (i64.const 277))
         (return)
       )
       (unreachable)

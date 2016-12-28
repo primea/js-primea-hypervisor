@@ -4,7 +4,7 @@
   (memory 1)
 
   (export "main" (func $main))
-  (export "a" (memory 0))
+  (export "memory" (memory 0))
   (func $main 
     (block
       ;; loads the address into memory

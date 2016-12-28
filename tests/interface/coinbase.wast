@@ -3,7 +3,7 @@
   (import "ethereum" "getBlockCoinbase" (func $coinbase (param i32)))
   (memory 1)
   (export "main" (func $main))
-  (export "a" (memory 0))
+  (export "memory" (memory 0))
   (func $main 
     (block
       ;; loads the coinbase into memory

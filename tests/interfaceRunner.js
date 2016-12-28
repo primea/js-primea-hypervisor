@@ -11,7 +11,7 @@ const Environment = require('../testEnvironment.js')
 const dir = path.join(__dirname, '/interface')
 // get the test names
 let tests = fs.readdirSync(dir).filter((file) => file.endsWith('.wast'))
-// tests = ['callDataCopy.wast']
+// tests = ['callDataSize.wast']
 
 runTests(tests)
 
@@ -20,7 +20,6 @@ function runTests (tests) {
     testName = testName.split('.')[0]
     tape(testName, async (t) => {
       // Compile Command
-
       const rootVertex = new Vertex()
       const code = fs.readFileSync(`${dir}/${testName}.wasm`)
       const envData = JSON.parse(fs.readFileSync(`${dir}/${testName}.json`).toString())

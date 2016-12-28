@@ -50,6 +50,6 @@ module.exports = class VM {
   }
 
   get memory () {
-    return this._instance.exports.memory
+    return this._instance.exports.memory.buffer
   }
 }

@@ -2,7 +2,7 @@
 (module
   (import  "ethereum" "getCallValue" (func  $callValue (param i32)))
   (memory 1)
-  (export "a" (memory 0))
+  (export "memory" (memory 0))
   (export "main" (func $main))
   (func $main 
     (block

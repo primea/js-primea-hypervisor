@@ -11,7 +11,6 @@ const Environment = require('../testEnvironment.js')
 const dir = path.join(__dirname, '/interface')
 // get the test names
 let tests = fs.readdirSync(dir).filter((file) => file.endsWith('.wast'))
-// tests = ['callDataSize.wast']
 
 runTests(tests)
 

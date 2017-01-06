@@ -188,7 +188,7 @@ module.exports = class Interface {
   callDataCopy (offset, dataOffset, length) {
     this.takeGas(3 + Math.ceil(length / 32) * 3)
 
-    if (length) {
+    if (length > 0 && offset >= 0 && dataOffset >= 0) {
       const callData = this.kernel.environment.callData.slice(dataOffset, dataOffset + length)
       this.setMemory(offset, length, callData)
     }
@@ -202,6 +202,7 @@ module.exports = class Interface {
    */
   callDataCopy256 (offset, dataOffset) {
     this.takeGas(3)
+
     const callData = this.kernel.environment.callData.slice(dataOffset, dataOffset + 32)
     this.setMemory(offset, U256_SIZE_BYTES, callData)
   }
@@ -337,7 +338,7 @@ module.exports = class Interface {
   getBlockCoinbase (offset) {
     this.takeGas(2)
 
-    this.setMemory(offset, ADDRESS_SIZE_BYTES, this.kernel.environment.coinbase.toMemory())
+    this.setMemory(offset, ADDRESS_SIZE_BYTES, this.kernel.environment.block.header.coinbase)
   }
 
   /**
@@ -604,9 +605,7 @@ module.exports = class Interface {
    * @param {integer} length the length of the output data.
    */
   return (offset, length) {
-    if (length) {
-      this.kernel.environment.returnValue = this.getMemory(offset, length).slice(0)
-    }
+    this.kernel.environment.returnValue = this.getMemory(offset, length).slice(0)
   }
 
   /**
@@ -621,12 +620,18 @@ module.exports = class Interface {
   }
 
   getMemory (offset, length) {
-    return new Uint8Array(this.kernel.memory, offset, length)
+    if (offset >= 0 && length > 0) {
+      return new Uint8Array(this.kernel.memory, offset, length)
+    } else {
+      return new Uint8Array([])
+    }
   }
 
   setMemory (offset, length, value) {
-    const memory = new Uint8Array(this.kernel.memory, offset, length)
-    memory.set(value)
+    if (offset >= 0 && length > 0) {
+      const memory = new Uint8Array(this.kernel.memory, offset, length)
+      memory.set(value)
+    }
   }
 
   /*

@@ -5,10 +5,17 @@
   (data (i32.const 0)  "\5d\48\c1\01\89\04\a1\72\88\68\29\bb\bd\9c\6f\4a\2d\06\c4\7b")
   (export "memory" (memory 0))
   (export "main" (func $main))
-  (export "1" (func  $callback))
+
+  (table
+    (export "callback")
+    anyfunc
+    (elem
+      $callback
+    )
+  )
 
   (func $main
-    (call $balance (i32.const 0) (i32.const 0) (i32.const 1))
+    (call $balance (i32.const 0) (i32.const 0) (i32.const 0))
   )
  
   (func $callback

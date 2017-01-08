@@ -4,16 +4,14 @@ const Imports = require('./EVMimports.js')
 const VM = require('./vm.js')
 const Environment = require('./environment.js')
 
-module.exports = class Kernel extends Vertex {
+module.exports = class Kernel {
   constructor (opts = {}) {
-    opts.code = opts.value || opts.code
-    super(opts)
+    opts.state = opts.state || new Vertex(opts.code)
+    opts.code = opts.state.value || opts.code
 
     // if code is bound to this kernel then create the interfaceAPI and the imports
-    if (opts.code) {
-      this._vm = new VM(opts.code)
-      this.imports = buildImports(this._vm, opts.interfaces)
-    }
+    this._vm = new VM(opts.code)
+    this.imports = buildImports(this._vm, opts.interfaces)
 
     /**
      * Builds a import map with an array of given interfaces
@@ -37,18 +35,10 @@ module.exports = class Kernel extends Vertex {
 
   async messageReceiver (message) {
     // let the code handle the message if there is code
-    if (this.code) {
-      const environment = new Environment(message)
-      let result = await this.run(environment)
-      if (!result.execption) {
-        this.state = result.state
-      }
-    } else if (message.to.length) {
-      // else forward the message on to the destination contract
-      let [vertex, done] = await this.state.update(message.to)
-      message.to = []
-      await vertex.kernel.messageReceiver(message)
-      done(vertex)
+    const environment = new Environment(message)
+    let result = await this.run(environment)
+    if (!result.execption) {
+      this.state = result.state
     }
   }
 

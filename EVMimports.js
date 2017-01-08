@@ -123,7 +123,7 @@ module.exports = class Interface {
   getBalance (addressOffset, offset, cbIndex) {
     this.takeGas(20)
 
-    const path = [...this.getMemory(addressOffset, ADDRESS_SIZE_BYTES), 'balance']
+    const path = ['accounts', ...this.getMemory(addressOffset, ADDRESS_SIZE_BYTES), 'balance']
     const opPromise = this.kernel.environment.state.root.get(path)
       .then(vertex => new U256(vertex.value))
       .catch(() => new U256(0))
@@ -256,7 +256,7 @@ module.exports = class Interface {
    */
   getExternalCodeSize (addressOffset, cbOffset) {
     this.takeGas(20)
-    const address = [...this.getMemory(addressOffset, ADDRESS_SIZE_BYTES), 'code']
+    const address = ['accounts', ...this.getMemory(addressOffset, ADDRESS_SIZE_BYTES), 'code']
     const opPromise = this.kernel.environment.state.root
       .get(address)
       .then(vertex => vertex.value.length)
@@ -276,7 +276,7 @@ module.exports = class Interface {
   externalCodeCopy (addressOffset, resultOffset, codeOffset, length, cbIndex) {
     this.takeGas(20 + Math.ceil(length / 32) * 3)
 
-    const address = [...this.getMemory(addressOffset, ADDRESS_SIZE_BYTES), 'code']
+    const address = ['accounts', ...this.getMemory(addressOffset, ADDRESS_SIZE_BYTES), 'code']
     let opPromise
 
     if (length) {
@@ -465,7 +465,7 @@ module.exports = class Interface {
 
     const gas = from64bit(gasHigh, gasLow)
     // Load the params from mem
-    const address = [...this.getMemory(addressOffset, ADDRESS_SIZE_BYTES)]
+    const address = ['accounts', ...this.getMemory(addressOffset, ADDRESS_SIZE_BYTES)]
     const value = new U256(this.getMemory(valueOffset, U128_SIZE_BYTES))
 
     // Special case for non-zero value; why does this exist?
@@ -500,7 +500,7 @@ module.exports = class Interface {
   callCode (gas, addressOffset, valueOffset, dataOffset, dataLength, resultOffset, resultLength, cbIndex) {
     this.takeGas(40)
     // Load the params from mem
-    const path = [...this.getMemory(addressOffset, ADDRESS_SIZE_BYTES), 'code']
+    const path = ['accounts', ...this.getMemory(addressOffset, ADDRESS_SIZE_BYTES), 'code']
     const value = U256.fromMemory(this.getMemory(valueOffset, U128_SIZE_BYTES))
 
     // Special case for non-zero value; why does this exist?

@@ -50,12 +50,14 @@ function runTests (tests) {
           }))
         }
 
-        const path = [...new Buffer(address.slice(2), 'hex')]
+        const path = ['accounts', ...new Buffer(address.slice(2), 'hex')]
         rootVertex.set(path, accountVertex)
       }
 
-      envData.state = await rootVertex.get([...envData.address.toBuffer()])
-      const kernel = new Kernel({code: code})
+      envData.state = await rootVertex.get(['accounts', ...envData.address.toBuffer()])
+      const kernel = new Kernel({
+        code: code
+      })
       const env = new Environment(envData)
 
       try {

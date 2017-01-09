@@ -10,14 +10,17 @@ module.exports = class VM {
   /**
    * Runs the core VM with a given environment and imports
    */
-  run (environment, imports) {
+  async run (environment, imports) {
     this._environment = environment
     // TODO, delete the instance once done.
     const instance = this._instance = WebAssembly.Instance(this._module, imports)
     if (instance.exports.main) {
       instance.exports.main()
     }
-    return this.onDone()
+    await this.onDone()
+    const env = this._environment
+    delete this._environment
+    return env
   }
 
   /**

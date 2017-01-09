@@ -12,7 +12,7 @@ const U128_SIZE_BYTES = 16
 const ADDRESS_SIZE_BYTES = 20
 const U256_SIZE_BYTES = 32
 
-// The interface exposed to the WebAessembly Core
+// The interface exposed to the WebAessembly VM
 module.exports = class Interface {
   constructor (kernel) {
     this.kernel = kernel
@@ -26,6 +26,11 @@ module.exports = class Interface {
         'call': this._call.bind(this)
       }
     })
+  }
+
+  async initialize (state) {
+    this.block = await state.root.get(['block'])
+    // this.blockchain = await state.get(['blockchain'])
   }
 
   static get name () {
@@ -337,7 +342,7 @@ module.exports = class Interface {
   getBlockCoinbase (offset) {
     this.takeGas(2)
 
-    this.setMemory(offset, ADDRESS_SIZE_BYTES, this.kernel.environment.coinbase.toMemory())
+    this.setMemory(offset, ADDRESS_SIZE_BYTES, this.kernel.environment.block.header.coinbase)
   }
 
   /**

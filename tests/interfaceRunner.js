@@ -26,7 +26,6 @@ function runTests (tests) {
 
       envData.caller = new Address(envData.caller)
       envData.address = new Address(envData.address)
-      envData.coinbase = new Address(envData.coinbase)
       envData.origin = new Address(envData.origin)
       envData.callData = new Buffer(envData.callData.slice(2), 'hex')
       envData.callValue = new U256(envData.callValue)
@@ -53,11 +52,19 @@ function runTests (tests) {
         rootVertex.set(path, accountVertex)
       }
 
-      envData.state = await rootVertex.get(['accounts', ...envData.address.toBuffer()])
-      const kernel = new Kernel({
-        code: code
-      })
+      const state = envData.state = await rootVertex.get(['accounts', ...envData.address.toBuffer()])
+      state.value = code
+
       const env = new Environment(envData)
+      env.block.header.coinbase = new Address(envData.coinbase)
+
+      rootVertex.set('block', new Vertex({
+        value: env.block
+      }))
+
+      const kernel = new Kernel({
+        state: state
+      })
 
       try {
         await kernel.run(env)

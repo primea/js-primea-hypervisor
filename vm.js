@@ -6,21 +6,51 @@ module.exports = class VM {
   constructor (code) {
     this._module = WebAssembly.Module(code)
   }
-
   /**
    * Runs the core VM with a given environment and imports
    */
-  async run (environment, imports) {
-    this._environment = environment
-    // TODO, delete the instance once done.
-    const instance = this._instance = WebAssembly.Instance(this._module, imports)
+  async run (message, kernel, imports) {
+    const responses = {}
+    /**
+     * Builds a import map with an array of given interfaces
+     */
+    async function buildImports (kernelApi, kernel, imports) {
+      const result = {}
+      for (const Import of imports) {
+        const response = responses[Import.name] = {}
+        const newIterface = new Import(kernelApi, message, response)
+        result[Import.name] = newIterface.exports
+        // initailize the import
+        await newIterface.initialize()
+      }
+      return result
+    }
+
+    let instance
+    const kernelApi = {
+      /**
+       * adds an aync operation to the operations queue
+       */
+      pushOpsQueue: (promise, callbackIndex, intefaceCallback) => {
+        this._opsQueue = Promise.all([this._opsQueue, promise]).then(values => {
+          const result = intefaceCallback(values.pop())
+          instance.exports[callbackIndex.toString()](result)
+        })
+      },
+      memory: () => {
+        return instance.exports.memory.buffer
+      },
+      kernel: kernel
+    }
+
+    const initializedImports = await buildImports(kernelApi, kernel, imports)
+    instance = WebAssembly.Instance(this._module, initializedImports)
+
     if (instance.exports.main) {
       instance.exports.main()
     }
     await this.onDone()
-    const env = this._environment
-    delete this._environment
-    return env
+    return responses
   }
 
   /**
@@ -34,25 +64,6 @@ module.exports = class VM {
     }
   }
 
-  /**
-   * addes an aync operation to the operations queue
-   */
-  pushOpsQueue (promise, callbackIndex, intefaceCallback) {
-    this._opsQueue = Promise.all([this._opsQueue, promise]).then(values => {
-      const result = intefaceCallback(values.pop())
-      this._instance.exports[callbackIndex.toString()](result)
-    })
-  }
-
   sendMessage (message) {
-
-  }
-
-  get environment () {
-    return this._environment
-  }
-
-  get memory () {
-    return this._instance.exports.memory.buffer
   }
 }

@@ -34,7 +34,7 @@ module.exports = class VM {
       pushOpsQueue: (promise, callbackIndex, intefaceCallback) => {
         this._opsQueue = Promise.all([this._opsQueue, promise]).then(values => {
           const result = intefaceCallback(values.pop())
-          instance.exports[callbackIndex.toString()](result)
+          instance.exports.callback.get(callbackIndex)(result)
         })
       },
       memory: () => {

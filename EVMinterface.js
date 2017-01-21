@@ -15,7 +15,7 @@ const U256_SIZE_BYTES = 32
 
 // The interface exposed to the WebAessembly VM
 module.exports = class Interface {
-  constructor (api, message, state) {
+  constructor (api, message) {
     this.message = message
     this.kernel = api.kernel
     this.state = api.kernel.state

@@ -11,11 +11,13 @@ module.exports = class Kernel {
     const state = this.state = opts.state || new Vertex()
     state.value = opts.code || state.value
     this.imports = opts.imports || [imports]
-    this.parent = opts.parent
     // RENAME agent
     this._vm = (opts.codeHandler || codeHandler).init(state.value)
     this._messageQueue = new MessageQueue(this)
     this._instanceCache = new Map()
+    if (opts.parent) {
+      this._instanceCache.set(opts.parent)
+    }
   }
 
   static get PARENT () {
@@ -41,12 +43,10 @@ module.exports = class Kernel {
    */
   async run (message, imports = this.imports) {
     const state = this.state.copy()
-
-    // const stateInterface = new StateInterface(state)
     const result = await this._vm.run(message, this, imports)
     if (!result.execption) {
       // update the state
-      await this.state.set([], state)
+      this.state.set([], state)
     }
     return result
   }
@@ -83,7 +83,8 @@ module.exports = class Kernel {
     if (this._instanceCache.has(port)) {
       return this._instanceCache.get(port)
     } else {
-      const destState = await (port === this.PARENT
+      const destState = await (
+        port === this.PARENT
         ? this.state.getParent()
         : this.state.get([port]))
 

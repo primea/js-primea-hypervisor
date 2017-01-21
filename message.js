@@ -1,12 +1,10 @@
 const U256 = require('./deps/u256.js')
-const Address = require('./deps/address.js')
 
 module.exports = class Message {
   constructor (opts = {}) {
     const defaults = {
       // call infromation
       to: [],
-      origin: new Address('0x0000000000000000000000000000000000000000'),
       from: [],
       data: new Uint8Array(),
       sync: true,

@@ -9,25 +9,25 @@ module.exports = class VM {
   /**
    * Runs the core VM with a given environment and imports
    */
-  async run (message, kernel, imports) {
+  async run (message, kernel, imports, state) {
     const responses = {}
     /**
      * Builds a import map with an array of given interfaces
      */
     async function buildImports (kernelApi, kernel, imports) {
-      const result = {}
+      const importMap = {}
       for (const Import of imports) {
         const response = responses[Import.name] = {}
-        const newIterface = new Import(kernelApi, message, response)
-        result[Import.name] = newIterface.exports
+        const newIterface = new Import(kernelApi, message, response, state)
+        importMap[Import.name] = newIterface.exports
         // initailize the import
         await newIterface.initialize()
       }
-      return result
+      return importMap
     }
 
     let instance
-    const kernelApi = {
+    const interfaceApi = {
       /**
        * adds an aync operation to the operations queue
        */
@@ -43,7 +43,7 @@ module.exports = class VM {
       kernel: kernel
     }
 
-    const initializedImports = await buildImports(kernelApi, kernel, imports)
+    const initializedImports = await buildImports(interfaceApi, kernel, imports)
     instance = WebAssembly.Instance(this._module, initializedImports)
 
     if (instance.exports.main) {
@@ -62,8 +62,5 @@ module.exports = class VM {
       prevOps = this._opsQueue
       await this._opsQueue
     }
-  }
-
-  sendMessage (message) {
   }
 }

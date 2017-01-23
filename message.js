@@ -13,31 +13,30 @@ module.exports = class Message {
       gasPrices: new U256(0)
     }
     Object.assign(this, defaults, opts)
-    this._index = 0
-    this._parentProcesses = []
+    this.hops = 0
+    this._vistedAgents = []
   }
 
   nextPort () {
-    // this.from.push(message.toPort)
-    this.toPort = this.to[this._index]
-    this._index++
+    this.toPort = this.to[this.hops]
+    this.hops++
     return this.toPort
   }
 
   finished () {
     if (this.sync) {
-      this._parentProcesses.pop()
+      this._vistedAgents.pop()
     }
   }
 
   sending (kernel, parentMessage) {
     if (this.sync && parentMessage) {
-      this._parentProcesses = parentMessage._parentProcesses
-      this._parentProcesses.push(kernel)
+      this._vistedAgents = parentMessage._vistedAgents
+      this._vistedAgents.push(kernel)
     }
   }
 
   isCyclic (kernel) {
-    return this.sync && this._parentProcesses.some(process => process === kernel)
+    return this.sync && this._vistedAgents.some(process => process === kernel)
   }
 }

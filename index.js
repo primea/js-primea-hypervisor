@@ -43,7 +43,7 @@ module.exports = class Kernel {
    */
   async run (message, imports = this.imports) {
     const state = this.state.copy()
-    const result = await this._vm.run(message, this, imports)
+    const result = await this._vm.run(message, this, imports, state)
     if (!result.execption) {
       // update the state
       this.state.set([], state)
@@ -79,19 +79,19 @@ module.exports = class Kernel {
     return dest.recieve(message)
   }
 
-  async getPort (port) {
-    if (this._instanceCache.has(port)) {
-      return this._instanceCache.get(port)
+  async getPort (name) {
+    if (this._instanceCache.has(name)) {
+      return this._instanceCache.get(name)
     } else {
       const destState = await (
-        port === this.PARENT
+        name === this.PARENT
         ? this.state.getParent()
-        : this.state.get([port]))
+        : this.state.get([name]))
 
       const kernel = new Kernel({
         state: destState
       })
-      this._instanceCache.set(port, kernel)
+      this._instanceCache.set(name, kernel)
       return kernel
     }
   }

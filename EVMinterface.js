@@ -8,6 +8,7 @@ const ethUtil = require('ethereumjs-util')
 const Vertex = require('merkle-trie')
 const U256 = require('./deps/u256.js')
 const Message = require('./message.js')
+const common = require('./common.js')
 
 const U128_SIZE_BYTES = 16
 const ADDRESS_SIZE_BYTES = 20
@@ -34,14 +35,14 @@ module.exports = class Interface {
   }
 
   async initialize () {
-    this.block = await this.kernel.send(this.kernel.ROOT, new Message({
+    this.block = await this.kernel.send(common.ROOT, new Message({
       data: {
         getValue: 'block'
       },
       sync: true
     }))
 
-    this.blockchain = await this.kernel.send(this.kernel.ROOT, new Message({
+    this.blockchain = await this.kernel.send(common.ROOT, new Message({
       data: {
         getValue: 'blockchain'
       },
@@ -150,8 +151,8 @@ module.exports = class Interface {
   getBalance (addressOffset, offset, cbIndex) {
     this.takeGas(20)
 
-    const path = [this.kernel.PARENT, '0x' + new Buffer(this.getMemory(addressOffset, ADDRESS_SIZE_BYTES)).toString('hex')]
-    const opPromise = this.kernel.send(this.kernel.PARENT, new Message({
+    const path = [common.PARENT, '0x' + new Buffer(this.getMemory(addressOffset, ADDRESS_SIZE_BYTES)).toString('hex')]
+    const opPromise = this.kernel.send(common.PARENT, new Message({
       to: path,
       data: {
         getValue: 'balance'
@@ -498,7 +499,7 @@ module.exports = class Interface {
 
     const gas = from64bit(gasHigh, gasLow)
     // Load the params from mem
-    const address = [this.kernel.PARENT, ...this.getMemory(addressOffset, ADDRESS_SIZE_BYTES)]
+    const address = [common.PARENT, ...this.getMemory(addressOffset, ADDRESS_SIZE_BYTES)]
     const value = new U256(this.getMemory(valueOffset, U128_SIZE_BYTES))
 
     // Special case for non-zero value; why does this exist?

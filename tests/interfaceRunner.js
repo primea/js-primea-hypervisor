@@ -9,6 +9,7 @@ const U256 = require('../deps/u256')
 const fakeBlockChain = require('../fakeBlockChain.js')
 const Kernel = require('../index.js')
 const Message = require('../message.js')
+const common = require('../common.js')
 
 const dir = path.join(__dirname, '/interface')
 // get the test names
@@ -70,7 +71,7 @@ function runTests (tests) {
       const callerState = await rootVertex.get(['accounts', envData.caller, 'code'])
       const caller = new Kernel({state: callerState})
       try {
-        await caller.send(Kernel.ROOT, message)
+        await caller.send(common.ROOT, message)
       } catch (e) {
         t.fail('Exception: ' + e)
         console.error('FAIL')

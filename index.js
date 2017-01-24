@@ -3,9 +3,7 @@ const Cache = require('imperative-trie')
 const imports = require('./EVMinterface.js')
 const codeHandler = require('./codeHandler.js')
 const MessageQueue = require('./messageQueue')
-
-const PARENT_SYMBOL = Symbol('parent')
-const ROOT_SYMBOL = Symbol('root')
+const common = require('./common.js')
 
 module.exports = class Kernel {
   constructor (opts = {}) {
@@ -16,22 +14,6 @@ module.exports = class Kernel {
     this._vm = (opts.codeHandler || codeHandler).init(state.value)
     this._messageQueue = new MessageQueue(this)
     this._instanceCache = new Cache()
-  }
-
-  static get PARENT () {
-    return PARENT_SYMBOL
-  }
-
-  static get ROOT () {
-    return ROOT_SYMBOL
-  }
-
-  get PARENT () {
-    return PARENT_SYMBOL
-  }
-
-  get ROOT () {
-    return ROOT_SYMBOL
   }
 
   /**
@@ -62,15 +44,15 @@ module.exports = class Kernel {
   async send (port, message) {
     message.sending(this, this._messageQueue.currentMessage)
     // replace root with parent path to root
-    if (port === ROOT_SYMBOL) {
-      port = PARENT_SYMBOL
-      message.to = new Array(this.state.path.length - 1).fill(PARENT_SYMBOL).concat(message.to)
+    if (port === common.ROOT) {
+      port = common.PARENT
+      message.to = new Array(this.state.path.length - 1).fill(common.PARENT).concat(message.to)
     }
 
-    if (port === PARENT_SYMBOL) {
+    if (port === common.PARENT) {
       message.from.push(this.state.name)
     } else {
-      message.from.push(this.PARENT)
+      message.from.push(common.PARENT)
     }
 
     const dest = await this.getPort(port)
@@ -87,7 +69,7 @@ module.exports = class Kernel {
 
   async getPort (name) {
     let kernel
-    if (name === this.PARENT) {
+    if (name === common.PARENT) {
       kernel = this.parent
     } else {
       kernel = this._instanceCache.get(name)
@@ -97,7 +79,7 @@ module.exports = class Kernel {
       return kernel
     } else {
       const destState = await (
-        name === this.PARENT
+        name === common.PARENT
         ? this.state.getParent()
         : this.state.get([name]))
 

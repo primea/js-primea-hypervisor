@@ -17,12 +17,6 @@ module.exports = class Message {
     this._vistedAgents = []
   }
 
-  nextPort () {
-    this.toPort = this.to[this.hops]
-    this.hops++
-    return this.toPort
-  }
-
   finished () {
     if (this.sync) {
       this._vistedAgents.pop()
@@ -30,6 +24,7 @@ module.exports = class Message {
   }
 
   sending (kernel, parentMessage) {
+    this.hops++
     if (this.sync && parentMessage) {
       this._vistedAgents = parentMessage._vistedAgents
       this._vistedAgents.push(kernel)

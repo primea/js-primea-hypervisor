@@ -1,4 +1,5 @@
 const Vertex = require('merkle-trie')
+const Cache = require('imperative-trie')
 const imports = require('./EVMinterface.js')
 const codeHandler = require('./codeHandler.js')
 const MessageQueue = require('./messageQueue')
@@ -14,10 +15,7 @@ module.exports = class Kernel {
     // RENAME agent
     this._vm = (opts.codeHandler || codeHandler).init(state.value)
     this._messageQueue = new MessageQueue(this)
-    this._instanceCache = new Map()
-    if (opts.parent) {
-      this._instanceCache.set(opts.parent)
-    }
+    this._instanceCache = new Cache()
   }
 
   static get PARENT () {
@@ -79,9 +77,24 @@ module.exports = class Kernel {
     return dest.recieve(message)
   }
 
+  setValue (name, value) {
+    return this.state.set(name, value)
+  }
+
+  getValue (name) {
+    return this.state.get(name)
+  }
+
   async getPort (name) {
-    if (this._instanceCache.has(name)) {
-      return this._instanceCache.get(name)
+    let kernel
+    if (name === this.PARENT) {
+      kernel = this.parent
+    } else {
+      kernel = this._instanceCache.get(name)
+    }
+
+    if (kernel) {
+      return kernel
     } else {
       const destState = await (
         name === this.PARENT
@@ -91,6 +104,10 @@ module.exports = class Kernel {
       const kernel = new Kernel({
         state: destState
       })
+
+      const cache = new Cache({value: kernel})
+      kernel._instanceCache = cache
+
       this._instanceCache.set(name, kernel)
       return kernel
     }

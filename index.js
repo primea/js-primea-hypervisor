@@ -8,11 +8,11 @@ const common = require('./common.js')
 module.exports = class Kernel {
   constructor (opts = {}) {
     const state = this.state = opts.state || new Vertex()
-    state.value = opts.code || state.value
+    this.code = opts.code || state.value
     this.path = state.path
     this.imports = opts.imports || [imports]
     // RENAME agent
-    this._vm = (opts.codeHandler || codeHandler).init(state.value)
+    this._vm = (opts.codeHandler || codeHandler).init(this.code)
     this._messageQueue = new MessageQueue(this)
     this.ports = new Port(state, Kernel)
   }
@@ -29,13 +29,14 @@ module.exports = class Kernel {
     //   // update the state
     //   this.state.set([], state)
     // }
+    //
+    message.finished()
     return result
   }
 
   async recieve (message) {
     if (message.isCyclic(this)) {
       const result = await this.run(message)
-      message.finished()
       return result
     } else {
       return this._messageQueue.add(message)

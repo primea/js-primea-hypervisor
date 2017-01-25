@@ -20,13 +20,11 @@ module.exports = class Port {
   }
 
   async get (name) {
-    // console.log(name)
     const vertex = name === common.PARENT ? this.cache.parent : this.cache.get(name)
 
     if (vertex) {
       return vertex.value
     } else {
-      // console.log(this.state.path)
       const destState = await (
         name === common.PARENT
         ? this.state.getParent()
@@ -37,7 +35,6 @@ module.exports = class Port {
       })
 
       const cache = new Cache(kernel)
-
       kernel.ports.cache = cache
       if (name === common.PARENT) {
         cache.set(this.state.name, this.cache)

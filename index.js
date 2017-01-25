@@ -9,6 +9,7 @@ module.exports = class Kernel {
   constructor (opts = {}) {
     const state = this.state = opts.state || new Vertex()
     state.value = opts.code || state.value
+    this.path = state.path
     this.imports = opts.imports || [imports]
     // RENAME agent
     this._vm = (opts.codeHandler || codeHandler).init(state.value)
@@ -52,7 +53,7 @@ module.exports = class Kernel {
   }
 
   setValue (name, value) {
-    return this.state.set(name, value)
+    this.state.set(name, value)
   }
 
   getValue (name) {

@@ -1,4 +1,4 @@
-module.exports = class VM {
+module.exports = class Wasm {
   /**
    * The interface API is the api the exposed to interfaces. All queries about
    * the enviroment and call to the kernel go through this API

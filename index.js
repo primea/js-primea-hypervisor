@@ -1,5 +1,5 @@
 const Vertex = require('merkle-trie')
-const Cache = require('imperative-trie')
+const Port = require('./port.js')
 const imports = require('./EVMinterface.js')
 const codeHandler = require('./codeHandler.js')
 const MessageQueue = require('./messageQueue')
@@ -13,7 +13,7 @@ module.exports = class Kernel {
     // RENAME agent
     this._vm = (opts.codeHandler || codeHandler).init(state.value)
     this._messageQueue = new MessageQueue(this)
-    this._instanceCache = new Cache()
+    this.ports = new Port(state, Kernel)
   }
 
   /**
@@ -42,21 +42,13 @@ module.exports = class Kernel {
   }
 
   async send (port, message) {
-    message.sending(this, this._messageQueue.currentMessage)
+    message.addVistedKernel(this)
     // replace root with parent path to root
     if (port === common.ROOT) {
       port = common.PARENT
-      message.to = new Array(this.state.path.length - 1).fill(common.PARENT).concat(message.to)
+      message.to = new Array(this.state.path.length).fill(common.PARENT).concat(message.to)
     }
-
-    if (port === common.PARENT) {
-      message.from.push(this.state.name)
-    } else {
-      message.from.push(common.PARENT)
-    }
-
-    const dest = await this.getPort(port)
-    return dest.recieve(message)
+    return this.ports.send(port, message)
   }
 
   setValue (name, value) {
@@ -65,33 +57,5 @@ module.exports = class Kernel {
 
   getValue (name) {
     return this.state.get(name)
-  }
-
-  async getPort (name) {
-    let kernel
-    if (name === common.PARENT) {
-      kernel = this.parent
-    } else {
-      kernel = this._instanceCache.get(name)
-    }
-
-    if (kernel) {
-      return kernel
-    } else {
-      const destState = await (
-        name === common.PARENT
-        ? this.state.getParent()
-        : this.state.get([name]))
-
-      const kernel = new Kernel({
-        state: destState
-      })
-
-      const cache = new Cache({value: kernel})
-      kernel._instanceCache = cache
-
-      this._instanceCache.set(name, kernel)
-      return kernel
-    }
   }
 }

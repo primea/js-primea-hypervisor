@@ -23,7 +23,8 @@ module.exports = class Message {
     }
   }
 
-  sending (kernel, parentMessage) {
+  addVistedKernel (kernel) {
+    const parentMessage = kernel._messageQueue.currentMessage
     this.hops++
     if (this.sync && parentMessage) {
       this._vistedAgents = parentMessage._vistedAgents

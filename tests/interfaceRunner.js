@@ -70,15 +70,15 @@ function runTests (tests) {
 
       const callerState = await rootVertex.get(['accounts', envData.caller, 'code'])
       const caller = new Kernel({state: callerState})
-      try {
+      // try {
         await caller.send(common.ROOT, message)
-      } catch (e) {
-        t.fail('Exception: ' + e)
-        console.error('FAIL')
-        console.error(e)
-      } finally {
+      // } catch (e) {
+      //   t.fail('Exception: ' + e)
+      //   console.error('FAIL')
+      //   console.error(e)
+      // } finally {
         t.pass(testName)
-      }
+      // }
       t.end()
     })
   }

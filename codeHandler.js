@@ -1,4 +1,4 @@
-const Wasm = require('./vm.js')
+const Wasm = require('./wasmAgent.js')
 
 const defaultHandler = {
   test: (code) => {

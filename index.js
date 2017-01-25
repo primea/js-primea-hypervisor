@@ -23,12 +23,12 @@ module.exports = class Kernel {
    * to by the VM to retrive infromation from the Environment.
    */
   async run (message, imports = this.imports) {
-    const state = this.state.copy()
-    const result = await this._vm.run(message, this, imports, state)
-    if (!result.execption) {
-      // update the state
-      this.state.set([], state)
-    }
+    // const state = this.state.copy()
+    const result = await this._vm.run(message, this, imports)
+    // if (!result.execption) {
+    //   // update the state
+    //   this.state.set([], state)
+    // }
     return result
   }
 
@@ -58,5 +58,9 @@ module.exports = class Kernel {
 
   getValue (name) {
     return this.state.get(name)
+  }
+
+  deleteValue (name) {
+    return this.state.del(name)
   }
 }

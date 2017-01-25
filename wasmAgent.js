@@ -9,7 +9,7 @@ module.exports = class Wasm {
   /**
    * Runs the core VM with a given environment and imports
    */
-  async run (message, kernel, imports, state) {
+  async run (message, kernel, imports) {
     const responses = {}
     /**
      * Builds a import map with an array of given interfaces
@@ -18,7 +18,7 @@ module.exports = class Wasm {
       const importMap = {}
       for (const Import of imports) {
         const response = responses[Import.name] = {}
-        const newIterface = new Import(kernelApi, message, response, state)
+        const newIterface = new Import(kernelApi, message, response)
         importMap[Import.name] = newIterface.exports
         // initailize the import
         await newIterface.initialize()

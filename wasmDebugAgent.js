@@ -5,7 +5,7 @@ module.exports = class Test extends Wasm {
    * Runs the core VM with a given environment and imports
    */
   async run (message, kernel, imports) {
-    const responses = {}
+    const responses = this.responses = {}
     /**
      * Builds a import map with an array of given interfaces
      */
@@ -22,7 +22,7 @@ module.exports = class Test extends Wasm {
     }
 
     let instance
-    const interfaceApi = {
+    const interfaceApi = this.api = {
       /**
        * adds an aync operation to the operations queue
        */

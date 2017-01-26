@@ -27,7 +27,7 @@ module.exports = class Wasm {
     }
 
     let instance
-    const interfaceApi = this.api = {
+    const interfaceApi = {
       /**
        * adds an aync operation to the operations queue
        */

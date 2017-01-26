@@ -121,10 +121,8 @@ module.exports = class Interface {
    */
   getAddress (offset) {
     this.takeGas(2)
-    const path = this.message.to
-    path.pop()
-    const address = path.pop()
-    this.setMemory(offset, ADDRESS_SIZE_BYTES, new Buffer(address.slice(2), 'hex'))
+    const path = this.kernel.path
+    this.setMemory(offset, ADDRESS_SIZE_BYTES, new Buffer(path[1].slice(2), 'hex'))
   }
 
   /**
@@ -160,7 +158,7 @@ module.exports = class Interface {
   getTxOrigin (offset) {
     this.takeGas(2)
 
-    const origin = new Buffer(this.message.from[0].slice(2), 'hex')
+    const origin = new Buffer(this.message.from[1].slice(2), 'hex')
     this.setMemory(offset, ADDRESS_SIZE_BYTES, origin)
   }
 

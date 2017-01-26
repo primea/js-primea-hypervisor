@@ -1,11 +1,6 @@
-module.exports = class Wasm {
-  /**
-   * The interface API is the api the exposed to interfaces. All queries about
-   * the enviroment and call to the kernel go through this API
-   */
-  constructor (code) {
-    this._module = WebAssembly.Module(code)
-  }
+const Wasm = require('./wasmAgent')
+
+module.exports = class Test extends Wasm {
   /**
    * Runs the core VM with a given environment and imports
    */
@@ -27,7 +22,7 @@ module.exports = class Wasm {
     }
 
     let instance
-    const interfaceApi = this.api = {
+    const interfaceApi = {
       /**
        * adds an aync operation to the operations queue
        */
@@ -44,23 +39,12 @@ module.exports = class Wasm {
     }
 
     const initializedImports = await buildImports(interfaceApi, kernel, imports)
-    instance = WebAssembly.Instance(this._module, initializedImports)
+    this.instance = instance = WebAssembly.Instance(this._module, initializedImports)
 
     if (instance.exports.main) {
       instance.exports.main()
     }
     await this.onDone()
     return responses
-  }
-
-  /**
-   * returns a promise that resolves when the wasm instance is done running
-   */
-  async onDone () {
-    let prevOps
-    while (prevOps !== this._opsQueue) {
-      prevOps = this._opsQueue
-      await this._opsQueue
-    }
   }
 }

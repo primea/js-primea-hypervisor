@@ -19,13 +19,14 @@ const wasm = {
   }
 }
 
-let codeHandlers = exports.codeHandlers = [
-  defaultHandler,
-  wasm
-]
+let codeHandlers = exports.handlers = {
+  default: defaultHandler,
+  wasm: wasm
+}
 
 exports.init = (code) => {
-  for (let handler of codeHandlers) {
+  for (let name in codeHandlers) {
+    const handler = codeHandlers[name]
     if (handler.test(code)) {
       return handler.init(code)
     }

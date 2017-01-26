@@ -29,7 +29,6 @@ module.exports = class Kernel {
     //   // update the state
     //   this.state.set([], state)
     // }
-    //
     message.finished()
     return result
   }

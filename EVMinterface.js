@@ -160,7 +160,8 @@ module.exports = class Interface {
   getTxOrigin (offset) {
     this.takeGas(2)
 
-    this.setMemory(offset, ADDRESS_SIZE_BYTES, this.message.origin.toMemory())
+    const origin = new Buffer(this.message.from[0].slice(2), 'hex')
+    this.setMemory(offset, ADDRESS_SIZE_BYTES, origin)
   }
 
   /**
@@ -233,7 +234,7 @@ module.exports = class Interface {
     this.takeGas(2)
 
     // wait for all the prevouse async ops to finish before running the callback
-    this.kernel.pushOpsQueue(this.kernel.code.length, cbIndex, length => length)
+    this.api.pushOpsQueue(this.kernel.code.length, cbIndex, length => length)
   }
 
   /**
@@ -246,7 +247,8 @@ module.exports = class Interface {
     this.takeGas(3 + Math.ceil(length / 32) * 3)
 
     // wait for all the prevouse async ops to finish before running the callback
-    this.kernel.pushOpsQueue(this.kernel.code, cbIndex, code => {
+    // console.log(this.kernel)
+    this.api.pushOpsQueue(this.kernel.code, cbIndex, code => {
       if (code.length) {
         code = code.slice(codeOffset, codeOffset + length)
         this.setMemory(resultOffset, length, code)
@@ -267,7 +269,7 @@ module.exports = class Interface {
       .catch(() => 0)
 
     // wait for all the prevouse async ops to finish before running the callback
-    this.kernel.pushOpsQueue(opPromise, cbOffset, length => length)
+    this.api.pushOpsQueue(opPromise, cbOffset, length => length)
   }
 
   /**
@@ -293,7 +295,7 @@ module.exports = class Interface {
     }
 
     // wait for all the prevouse async ops to finish before running the callback
-    this.kernel.pushOpsQueue(opPromise, cbIndex, code => {
+    this.api.pushOpsQueue(opPromise, cbIndex, code => {
       if (code.length) {
         code = code.slice(codeOffset, codeOffset + length)
         this.setMemory(resultOffset, length, code)
@@ -329,7 +331,7 @@ module.exports = class Interface {
     }
 
     // wait for all the prevouse async ops to finish before running the callback
-    this.kernel.pushOpsQueue(opPromise, cbOffset, hash => {
+    this.api.pushOpsQueue(opPromise, cbOffset, hash => {
       this.setMemory(offset, U256_SIZE_BYTES, hash.toMemory())
     })
   }
@@ -448,7 +450,7 @@ module.exports = class Interface {
     }
 
     // wait for all the prevouse async ops to finish before running the callback
-    this.kernel.pushOpsQueue(opPromise, cbIndex, address => {
+    this.api.pushOpsQueue(opPromise, cbIndex, address => {
       this.setMemory(resultOffset, ADDRESS_SIZE_BYTES, address)
     })
   }

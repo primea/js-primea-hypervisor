@@ -61,7 +61,6 @@ function runTests (tests) {
       }))
 
       const message = new Message()
-      // message.from = new Address()
       message.to = ['accounts', envData.address, 'code']
       message.origin = new Address(envData.origin)
       message.data = new Buffer(envData.callData.slice(2), 'hex')
@@ -70,15 +69,15 @@ function runTests (tests) {
 
       const callerState = await rootVertex.get(['accounts', envData.caller, 'code'])
       const caller = new Kernel({state: callerState})
-      // try {
+      try {
         await caller.send(common.ROOT, message)
-      // } catch (e) {
-      //   t.fail('Exception: ' + e)
-      //   console.error('FAIL')
-      //   console.error(e)
-      // } finally {
+      } catch (e) {
+        t.fail('Exception: ' + e)
+        console.error('FAIL')
+        console.error(e)
+      } finally {
         t.pass(testName)
-      // }
+      }
       t.end()
     })
   }

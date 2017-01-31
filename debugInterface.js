@@ -4,7 +4,6 @@ const opcodes = require('./opcodes.js')
  * Debug Interface
  * This expose some functions that can help with debugging wast
  */
-
 module.exports = class DebugInterface {
   constructor (kernel) {
     this.kernel = kernel

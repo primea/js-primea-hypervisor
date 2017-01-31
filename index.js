@@ -1,29 +1,20 @@
 const Vertex = require('merkle-trie')
-// The Kernel Exposes this Interface to VM instances it makes
-const Imports = require('./EVMimports.js')
-const VM = require('./vm.js')
-const Environment = require('./environment.js')
+const Port = require('./port.js')
+const imports = require('./EVMinterface.js')
+const codeHandler = require('./codeHandler.js')
+const MessageQueue = require('./messageQueue')
+const common = require('./common.js')
 
-module.exports = class Kernel extends Vertex {
+module.exports = class Kernel {
   constructor (opts = {}) {
-    opts.code = opts.value || opts.code
-    super(opts)
-
-    // if code is bound to this kernel then create the interfaceAPI and the imports
-    if (opts.code) {
-      this._vm = new VM(opts.code)
-      this.imports = buildImports(this._vm, opts.interfaces)
-    }
-
-    /**
-     * Builds a import map with an array of given interfaces
-     */
-    function buildImports (api, imports = [Imports]) {
-      return imports.reduce((obj, InterfaceConstuctor) => {
-        obj[InterfaceConstuctor.name] = new InterfaceConstuctor(api).exports
-        return obj
-      }, {})
-    }
+    const state = this.state = opts.state || new Vertex()
+    this.code = opts.code || state.value
+    this.path = state.path
+    this.imports = opts.imports || [imports]
+    // RENAME agent
+    this._vm = (opts.codeHandler || codeHandler).init(this.code)
+    this._messageQueue = new MessageQueue(this)
+    this.ports = new Port(state, Kernel)
   }
 
   /**
@@ -31,33 +22,45 @@ module.exports = class Kernel extends Vertex {
    * The Kernel Stores all of its state in the Environment. The Interface is used
    * to by the VM to retrive infromation from the Environment.
    */
-  async run (environment = new Environment({state: this}), imports = this.imports) {
-    await this._vm.run(environment, imports)
+  async run (message, imports = this.imports) {
+    // const state = this.state.copy()
+    const result = await this._vm.run(message, this, imports)
+    // if (!result.execption) {
+    //   // update the state
+    //   this.state.set([], state)
+    // }
+    message.finished()
+    return result
   }
 
-  async messageReceiver (message) {
-    // let the code handle the message if there is code
-    if (this.code) {
-      const environment = new Environment(message)
-      let result = await this.run(environment)
-      if (!result.execption) {
-        this.state = result.state
-      }
-    } else if (message.to.length) {
-      // else forward the message on to the destination contract
-      let [vertex, done] = await this.state.update(message.to)
-      message.to = []
-      await vertex.kernel.messageReceiver(message)
-      done(vertex)
+  async recieve (message) {
+    if (message.isCyclic(this)) {
+      const result = await this.run(message)
+      return result
+    } else {
+      return this._messageQueue.add(message)
     }
   }
 
-  copy () {
-    return new Kernel({
-      state: this.state.copy(),
-      code: this.code,
-      interfaces: this.interfaces,
-      parent: this.parent
-    })
+  async send (port, message) {
+    message.addVistedKernel(this)
+    // replace root with parent path to root
+    if (port === common.ROOT) {
+      port = common.PARENT
+      message.to = new Array(this.state.path.length).fill(common.PARENT).concat(message.to)
+    }
+    return this.ports.send(port, message)
+  }
+
+  setValue (name, value) {
+    this.state.set(name, value)
+  }
+
+  getValue (name) {
+    return this.state.get(name)
+  }
+
+  deleteValue (name) {
+    return this.state.del(name)
   }
 }

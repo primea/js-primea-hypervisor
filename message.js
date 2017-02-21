@@ -7,32 +7,36 @@ module.exports = class Message {
       to: [],
       from: [],
       data: new Uint8Array(),
-      sync: true,
+      atomic: true,
       // resource info
       gas: new U256(0),
       gasPrices: new U256(0)
     }
     Object.assign(this, defaults, opts)
     this.hops = 0
-    this._vistedAgents = []
+    this._vistedKernels = []
   }
 
   finished () {
-    if (this.sync) {
-      this._vistedAgents.pop()
+    if (this.atomic) {
+      this._vistedKernels.pop()
     }
+    return new Promise((resolve, reject) => {
+
+    })
+  }
+
+  nextPort () {
+    return this.to[this.hops++]
   }
 
   addVistedKernel (kernel) {
-    const parentMessage = kernel._messageQueue.currentMessage
-    this.hops++
-    if (this.sync && parentMessage) {
-      this._vistedAgents = parentMessage._vistedAgents
-      this._vistedAgents.push(kernel)
+    if (this.atomic) {
+      this._vistedKernels.push(kernel)
     }
   }
 
   isCyclic (kernel) {
-    return this.sync && this._vistedAgents.some(process => process === kernel)
+    return this.sync && this._vistedKernels.some(process => process === kernel)
   }
 }

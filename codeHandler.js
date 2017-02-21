@@ -19,16 +19,28 @@ const wasm = {
   }
 }
 
+const javascript = {
+  test: (code) => {
+    return typeof code === 'object'
+  },
+  init: (code) => {
+    return code
+  }
+}
+
 let codeHandlers = exports.handlers = {
   default: defaultHandler,
-  wasm: wasm
+  wasm: wasm,
+  javascript: javascript
 }
 
 exports.init = (code) => {
   for (let name in codeHandlers) {
-    const handler = codeHandlers[name]
-    if (handler.test(code)) {
-      return handler.init(code)
-    }
+    try {
+      const handler = codeHandlers[name]
+      if (handler.test(code)) {
+        return handler.init(code)
+      }
+    } catch (e) {}
   }
 }

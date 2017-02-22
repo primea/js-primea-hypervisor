@@ -3,6 +3,8 @@
   "version": "0.0.0",
   "description": "This is a JS prototype of the eWASM kernal.",
   "scripts": {
+    "coverage": "node --harmony ./node_modules/istanbul/lib/cli.js cover ./tests/apiTests.js",
+    "coveralls": "npm run coverage && coveralls <coverage/lcov.info",
     "lint": "standard",
     "test": "node --harmony --expose-wasm ./tests/interfaceRunner.js",
     "build": "node ./tests/buildTests.js && ./tools/wabt/out/wast2wasm ./wasm/interface.wast -o ./wasm/interface.wasm"
@@ -25,6 +27,8 @@
   "contributors": "Alex Beregszaszi <alex@rtfs.hu>",
   "license": "MPL-2.0",
   "devDependencies": {
+    "coveralls": "^2.11.16",
+    "istanbul": "^0.4.5",
     "standard": "*",
     "tape": "^4.5.1"
   },

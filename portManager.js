@@ -5,17 +5,22 @@ const common = require('./common.js')
 module.exports = class PortManager extends EventEmitter {
   constructor (state, destParentPort, KernelContructor) {
     super()
+    this._queue = []
     this.state = state
-    this.sentMessage = []
     this.Kernel = KernelContructor
     // set up the parent port
     const parentPort = new Port()
     parentPort.on('message', message => {
-      this.emit('message', message)
+      this._recieveMessage(message)
     })
     // create the cache
     this.cache = new Map()
     this.cache.set(common.PARENT, parentPort)
+  }
+
+  _recieveMessage (message) {
+    const index = this._queue.push(message) - 1
+    this.emit('message', index)
   }
 
   async get (name) {
@@ -23,7 +28,7 @@ module.exports = class PortManager extends EventEmitter {
     if (!port) {
       port = new Port()
       port.on('message', message => {
-        this.emit('message', message)
+        this._recieveMessage(message)
       })
       // create destination kernel
       const state = await this.state.get(name)
@@ -46,16 +51,12 @@ module.exports = class PortManager extends EventEmitter {
     return port
   }
 
-  // dequeues the first message that is waiting on a port
-  async dequeue () {
-    // clear the outbox
-    this.sentMessage = []
-    for (let port in this.cache) {
-      const message = port.dequeue()
-      if (message) {
-        return message
-      }
-    }
+  async peek (index = 0) {
+    return this._queue[index]
+  }
+
+  remove (index) {
+    return this._queue.splice(index, index + 1)
   }
 
   close () {

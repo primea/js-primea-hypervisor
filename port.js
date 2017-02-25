@@ -3,7 +3,6 @@ const EventEmitter = require('events')
 module.exports = class Port extends EventEmitter {
   constructor () {
     super()
-    this.queue = []
   }
 
   connect (destPort) {
@@ -17,10 +16,5 @@ module.exports = class Port extends EventEmitter {
 
   async recieve (message) {
     this.emit('message', message)
-    this.queue.push(message)
-  }
-
-  dequeue () {
-    return this.queue.unshift()
   }
 }

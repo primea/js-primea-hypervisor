@@ -45,7 +45,6 @@
     "ethereumjs-block": "^1.4.1",
     "ethereumjs-tx": "^1.1.2",
     "ethereumjs-util": "^5.0.0",
-    "merkle-trie": "0.1.2",
-    "promise-queue": "^2.2.3"
+    "merkle-trie": "0.1.2"
   }
 }

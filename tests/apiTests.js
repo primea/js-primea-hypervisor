@@ -1,6 +1,7 @@
 const tape = require('tape')
 const Hypervisor = require('../hypervisor.js')
 const Message = require('../message.js')
+const Vertex = require('merkle-trie')
 
 tape('send and reciving messages', async t => {
   try {
@@ -15,10 +16,41 @@ tape('send and reciving messages', async t => {
     })
     hypervisor.send(new Message({
       to: path
-    })).catch(e => {
-      console.log(e)
-    })
+    }))
   } catch (e) {
     console.log(e)
+  }
+})
+
+tape('reverts', async t => {
+  const hypervisor = new Hypervisor()
+  const path = ['one', 'two', 'three']
+  const path2 = ['one', 'two', 'three', 'four']
+  hypervisor.set(path, {
+    run: async (message, kernel) => {
+      await kernel.send(new Message({
+        to: ['four']
+      }))
+      throw new Error('vm exception')
+    }
+  })
+
+  hypervisor.set(path2, {
+    run: (message, kernel) => {
+      kernel.stateInterface.set('key', new Vertex({
+        value: 'value'
+      }))
+    }
+  })
+
+  await hypervisor.send(new Message({
+    to: path
+  }))
+
+  try {
+    await hypervisor.state.get(path2.concat(['key']))
+  } catch (e) {
+    t.equal(typeof e, 'object')
+    t.end()
   }
 })

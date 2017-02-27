@@ -15,15 +15,22 @@ module.exports = class Message {
     Object.assign(this, defaults, opts)
     this.hops = 0
     this._vistedKernels = []
+    this._resultPromise = new Promise((resolve, reject) => {
+      this._resolve = resolve
+    })
   }
 
-  finished () {
+  _finish (result) {
     if (this.atomic) {
       this._vistedKernels.pop()
+      if (!this._vistedKernels.length) {
+        this._resolve(result)
+      }
     }
-    return new Promise((resolve, reject) => {
+  }
 
-    })
+  result () {
+    return this._resultPromise
   }
 
   nextPort () {

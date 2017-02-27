@@ -58,6 +58,7 @@ module.exports = class Kernel extends EventEmitter {
     try {
       result = await this._vm.run(message, this, imports) || {}
     } catch (e) {
+      console.log(e)
       result = {
         exception: true
       }
@@ -67,8 +68,9 @@ module.exports = class Kernel extends EventEmitter {
       revert()
     } else if (message.atomic) {
       // messages
-      message.finished().then(vmError => {
-        if (vmError) {
+      message._finish(result)
+      message.result().then(result => {
+        if (result.execption) {
           revert()
         } else {
           this.runNextMessage(0)
@@ -82,14 +84,16 @@ module.exports = class Kernel extends EventEmitter {
   }
 
   async send (message) {
+    // replace root with parent path to root
     let portName = message.nextPort()
+    if (portName === common.ROOT) {
+      message.to.shift()
+      message.to = new Array(this.path.length).fill(common.PARENT).concat(message.to)
+      portName = common.PARENT
+    }
     message.addVistedKernel(message)
     this.lastMessage = message
-    // replace root with parent path to root
-    if (portName === common.ROOT) {
-      portName = common.PARENT
-      message.to = new Array(this.path.length).fill(common.PARENT).concat(message.to)
-    }
+    // console.log(portName, message)
     const port = await this.ports.get(portName)
     // save the atomic messages for possible reverts
     if (message.atomic) {

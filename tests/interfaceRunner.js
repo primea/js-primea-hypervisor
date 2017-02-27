@@ -7,14 +7,14 @@ const Block = require('../deps/block')
 const U256 = require('../deps/u256')
 // TODO remove fakeblockchain
 const fakeBlockChain = require('../fakeBlockChain.js')
-const Kernel = require('../index.js')
+const Hypervisor = require('../hypervisor.js')
 const Message = require('../message.js')
 const common = require('../common.js')
 
 const dir = path.join(__dirname, '/interface')
 // get the test names
 let tests = fs.readdirSync(dir).filter((file) => file.endsWith('.wast'))
-// tests = ['sstore.wast']
+// tests = ['address.wast']
 
 runTests(tests)
 
@@ -22,8 +22,8 @@ function runTests (tests) {
   for (let testName of tests) {
     testName = testName.split('.')[0]
     tape(testName, async (t) => {
-      // Compile Command
-      const rootVertex = new Vertex()
+      const hypervisor = new Hypervisor()
+      const rootVertex = hypervisor.state
       const code = fs.readFileSync(`${dir}/${testName}.wasm`)
       const envData = JSON.parse(fs.readFileSync(`${dir}/${testName}.json`).toString())
 
@@ -67,10 +67,8 @@ function runTests (tests) {
       message.value = new U256(envData.callValue)
       message.gas = 1000000
 
-      const callerState = await rootVertex.get(['accounts', envData.caller, 'code'])
-      const caller = new Kernel({state: callerState})
       try {
-        await caller.send(common.ROOT, message)
+        await hypervisor.send(message)
       } catch (e) {
         t.fail('Exception: ' + e)
         console.error('FAIL')

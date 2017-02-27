@@ -35,8 +35,8 @@ module.exports = class Interface {
   }
 
   async initialize () {
-    this.block = await this.kernel.send(common.ROOT, common.getterMessage('block'))
-    this.blockchain = await this.kernel.send(common.ROOT, common.getterMessage('blockchain'))
+    this.block = await this.kernel.send(common.getterMessage('block', [common.ROOT]))
+    this.blockchain = await this.kernel.send(common.getterMessage('blockchain', [common.ROOT]))
   }
 
   static get name () {
@@ -245,7 +245,6 @@ module.exports = class Interface {
     this.takeGas(3 + Math.ceil(length / 32) * 3)
 
     // wait for all the prevouse async ops to finish before running the callback
-    // console.log(this.kernel)
     this.api.pushOpsQueue(this.kernel.code, cbIndex, code => {
       if (code.length) {
         code = code.slice(codeOffset, codeOffset + length)

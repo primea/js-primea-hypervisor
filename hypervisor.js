@@ -27,7 +27,8 @@ module.exports = class Hypervisor {
   }
 
   send (message) {
-    return this.root.send(message)
+    this.root.send(message)
+    return message.result()
   }
 
   async get (path) {

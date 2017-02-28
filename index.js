@@ -67,7 +67,7 @@ module.exports = class Kernel extends EventEmitter {
       revert()
     } else if (message.atomic) {
       // messages
-      message._finish(result)
+      message._finish()
       message.result().then(result => {
         if (result.execption) {
           revert()
@@ -75,6 +75,10 @@ module.exports = class Kernel extends EventEmitter {
           this.runNextMessage(0)
         }
       })
+
+      if (message.hops === message.to.length) {
+        message._respond(result)
+      }
     } else {
       // non-atomic messages
       this.runNextMessage(0)

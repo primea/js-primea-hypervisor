@@ -20,13 +20,14 @@ module.exports = class Message {
     })
   }
 
-  _finish (result) {
+  _finish () {
     if (this.atomic) {
-      if (this._vistedKernels.length === this.hops) {
-        this._resolve(result)
-      }
       this._vistedKernels.pop()
     }
+  }
+
+  _respond (result) {
+    this._resolve(result)
   }
 
   result () {

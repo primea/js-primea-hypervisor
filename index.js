@@ -16,7 +16,6 @@ module.exports = class Kernel extends EventEmitter {
     this.imports = opts.imports || [imports]
     this.ports = new PortManager(state, opts.parent, Kernel)
     this._sentAtomicMessages = []
-    // rename sandbox?
     this._vm = (opts.codeHandler || codeHandler).init(this.code)
     this._state = 'idle'
     this.ports.on('message', index => {
@@ -25,10 +24,10 @@ module.exports = class Kernel extends EventEmitter {
   }
 
   runNextMessage (index = 0) {
-    this.ports.peek(index).then(message => {
+    return this.ports.peek(index).then(message => {
       if (message && (message.isCyclic(this) || this._state === 'idle')) {
         this.ports.remove(index)
-        this.run(message)
+        return this.run(message)
       } else {
         this._state = 'idle'
         this.emit('idle')
@@ -84,14 +83,14 @@ module.exports = class Kernel extends EventEmitter {
   }
 
   async send (message) {
-    // replace root with parent path to root
     let portName = message.nextPort()
+    // replace root with parent path to root
     if (portName === common.ROOT) {
       message.to.shift()
       message.to = new Array(this.path.length).fill(common.PARENT).concat(message.to)
       portName = common.PARENT
     }
-    message.addVistedKernel(message)
+    message.addVistedKernel(this)
     this.lastMessage = message
     // console.log(portName, message)
     const port = await this.ports.get(portName)
@@ -99,7 +98,8 @@ module.exports = class Kernel extends EventEmitter {
     if (message.atomic) {
       this._sentAtomicMessages.push(message)
     }
-    return port.send(message)
+    port.send(message)
+    return message.result()
   }
 
   shutdown () {}

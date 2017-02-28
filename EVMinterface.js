@@ -34,11 +34,6 @@ module.exports = class Interface {
     })
   }
 
-  async initialize () {
-    this.block = await this.kernel.send(common.getterMessage('block', [common.ROOT]))
-    this.blockchain = await this.kernel.send(common.getterMessage('blockchain', [common.ROOT]))
-  }
-
   static get name () {
     return 'ethereum'
   }
@@ -169,8 +164,7 @@ module.exports = class Interface {
    */
   getCaller (offset) {
     this.takeGas(2)
-
-    const caller = this.message.from[1]
+    const caller = this.message.from[2]
     this.setMemory(offset, ADDRESS_SIZE_BYTES, new Buffer(caller.slice(2), 'hex'))
   }
 

@@ -1,5 +1,8 @@
+const assert = require('assert')
+
 module.exports = class StateInterface {
-  constuctor (state) {
+  constructor (state) {
+    assert(state, 'must have state')
     this.state = state
   }
 

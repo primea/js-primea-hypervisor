@@ -9,10 +9,11 @@ module.exports = class PortManager extends EventEmitter {
     this.state = state
     this.Kernel = KernelContructor
     // set up the parent port
-    const parentPort = new Port()
+    const parentPort = new Port(common.PARENT)
     parentPort.on('message', message => {
       this._recieveMessage(message)
     })
+
     // create the cache
     this.cache = new Map()
     this.cache.set(common.PARENT, parentPort)
@@ -24,9 +25,10 @@ module.exports = class PortManager extends EventEmitter {
   }
 
   async get (name) {
+    console.log(name)
     let port = this.cache.get(name)
     if (!port) {
-      port = new Port()
+      port = new Port(name)
       port.on('message', message => {
         this._recieveMessage(message)
       })

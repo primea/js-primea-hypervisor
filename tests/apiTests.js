@@ -43,14 +43,11 @@ tape('reverts', async t => {
     }
   })
 
-  await hypervisor.send(new Message({
+  const message = new Message({
     to: path
-  }))
-
-  try {
-    await hypervisor.state.get(path2.concat(['key']))
-  } catch (e) {
-    t.equal(typeof e, 'object')
-    t.end()
-  }
+  })
+  hypervisor.send(message)
+  const result = await message.result()
+  t.equals(result.exception, true)
+  t.end()
 })

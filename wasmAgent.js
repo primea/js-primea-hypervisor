@@ -14,14 +14,12 @@ module.exports = class Wasm {
     /**
      * Builds a import map with an array of given interfaces
      */
-    async function buildImports (kernelApi, kernel, imports) {
+    function buildImports (kernelApi, kernel, imports) {
       const importMap = {}
       for (const Import of imports) {
         const response = responses[Import.name] = {}
         const newIterface = new Import(kernelApi, message, response)
         importMap[Import.name] = newIterface.exports
-        // initailize the import
-        await newIterface.initialize()
       }
       return importMap
     }
@@ -43,7 +41,7 @@ module.exports = class Wasm {
       kernel: kernel
     }
 
-    const initializedImports = await buildImports(interfaceApi, kernel, imports)
+    const initializedImports = buildImports(interfaceApi, kernel, imports)
     instance = WebAssembly.Instance(this._module, initializedImports)
 
     if (instance.exports.main) {

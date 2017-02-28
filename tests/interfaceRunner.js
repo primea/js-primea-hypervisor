@@ -9,12 +9,12 @@ const U256 = require('../deps/u256')
 const fakeBlockChain = require('../fakeBlockChain.js')
 const Hypervisor = require('../hypervisor.js')
 const Message = require('../message.js')
-const common = require('../common.js')
+const common = require('../common')
 
 const dir = path.join(__dirname, '/interface')
 // get the test names
 let tests = fs.readdirSync(dir).filter((file) => file.endsWith('.wast'))
-// tests = ['address.wast']
+tests = ['call.wast']
 
 runTests(tests)
 
@@ -61,14 +61,14 @@ function runTests (tests) {
       }))
 
       const message = new Message()
-      message.to = ['accounts', envData.address, 'code']
-      message.origin = new Address(envData.origin)
+      message.to = ['accounts', envData.caller, common.PARENT, envData.address, 'code']
       message.data = new Buffer(envData.callData.slice(2), 'hex')
       message.value = new U256(envData.callValue)
       message.gas = 1000000
 
       try {
         await hypervisor.send(message)
+        console.log('done')
       } catch (e) {
         t.fail('Exception: ' + e)
         console.error('FAIL')

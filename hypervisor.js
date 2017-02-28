@@ -31,21 +31,6 @@ module.exports = class Hypervisor {
     return message.result()
   }
 
-  async get (path) {
-    let lastKernel = this.root
-    let state = this.state
-    while (path.length) {
-      const name = path.unshift()
-      state = await state.get(name)
-      const kernel = new Kernel({
-        state: state,
-        parent: lastKernel
-      })
-      lastKernel = kernel
-    }
-    return lastKernel
-  }
-
   addVM (type, handler) {
     codeHandlers.handlers.type = handler
   }

@@ -22,10 +22,10 @@ module.exports = class Message {
 
   _finish (result) {
     if (this.atomic) {
-      this._vistedKernels.pop()
-      if (!this._vistedKernels.length) {
+      if (this._vistedKernels.length === this.hops) {
         this._resolve(result)
       }
+      this._vistedKernels.pop()
     }
   }
 
@@ -44,6 +44,6 @@ module.exports = class Message {
   }
 
   isCyclic (kernel) {
-    return this.sync && this._vistedKernels.some(process => process === kernel)
+    return this.atomic && this._vistedKernels.some(process => process === kernel)
   }
 }

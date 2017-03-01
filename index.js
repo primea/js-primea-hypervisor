@@ -4,20 +4,23 @@ const PortManager = require('./portManager.js')
 const StateInterface = require('./stateInterface.js')
 const imports = require('./EVMinterface.js')
 const codeHandler = require('./codeHandler.js')
-const common = require('./common.js')
 
 module.exports = class Kernel extends EventEmitter {
   constructor (opts = {}) {
     super()
+    // set up the state
     const state = this.state = opts.state || new Vertex()
     this.stateInterface = new StateInterface(state)
-    this.code = opts.code || state.value
     this.path = state.path
+
+    // set up the vm
     this.imports = opts.imports || [imports]
-    this.ports = new PortManager(state, opts.parent, Kernel)
-    this._sentAtomicMessages = []
-    this._vm = (opts.codeHandler || codeHandler).init(this.code)
+    this._vm = (opts.codeHandler || codeHandler).init(opts.code || state.value)
     this._state = 'idle'
+
+    // set up ports
+    this.ports = new PortManager(state, opts.parentPort, Kernel)
+    this._sentAtomicMessages = []
     this.ports.on('message', index => {
       this.runNextMessage(index)
     })
@@ -25,7 +28,8 @@ module.exports = class Kernel extends EventEmitter {
 
   runNextMessage (index = 0) {
     return this.ports.peek(index).then(message => {
-      if (message && (message.isCyclic(this) || this._state === 'idle')) {
+      if (message && (message._isCyclic(this) || this._state === 'idle')) {
+        this._currentMessage = message
         this.ports.remove(index)
         return this.run(message)
       } else {
@@ -41,14 +45,13 @@ module.exports = class Kernel extends EventEmitter {
    * to by the VM to retrive infromation from the Environment.
    */
   async run (message, imports = this.imports) {
-    function revert () {
+    function revert (oldState) {
       // revert the state
       this.state.set([], oldState)
       // revert all the sent messages
       for (let msg in this._sentAtomicMessages) {
         msg.revert()
       }
-      this.runNextMessage(0)
     }
 
     const oldState = this.state.copy()
@@ -57,16 +60,18 @@ module.exports = class Kernel extends EventEmitter {
     try {
       result = await this._vm.run(message, this, imports) || {}
     } catch (e) {
-      console.log(e)
       result = {
-        exception: true
+        exception: true,
+        exceptionError: e
       }
     }
-    if (result.execption) {
-      // failed messages
-      revert()
-    } else if (message.atomic) {
-      // messages
+
+    if (message.atomic) {
+      // if we trapped revert all the sent messages
+      if (result.execption) {
+        // revert to the old state
+        revert(oldState)
+      }
       message._finish()
       message.result().then(result => {
         if (result.execption) {
@@ -76,7 +81,7 @@ module.exports = class Kernel extends EventEmitter {
         }
       })
 
-      if (message.hops === message.to.length) {
+      if (message.hops === message.to.length || result.exception) {
         message._respond(result)
       }
     } else {
@@ -87,23 +92,14 @@ module.exports = class Kernel extends EventEmitter {
   }
 
   async send (message) {
-    let portName = message.nextPort()
-    // replace root with parent path to root
-    if (portName === common.ROOT) {
-      message.to.shift()
-      message.to = new Array(this.path.length).fill(common.PARENT).concat(message.to)
-      portName = common.PARENT
-    }
-    message.addVistedKernel(this)
-    this.lastMessage = message
-    // console.log(portName, message)
-    const port = await this.ports.get(portName)
-    // save the atomic messages for possible reverts
     if (message.atomic) {
+      // record that this message has traveled thourgh this kernel. This is used
+      // to detect re-entry
+      message._visited(this, this._currentMessage)
+      // recoded that this message was sent, so that we can revert it if needed
       this._sentAtomicMessages.push(message)
     }
-    port.send(message)
-    return message.result()
+    return this.ports.send(message)
   }
 
   shutdown () {}

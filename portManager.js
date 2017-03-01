@@ -25,7 +25,6 @@ module.exports = class PortManager extends EventEmitter {
   }
 
   async get (name) {
-    console.log(name)
     let port = this.cache.get(name)
     if (!port) {
       port = new Port(name)
@@ -36,7 +35,7 @@ module.exports = class PortManager extends EventEmitter {
       const state = await this.state.get(name)
       const destKernel = new this.Kernel({
         state: state,
-        parent: port
+        parentPort: port
       })
 
       // shutdown the kernel when it is done doing it work
@@ -59,6 +58,13 @@ module.exports = class PortManager extends EventEmitter {
 
   remove (index) {
     return this._queue.splice(index, index + 1)
+  }
+
+  async send (message) {
+    let portName = message.nextPort()
+    const port = await this.get(portName)
+    port.send(message)
+    return message.result()
   }
 
   close () {

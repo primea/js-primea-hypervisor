@@ -1,20 +1,20 @@
 const Kernel = require('./index.js')
 const Vertex = require('merkle-trie')
-const Block = require('./deps/block.js')
-const blockchain = require('./fakeBlockChain.js')
+// const Block = require('./deps/block.js')
+// const blockchain = require('./fakeBlockChain.js')
 const codeHandlers = require('./codeHandler.js')
 
 module.exports = class Hypervisor {
   constructor (state = new Vertex()) {
     this.state = state
-    if (state.isEmpty) {
-      state.set('block', new Vertex({
-        value: new Block()
-      }))
-      state.set('blockchain', new Vertex({
-        value: blockchain
-      }))
-    }
+    // if (state.isEmpty) {
+    //   state.set('block', new Vertex({
+    //     value: new Block()
+    //   }))
+    //   state.set('blockchain', new Vertex({
+    //     value: blockchain
+    //   }))
+    // }
     this.root = new Kernel({
       state: state
     })
@@ -27,8 +27,7 @@ module.exports = class Hypervisor {
   }
 
   send (message) {
-    this.root.send(message)
-    return message.result()
+    return this.root.send(message)
   }
 
   addVM (type, handler) {

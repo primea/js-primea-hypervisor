@@ -14,7 +14,7 @@ const common = require('../common')
 const dir = path.join(__dirname, '/interface')
 // get the test names
 let tests = fs.readdirSync(dir).filter((file) => file.endsWith('.wast'))
-tests = ['call.wast']
+// tests = ['call.wast']
 
 runTests(tests)
 
@@ -68,11 +68,8 @@ function runTests (tests) {
 
       try {
         await hypervisor.send(message)
-        console.log('done')
       } catch (e) {
         t.fail('Exception: ' + e)
-        console.error('FAIL')
-        console.error(e)
       } finally {
         t.pass(testName)
       }

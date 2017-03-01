@@ -14,20 +14,10 @@ module.exports = class Message {
     }
     Object.assign(this, defaults, opts)
     this.hops = 0
-    this._vistedKernels = []
+    this._visitedKernels = []
     this._resultPromise = new Promise((resolve, reject) => {
       this._resolve = resolve
     })
-  }
-
-  _finish () {
-    if (this.atomic) {
-      this._vistedKernels.pop()
-    }
-  }
-
-  _respond (result) {
-    this._resolve(result)
   }
 
   result () {
@@ -35,16 +25,25 @@ module.exports = class Message {
   }
 
   nextPort () {
-    return this.to[this.hops++]
+    return this.to[this.hops]
   }
 
-  addVistedKernel (kernel) {
-    if (this.atomic) {
-      this._vistedKernels.push(kernel)
+  _respond (result) {
+    this._resolve(result)
+  }
+
+  _finish () {
+    this._visitedKernels.pop()
+  }
+
+  _visited (kernel, currentMessage) {
+    if (currentMessage && this !== currentMessage) {
+      this._visitedKernels = currentMessage._visitedKernels
     }
+    this._visitedKernels.push(kernel)
   }
 
-  isCyclic (kernel) {
-    return this.atomic && this._vistedKernels.some(process => process === kernel)
+  _isCyclic (kernel) {
+    return this.atomic && this._visitedKernels.some(process => process === kernel)
   }
 }

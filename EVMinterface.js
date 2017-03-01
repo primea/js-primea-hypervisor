@@ -459,10 +459,9 @@ module.exports = class Interface {
    */
   _call (gasHigh, gasLow, addressOffset, valueOffset, dataOffset, dataLength, resultOffset, resultLength, cbIndex) {
     this.takeGas(40)
-
     const gas = from64bit(gasHigh, gasLow)
     // Load the params from mem
-    const address = [common.PARENT, ...this.getMemory(addressOffset, ADDRESS_SIZE_BYTES)]
+    const address = [common.PARENT, common.PARENT, ...this.getMemory(addressOffset, ADDRESS_SIZE_BYTES)]
     const value = new U256(this.getMemory(valueOffset, U128_SIZE_BYTES))
 
     // Special case for non-zero value; why does this exist?
@@ -471,18 +470,19 @@ module.exports = class Interface {
       this.takeGas(-gas)
     }
 
-    // should be
-    let opPromise = this.kernel.send(new Message({
+    const message = new Message({
       to: address,
       value: value
-    }))
-    .catch(() => {
-      // why does this exist?
-      this.takeGas(25000)
+    })
+
+    const messagePromise = this.kernel.send(message).then(result => {
+      if (result.exception) {
+        this.takeGas(25000)
+      }
     })
 
     // wait for all the prevouse async ops to finish before running the callback
-    this.api.pushOpsQueue(opPromise, cbIndex, () => {
+    this.api.pushOpsQueue(messagePromise, cbIndex, () => {
       return 1
     })
   }

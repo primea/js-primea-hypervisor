@@ -3,10 +3,11 @@ const Port = require('./port.js')
 const common = require('./common.js')
 
 module.exports = class PortManager extends EventEmitter {
-  constructor (state, destParentPort, KernelContructor) {
+  constructor (state, destParentPort, KernelContructor, imports) {
     super()
     this._queue = []
     this.state = state
+    this.imports = imports
     this.Kernel = KernelContructor
     // set up the parent port
     const parentPort = new Port(common.PARENT)
@@ -35,7 +36,8 @@ module.exports = class PortManager extends EventEmitter {
       const state = await this.state.get(name)
       const destKernel = new this.Kernel({
         state: state,
-        parentPort: port
+        parentPort: port,
+        imports: this.imports
       })
 
       // shutdown the kernel when it is done doing it work

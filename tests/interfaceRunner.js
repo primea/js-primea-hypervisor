@@ -10,8 +10,8 @@ const fakeBlockChain = require('../fakeBlockChain.js')
 const Hypervisor = require('../hypervisor.js')
 const Message = require('../message.js')
 const common = require('../common')
-
 const dir = path.join(__dirname, '/interface')
+const EVMinterface = require('../EVMinterface.js')
 // get the test names
 let tests = fs.readdirSync(dir).filter((file) => file.endsWith('.wast'))
 // tests = ['sstore.wast']
@@ -22,7 +22,7 @@ function runTests (tests) {
   for (let testName of tests) {
     testName = testName.split('.')[0]
     tape(testName, async (t) => {
-      const hypervisor = new Hypervisor()
+      const hypervisor = new Hypervisor(new Vertex(), [EVMinterface])
       const rootVertex = hypervisor.state
       const code = fs.readFileSync(`${dir}/${testName}.wasm`)
       const envData = JSON.parse(fs.readFileSync(`${dir}/${testName}.json`).toString())

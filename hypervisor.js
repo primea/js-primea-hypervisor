@@ -5,17 +5,10 @@ const Vertex = require('merkle-trie')
 const codeHandlers = require('./codeHandler.js')
 
 module.exports = class Hypervisor {
-  constructor (state = new Vertex()) {
+  constructor (state = new Vertex(), imports = []) {
     this.state = state
-    // if (state.isEmpty) {
-    //   state.set('block', new Vertex({
-    //     value: new Block()
-    //   }))
-    //   state.set('blockchain', new Vertex({
-    //     value: blockchain
-    //   }))
-    // }
     this.root = new Kernel({
+      imports: imports,
       state: state
     })
   }

@@ -1,7 +1,6 @@
 const EventEmitter = require('events')
 const Vertex = require('merkle-trie')
 const PortManager = require('./portManager.js')
-const imports = require('./EVMinterface.js')
 const codeHandler = require('./codeHandler.js')
 
 module.exports = class Kernel extends EventEmitter {
@@ -12,27 +11,27 @@ module.exports = class Kernel extends EventEmitter {
     this.path = state.path
 
     // set up the vm
-    this.imports = opts.imports || [imports]
+    this.imports = opts.imports
     this._vm = (opts.codeHandler || codeHandler).init(opts.code || state.value)
-    this._state = 'idle'
+    this._vmstate = 'idle'
 
     // set up ports
-    this.ports = new PortManager(state, opts.parentPort, Kernel)
-    this._sentAtomicMessages = []
+    this.ports = new PortManager(state, opts.parentPort, Kernel, this.imports)
     this.ports.on('message', index => {
       this.runNextMessage(index)
     })
+    this._sentAtomicMessages = []
   }
 
   runNextMessage (index = 0) {
     // load the next message from port space
     return this.ports.peek(index).then(message => {
-      if (message && (message._isCyclic(this) || this._state === 'idle')) {
+      if (message && (message._isCyclic(this) || this._vmstate === 'idle')) {
         this._currentMessage = message
         this.ports.remove(index)
         return this.run(message)
       } else {
-        this._state = 'idle'
+        this._vmstate = 'idle'
         this.emit('idle')
       }
     })
@@ -55,7 +54,7 @@ module.exports = class Kernel extends EventEmitter {
 
     const oldState = this.state.copy()
     let result
-    this._state = 'running'
+    this._vmstate = 'running'
     try {
       result = await this._vm.run(message, this, imports) || {}
     } catch (e) {

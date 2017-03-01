@@ -18,8 +18,8 @@ module.exports = class Wasm {
       const importMap = {}
       for (const Import of imports) {
         const response = responses[Import.name] = {}
-        const newIterface = new Import(kernelApi, message, response)
-        importMap[Import.name] = newIterface.exports
+        const newInterface = new Import(kernelApi, message, response)
+        importMap[Import.name] = newInterface.exports
       }
       return importMap
     }

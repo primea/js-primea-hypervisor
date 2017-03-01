@@ -14,7 +14,7 @@ const common = require('../common')
 const dir = path.join(__dirname, '/interface')
 // get the test names
 let tests = fs.readdirSync(dir).filter((file) => file.endsWith('.wast'))
-// tests = ['call.wast']
+// tests = ['sstore.wast']
 
 runTests(tests)
 
@@ -49,30 +49,24 @@ function runTests (tests) {
         rootVertex.set(path, accountVertex)
       }
 
-      const block = new Block()
-      block.header.coinbase = new Address(envData.coinbase)
-
-      rootVertex.set('block', new Vertex({
-        value: block
-      }))
-
       rootVertex.set('blockchain', new Vertex({
         value: fakeBlockChain
       }))
+
+      const block = new Block()
+      block.header.coinbase = new Address(envData.coinbase)
 
       const message = new Message()
       message.to = ['accounts', envData.caller, common.PARENT, envData.address, 'code']
       message.data = new Buffer(envData.callData.slice(2), 'hex')
       message.value = new U256(envData.callValue)
       message.gas = 1000000
+      message.block = block
+      message.blockchain = fakeBlockChain
 
-      try {
-        await hypervisor.send(message)
-      } catch (e) {
-        t.fail('Exception: ' + e)
-      } finally {
-        t.pass(testName)
-      }
+      const results = await hypervisor.send(message)
+      // console.log(results)
+      t.equals(results.exception, undefined)
       t.end()
     })
   }

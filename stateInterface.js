@@ -14,7 +14,7 @@ module.exports = class StateInterface {
     return this.state.get([name])
   }
 
-  delete (name) {
+  del (name) {
     return this.state.del([name])
   }
 }

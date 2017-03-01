@@ -129,15 +129,15 @@ module.exports = class Interface {
   getBalance (addressOffset, offset, cbIndex) {
     this.takeGas(20)
 
-    const path = [common.PARENT, '0x' + new Buffer(this.getMemory(addressOffset, ADDRESS_SIZE_BYTES)).toString('hex')]
-    const opPromise = this.kernel.send(common.PARENT, new Message({
+    const path = [common.PARENT, common.PARENT, '0x' + new Buffer(this.getMemory(addressOffset, ADDRESS_SIZE_BYTES)).toString('hex')]
+    const opPromise = this.kernel.send(new Message({
       to: path,
       data: {
         getValue: 'balance'
       },
       sync: true
     }))
-      .catch(() => new U256(0))
+      .catch(() => new Buffer([]))
 
     this.api.pushOpsQueue(opPromise, cbIndex, balance => {
       this.setMemory(offset, U128_SIZE_BYTES, new U256(balance).toMemory(U128_SIZE_BYTES))
@@ -153,7 +153,7 @@ module.exports = class Interface {
   getTxOrigin (offset) {
     this.takeGas(2)
 
-    const origin = new Buffer(this.message.from[1].slice(2), 'hex')
+    const origin = new Buffer(this.message.from[2].slice(2), 'hex')
     this.setMemory(offset, ADDRESS_SIZE_BYTES, origin)
   }
 
@@ -312,7 +312,7 @@ module.exports = class Interface {
   getBlockHash (number, offset, cbOffset) {
     this.takeGas(20)
 
-    const diff = this.block.number - number
+    const diff = this.message.block.number - number
     let opPromise
 
     if (diff > 256 || diff <= 0) {
@@ -334,7 +334,7 @@ module.exports = class Interface {
   getBlockCoinbase (offset) {
     this.takeGas(2)
 
-    this.setMemory(offset, ADDRESS_SIZE_BYTES, this.block.header.coinbase)
+    this.setMemory(offset, ADDRESS_SIZE_BYTES, this.message.block.header.coinbase)
   }
 
   /**
@@ -344,7 +344,7 @@ module.exports = class Interface {
   getBlockTimestamp () {
     this.takeGas(2)
 
-    return this.block.timestamp
+    return this.message.block.timestamp
   }
 
   /**
@@ -354,7 +354,7 @@ module.exports = class Interface {
   getBlockNumber () {
     this.takeGas(2)
 
-    return this.block.number
+    return this.message.block.number
   }
 
   /**
@@ -364,7 +364,7 @@ module.exports = class Interface {
   getBlockDifficulty (offset) {
     this.takeGas(2)
 
-    this.setMemory(offset, U256_SIZE_BYTES, this.block.difficulty.toMemory())
+    this.setMemory(offset, U256_SIZE_BYTES, this.message.block.difficulty.toMemory())
   }
 
   /**
@@ -553,11 +553,11 @@ module.exports = class Interface {
    */
   storageStore (pathOffset, valueOffset, cbIndex) {
     this.takeGas(5000)
-    const path = [new Buffer(this.getMemory(pathOffset, U256_SIZE_BYTES)).toString('hex')]
+    const key = new Buffer(this.getMemory(pathOffset, U256_SIZE_BYTES)).toString('hex')
     // copy the value
     const value = this.getMemory(valueOffset, U256_SIZE_BYTES).slice(0)
     const valIsZero = value.every((i) => i === 0)
-    const opPromise = this.kernel.getValue(path)
+    const opPromise = this.kernel.stateInterface.get(key)
       .then(vertex => vertex.value)
       .catch(() => null)
 
@@ -565,14 +565,14 @@ module.exports = class Interface {
       if (valIsZero && oldValue) {
         // delete a value
         this.results.gasRefund += 15000
-        this.kernel.deleteValue(path)
+        this.kernel.storageInterface.del(key)
       } else {
         if (!valIsZero && !oldValue) {
           // creating a new value
           this.takeGas(15000)
         }
         // update
-        this.kernel.setValue(path, new Vertex({
+        this.kernel.stateInterface.set(key, new Vertex({
           value: value
         }))
       }
@@ -588,9 +588,9 @@ module.exports = class Interface {
     this.takeGas(50)
 
     // convert the path to an array
-    const path = [new Buffer(this.getMemory(pathOffset, U256_SIZE_BYTES)).toString('hex')]
+    const key = new Buffer(this.getMemory(pathOffset, U256_SIZE_BYTES)).toString('hex')
     // get the value from the state
-    const opPromise = this.kernel.getValue(path)
+    const opPromise = this.kernel.stateInterface.get(key)
       .then(vertex => vertex.value)
       .catch(() => new Uint8Array(32))
 

@@ -1,7 +1,6 @@
 const EventEmitter = require('events')
 const Vertex = require('merkle-trie')
 const PortManager = require('./portManager.js')
-const StateInterface = require('./stateInterface.js')
 const imports = require('./EVMinterface.js')
 const codeHandler = require('./codeHandler.js')
 
@@ -10,7 +9,6 @@ module.exports = class Kernel extends EventEmitter {
     super()
     // set up the state
     const state = this.state = opts.state || new Vertex()
-    this.stateInterface = new StateInterface(state)
     this.path = state.path
 
     // set up the vm
@@ -27,6 +25,7 @@ module.exports = class Kernel extends EventEmitter {
   }
 
   runNextMessage (index = 0) {
+    // load the next message from port space
     return this.ports.peek(index).then(message => {
       if (message && (message._isCyclic(this) || this._state === 'idle')) {
         this._currentMessage = message
@@ -102,5 +101,7 @@ module.exports = class Kernel extends EventEmitter {
     return this.ports.send(message)
   }
 
-  shutdown () {}
+  shutdown () {
+    this.ports.close()
+  }
 }

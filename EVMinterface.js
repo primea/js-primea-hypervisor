@@ -16,12 +16,12 @@ const U256_SIZE_BYTES = 32
 
 // The interface exposed to the WebAessembly VM
 module.exports = class Interface {
-  constructor (api, message, results) {
-    results.gasRefund = 0
-    this.message = message
-    this.kernel = api.kernel
-    this.api = api
-    this.results = results
+  constructor (opts) {
+    opts.response.gasRefund = 0
+    this.message = opts.message
+    this.kernel = opts.kernel
+    this.vm = opts.vm
+    this.results = opts.response
     const shimBin = fs.readFileSync(path.join(__dirname, '/wasm/interface.wasm'))
     const shimMod = WebAssembly.Module(shimBin)
     this.shims = WebAssembly.Instance(shimMod, {
@@ -139,7 +139,7 @@ module.exports = class Interface {
     }))
       .catch(() => new Buffer([]))
 
-    this.api.pushOpsQueue(opPromise, cbIndex, balance => {
+    this.vm.pushOpsQueue(opPromise, cbIndex, balance => {
       this.setMemory(offset, U128_SIZE_BYTES, new U256(balance).toMemory(U128_SIZE_BYTES))
     })
   }
@@ -226,7 +226,7 @@ module.exports = class Interface {
     this.takeGas(2)
 
     // wait for all the prevouse async ops to finish before running the callback
-    this.api.pushOpsQueue(this.kernel.code.length, cbIndex, length => length)
+    this.vm.pushOpsQueue(this.kernel.code.length, cbIndex, length => length)
   }
 
   /**
@@ -239,7 +239,7 @@ module.exports = class Interface {
     this.takeGas(3 + Math.ceil(length / 32) * 3)
 
     // wait for all the prevouse async ops to finish before running the callback
-    this.api.pushOpsQueue(this.kernel.code, cbIndex, code => {
+    this.vm.pushOpsQueue(this.kernel.code, cbIndex, code => {
       if (code.length) {
         code = code.slice(codeOffset, codeOffset + length)
         this.setMemory(resultOffset, length, code)
@@ -260,7 +260,7 @@ module.exports = class Interface {
       .catch(() => 0)
 
     // wait for all the prevouse async ops to finish before running the callback
-    this.api.pushOpsQueue(opPromise, cbOffset, length => length)
+    this.vm.pushOpsQueue(opPromise, cbOffset, length => length)
   }
 
   /**
@@ -286,7 +286,7 @@ module.exports = class Interface {
     }
 
     // wait for all the prevouse async ops to finish before running the callback
-    this.api.pushOpsQueue(opPromise, cbIndex, code => {
+    this.vm.pushOpsQueue(opPromise, cbIndex, code => {
       if (code.length) {
         code = code.slice(codeOffset, codeOffset + length)
         this.setMemory(resultOffset, length, code)
@@ -322,7 +322,7 @@ module.exports = class Interface {
     }
 
     // wait for all the prevouse async ops to finish before running the callback
-    this.api.pushOpsQueue(opPromise, cbOffset, hash => {
+    this.vm.pushOpsQueue(opPromise, cbOffset, hash => {
       this.setMemory(offset, U256_SIZE_BYTES, hash.toMemory())
     })
   }
@@ -441,7 +441,7 @@ module.exports = class Interface {
     }
 
     // wait for all the prevouse async ops to finish before running the callback
-    this.api.pushOpsQueue(opPromise, cbIndex, address => {
+    this.vm.pushOpsQueue(opPromise, cbIndex, address => {
       this.setMemory(resultOffset, ADDRESS_SIZE_BYTES, address)
     })
   }
@@ -482,7 +482,7 @@ module.exports = class Interface {
     })
 
     // wait for all the prevouse async ops to finish before running the callback
-    this.api.pushOpsQueue(messagePromise, cbIndex, () => {
+    this.vm.pushOpsQueue(messagePromise, cbIndex, () => {
       return 1
     })
   }
@@ -517,7 +517,7 @@ module.exports = class Interface {
       return null
     })
 
-    this.api.pushOpsQueue(opPromise, cbIndex, oldValue => {
+    this.vm.pushOpsQueue(opPromise, cbIndex, oldValue => {
       return 1
     })
   }
@@ -557,22 +557,22 @@ module.exports = class Interface {
     // copy the value
     const value = this.getMemory(valueOffset, U256_SIZE_BYTES).slice(0)
     const valIsZero = value.every((i) => i === 0)
-    const opPromise = this.kernel.stateInterface.get(key)
+    const opPromise = this.kernel.state.get(key)
       .then(vertex => vertex.value)
       .catch(() => null)
 
-    this.api.pushOpsQueue(opPromise, cbIndex, oldValue => {
+    this.vm.pushOpsQueue(opPromise, cbIndex, oldValue => {
       if (valIsZero && oldValue) {
         // delete a value
         this.results.gasRefund += 15000
-        this.kernel.storageInterface.del(key)
+        this.kernel.state.del(key)
       } else {
         if (!valIsZero && !oldValue) {
           // creating a new value
           this.takeGas(15000)
         }
         // update
-        this.kernel.stateInterface.set(key, new Vertex({
+        this.kernel.state.set(key, new Vertex({
           value: value
         }))
       }
@@ -590,11 +590,11 @@ module.exports = class Interface {
     // convert the path to an array
     const key = new Buffer(this.getMemory(pathOffset, U256_SIZE_BYTES)).toString('hex')
     // get the value from the state
-    const opPromise = this.kernel.stateInterface.get(key)
+    const opPromise = this.kernel.state.get([key])
       .then(vertex => vertex.value)
       .catch(() => new Uint8Array(32))
 
-    this.api.pushOpsQueue(opPromise, cbIndex, value => {
+    this.vm.pushOpsQueue(opPromise, cbIndex, value => {
       this.setMemory(resultOffset, U256_SIZE_BYTES, value)
     })
   }
@@ -622,11 +622,11 @@ module.exports = class Interface {
   }
 
   getMemory (offset, length) {
-    return new Uint8Array(this.api.memory(), offset, length)
+    return new Uint8Array(this.vm.memory(), offset, length)
   }
 
   setMemory (offset, length, value) {
-    const memory = new Uint8Array(this.api.memory(), offset, length)
+    const memory = new Uint8Array(this.vm.memory(), offset, length)
     memory.set(value)
   }
 

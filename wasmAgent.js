@@ -14,34 +14,37 @@ module.exports = class Wasm {
     /**
      * Builds a import map with an array of given interfaces
      */
-    function buildImports (kernelApi, kernel, imports) {
+    function buildImports (opts, imports) {
       const importMap = {}
       for (const Import of imports) {
-        const response = responses[Import.name] = {}
-        const newInterface = new Import(kernelApi, message, response)
+        opts.response = responses[Import.name] = {}
+        const newInterface = new Import(opts)
         importMap[Import.name] = newInterface.exports
       }
       return importMap
     }
 
     let instance
-    const interfaceApi = {
-      /**
-       * adds an aync operation to the operations queue
-       */
-      pushOpsQueue: (promise, callbackIndex, intefaceCallback) => {
-        this._opsQueue = Promise.all([this._opsQueue, promise]).then(values => {
-          const result = intefaceCallback(values.pop())
-          instance.exports.callback.get(callbackIndex)(result)
-        })
-      },
-      memory: () => {
-        return instance.exports.memory.buffer
-      },
-      kernel: kernel
-    }
 
-    const initializedImports = buildImports(interfaceApi, kernel, imports)
+    const opts = {
+      vm: {
+        /**
+         * adds an aync operation to the operations queue
+         */
+        pushOpsQueue: (promise, callbackIndex, intefaceCallback) => {
+          this._opsQueue = Promise.all([this._opsQueue, promise]).then(values => {
+            const result = intefaceCallback(values.pop())
+            instance.exports.callback.get(callbackIndex)(result)
+          })
+        },
+        memory: () => {
+          return instance.exports.memory.buffer
+        }
+      },
+      kernel: kernel,
+      message: message
+    }
+    const initializedImports = buildImports(opts, imports)
     instance = WebAssembly.Instance(this._module, initializedImports)
 
     if (instance.exports.main) {

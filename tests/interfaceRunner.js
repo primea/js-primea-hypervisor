@@ -65,7 +65,6 @@ function runTests (tests) {
       message.blockchain = fakeBlockChain
 
       const results = await hypervisor.send(message)
-      // console.log(results)
       t.equals(results.exception, undefined)
       t.end()
     })

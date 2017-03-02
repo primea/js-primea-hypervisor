@@ -1,29 +1,40 @@
+const EventEmitter = require('events')
 const Vertex = require('merkle-trie')
-// The Kernel Exposes this Interface to VM instances it makes
-const Imports = require('./EVMimports.js')
-const VM = require('./vm.js')
-const Environment = require('./environment.js')
+const PortManager = require('./portManager.js')
+const codeHandler = require('./codeHandler.js')
 
-module.exports = class Kernel extends Vertex {
+module.exports = class Kernel extends EventEmitter {
   constructor (opts = {}) {
-    opts.code = opts.value || opts.code
-    super(opts)
+    super()
+    // set up the state
+    const state = this.state = opts.state || new Vertex()
+    this.path = state.path
 
-    // if code is bound to this kernel then create the interfaceAPI and the imports
-    if (opts.code) {
-      this._vm = new VM(opts.code)
-      this.imports = buildImports(this._vm, opts.interfaces)
-    }
+    // set up the vm
+    this.imports = opts.imports
+    this._vm = (opts.codeHandler || codeHandler).init(opts.code || state.value)
+    this._vmstate = 'idle'
 
-    /**
-     * Builds a import map with an array of given interfaces
-     */
-    function buildImports (api, imports = [Imports]) {
-      return imports.reduce((obj, InterfaceConstuctor) => {
-        obj[InterfaceConstuctor.name] = new InterfaceConstuctor(api).exports
-        return obj
-      }, {})
-    }
+    // set up ports
+    this.ports = new PortManager(state, opts.parentPort, Kernel, this.imports)
+    this.ports.on('message', index => {
+      this.runNextMessage(index)
+    })
+    this._sentAtomicMessages = []
+  }
+
+  runNextMessage (index = 0) {
+    // load the next message from port space
+    return this.ports.peek(index).then(message => {
+      if (message && (message._isCyclic(this) || this._vmstate === 'idle')) {
+        this._currentMessage = message
+        this.ports.remove(index)
+        return this.run(message)
+      } else {
+        this._vmstate = 'idle'
+        this.emit('idle')
+      }
+    })
   }
 
   /**
@@ -31,33 +42,65 @@ module.exports = class Kernel extends Vertex {
    * The Kernel Stores all of its state in the Environment. The Interface is used
    * to by the VM to retrive infromation from the Environment.
    */
-  async run (environment = new Environment({state: this}), imports = this.imports) {
-    await this._vm.run(environment, imports)
-  }
-
-  async messageReceiver (message) {
-    // let the code handle the message if there is code
-    if (this.code) {
-      const environment = new Environment(message)
-      let result = await this.run(environment)
-      if (!result.execption) {
-        this.state = result.state
+  async run (message, imports = this.imports) {
+    function revert (oldState) {
+      // revert the state
+      this.state.set([], oldState)
+      // revert all the sent messages
+      for (let msg in this._sentAtomicMessages) {
+        msg.revert()
       }
-    } else if (message.to.length) {
-      // else forward the message on to the destination contract
-      let [vertex, done] = await this.state.update(message.to)
-      message.to = []
-      await vertex.kernel.messageReceiver(message)
-      done(vertex)
     }
+
+    const oldState = this.state.copy()
+    let result
+    this._vmstate = 'running'
+    try {
+      result = await this._vm.run(message, this, imports) || {}
+    } catch (e) {
+      result = {
+        exception: true,
+        exceptionError: e
+      }
+    }
+
+    if (message.atomic) {
+      // if we trapped revert all the sent messages
+      if (result.execption) {
+        // revert to the old state
+        revert(oldState)
+      }
+      message._finish()
+      message.result().then(result => {
+        if (result.execption) {
+          revert()
+        } else {
+          this.runNextMessage(0)
+        }
+      })
+
+      if (message.hops === message.to.length || result.exception) {
+        message._respond(result)
+      }
+    } else {
+      // non-atomic messages
+      this.runNextMessage(0)
+    }
+    return result
   }
 
-  copy () {
-    return new Kernel({
-      state: this.state.copy(),
-      code: this.code,
-      interfaces: this.interfaces,
-      parent: this.parent
-    })
+  async send (message) {
+    if (message.atomic) {
+      // record that this message has traveled thourgh this kernel. This is used
+      // to detect re-entry
+      message._visited(this, this._currentMessage)
+      // recoded that this message was sent, so that we can revert it if needed
+      this._sentAtomicMessages.push(message)
+    }
+    return this.ports.send(message)
+  }
+
+  shutdown () {
+    this.ports.close()
   }
 }

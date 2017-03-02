@@ -1,8 +1,3 @@
-//
-// This class parses a serialised Ethereum Block
-//
-// The input is a Buffer.
-//
 const Address = require('./address.js')
 const ethUtil = require('ethereumjs-util')
 const OldBlock = require('ethereumjs-block')

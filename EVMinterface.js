@@ -7,15 +7,21 @@ const path = require('path')
 const ethUtil = require('ethereumjs-util')
 const Vertex = require('merkle-trie')
 const U256 = require('./deps/u256.js')
+const Message = require('./message.js')
+const common = require('./common.js')
 
 const U128_SIZE_BYTES = 16
 const ADDRESS_SIZE_BYTES = 20
 const U256_SIZE_BYTES = 32
 
-// The interface exposed to the WebAessembly Core
+// The interface exposed to the WebAessembly VM
 module.exports = class Interface {
-  constructor (kernel) {
-    this.kernel = kernel
+  constructor (opts) {
+    opts.response.gasRefund = 0
+    this.message = opts.message
+    this.kernel = opts.kernel
+    this.vm = opts.vm
+    this.results = opts.response
     const shimBin = fs.readFileSync(path.join(__dirname, '/wasm/interface.wasm'))
     const shimMod = WebAssembly.Module(shimBin)
     this.shims = WebAssembly.Instance(shimMod, {
@@ -92,7 +98,7 @@ module.exports = class Interface {
    * @return {integer}
    */
   _getGasLeftHigh () {
-    return Math.floor(this.kernel.environment.gasLeft / 4294967296)
+    return Math.floor(this.message.gas / 4294967296)
   }
 
   /**
@@ -100,7 +106,7 @@ module.exports = class Interface {
    * @return {integer}
    */
   _getGasLeftLow () {
-    return this.kernel.environment.gasLeft
+    return this.message.gas
   }
 
   /**
@@ -110,8 +116,8 @@ module.exports = class Interface {
    */
   getAddress (offset) {
     this.takeGas(2)
-
-    this.setMemory(offset, ADDRESS_SIZE_BYTES, this.kernel.environment.address.toMemory())
+    const path = this.kernel.path
+    this.setMemory(offset, ADDRESS_SIZE_BYTES, new Buffer(path[1].slice(2), 'hex'))
   }
 
   /**
@@ -123,13 +129,18 @@ module.exports = class Interface {
   getBalance (addressOffset, offset, cbIndex) {
     this.takeGas(20)
 
-    const path = [...this.getMemory(addressOffset, ADDRESS_SIZE_BYTES), 'balance']
-    const opPromise = this.kernel.environment.state.root.get(path)
-      .then(vertex => new U256(vertex.value))
-      .catch(() => new U256(0))
+    const path = [common.PARENT, common.PARENT, '0x' + new Buffer(this.getMemory(addressOffset, ADDRESS_SIZE_BYTES)).toString('hex')]
+    const opPromise = this.kernel.send(new Message({
+      to: path,
+      data: {
+        getValue: 'balance'
+      },
+      sync: true
+    }))
+      .catch(() => new Buffer([]))
 
-    this.kernel.pushOpsQueue(opPromise, cbIndex, balance => {
-      this.setMemory(offset, U128_SIZE_BYTES, balance.toMemory(U128_SIZE_BYTES))
+    this.vm.pushOpsQueue(opPromise, cbIndex, balance => {
+      this.setMemory(offset, U128_SIZE_BYTES, new U256(balance).toMemory(U128_SIZE_BYTES))
     })
   }
 
@@ -142,7 +153,8 @@ module.exports = class Interface {
   getTxOrigin (offset) {
     this.takeGas(2)
 
-    this.setMemory(offset, ADDRESS_SIZE_BYTES, this.kernel.environment.origin.toMemory())
+    const origin = new Buffer(this.message.from[2].slice(2), 'hex')
+    this.setMemory(offset, ADDRESS_SIZE_BYTES, origin)
   }
 
   /**
@@ -152,8 +164,8 @@ module.exports = class Interface {
    */
   getCaller (offset) {
     this.takeGas(2)
-
-    this.setMemory(offset, ADDRESS_SIZE_BYTES, this.kernel.environment.caller.toMemory())
+    const caller = this.message.from[2]
+    this.setMemory(offset, ADDRESS_SIZE_BYTES, new Buffer(caller.slice(2), 'hex'))
   }
 
   /**
@@ -164,7 +176,7 @@ module.exports = class Interface {
   getCallValue (offset) {
     this.takeGas(2)
 
-    this.setMemory(offset, U128_SIZE_BYTES, this.kernel.environment.callValue.toMemory(U128_SIZE_BYTES))
+    this.setMemory(offset, U128_SIZE_BYTES, this.message.value.toMemory(U128_SIZE_BYTES))
   }
 
   /**
@@ -175,7 +187,7 @@ module.exports = class Interface {
   getCallDataSize () {
     this.takeGas(2)
 
-    return this.kernel.environment.callData.length
+    return this.message.data.length
   }
 
   /**
@@ -188,8 +200,8 @@ module.exports = class Interface {
   callDataCopy (offset, dataOffset, length) {
     this.takeGas(3 + Math.ceil(length / 32) * 3)
 
-    if (length > 0 && offset >= 0 && dataOffset >= 0) {
-      const callData = this.kernel.environment.callData.slice(dataOffset, dataOffset + length)
+    if (length) {
+      const callData = this.message.data.slice(dataOffset, dataOffset + length)
       this.setMemory(offset, length, callData)
     }
   }
@@ -202,8 +214,7 @@ module.exports = class Interface {
    */
   callDataCopy256 (offset, dataOffset) {
     this.takeGas(3)
-
-    const callData = this.kernel.environment.callData.slice(dataOffset, dataOffset + 32)
+    const callData = this.message.data.slice(dataOffset, dataOffset + 32)
     this.setMemory(offset, U256_SIZE_BYTES, callData)
   }
 
@@ -214,12 +225,8 @@ module.exports = class Interface {
   getCodeSize (cbIndex) {
     this.takeGas(2)
 
-    const opPromise = this.kernel.environment.state
-      .get('code')
-      .then(vertex => vertex.value.length)
-
     // wait for all the prevouse async ops to finish before running the callback
-    this.kernel.pushOpsQueue(opPromise, cbIndex, length => length)
+    this.vm.pushOpsQueue(this.kernel.code.length, cbIndex, length => length)
   }
 
   /**
@@ -231,18 +238,8 @@ module.exports = class Interface {
   codeCopy (resultOffset, codeOffset, length, cbIndex) {
     this.takeGas(3 + Math.ceil(length / 32) * 3)
 
-    let opPromise
-
-    if (length) {
-      opPromise = this.kernel.environment.state
-        .get('code')
-        .then(vertex => vertex.value)
-    } else {
-      opPromise = Promise.resolve([])
-    }
-
     // wait for all the prevouse async ops to finish before running the callback
-    this.kernel.pushOpsQueue(opPromise, cbIndex, code => {
+    this.vm.pushOpsQueue(this.kernel.code, cbIndex, code => {
       if (code.length) {
         code = code.slice(codeOffset, codeOffset + length)
         this.setMemory(resultOffset, length, code)
@@ -257,14 +254,13 @@ module.exports = class Interface {
    */
   getExternalCodeSize (addressOffset, cbOffset) {
     this.takeGas(20)
-    const address = [...this.getMemory(addressOffset, ADDRESS_SIZE_BYTES), 'code']
-    const opPromise = this.kernel.environment.state.root
-      .get(address)
+    const address = ['accounts', ...this.getMemory(addressOffset, ADDRESS_SIZE_BYTES)]
+    const opPromise = this.kernel.sendMessage(common.ROOT, common.getterMessage('code', address))
       .then(vertex => vertex.value.length)
       .catch(() => 0)
 
     // wait for all the prevouse async ops to finish before running the callback
-    this.kernel.pushOpsQueue(opPromise, cbOffset, length => length)
+    this.vm.pushOpsQueue(opPromise, cbOffset, length => length)
   }
 
   /**
@@ -277,11 +273,11 @@ module.exports = class Interface {
   externalCodeCopy (addressOffset, resultOffset, codeOffset, length, cbIndex) {
     this.takeGas(20 + Math.ceil(length / 32) * 3)
 
-    const address = [...this.getMemory(addressOffset, ADDRESS_SIZE_BYTES), 'code']
+    const address = ['accounts', ...this.getMemory(addressOffset, ADDRESS_SIZE_BYTES)]
     let opPromise
 
     if (length) {
-      opPromise = this.kernel.environment.state.root
+      opPromise = this.kernel.sendMessage(common.ROOT, common.getterMessage('code', address))
         .get(address)
         .then(vertex => vertex.value)
         .catch(() => [])
@@ -290,7 +286,7 @@ module.exports = class Interface {
     }
 
     // wait for all the prevouse async ops to finish before running the callback
-    this.kernel.pushOpsQueue(opPromise, cbIndex, code => {
+    this.vm.pushOpsQueue(opPromise, cbIndex, code => {
       if (code.length) {
         code = code.slice(codeOffset, codeOffset + length)
         this.setMemory(resultOffset, length, code)
@@ -305,7 +301,7 @@ module.exports = class Interface {
   getTxGasPrice () {
     this.takeGas(2)
 
-    return this.kernel.environment.gasPrice
+    return this.message.gasPrice
   }
 
   /**
@@ -316,17 +312,17 @@ module.exports = class Interface {
   getBlockHash (number, offset, cbOffset) {
     this.takeGas(20)
 
-    const diff = this.kernel.environment.block.number - number
+    const diff = this.message.block.number - number
     let opPromise
 
     if (diff > 256 || diff <= 0) {
       opPromise = Promise.resolve(new U256(0))
     } else {
-      opPromise = this.kernel.environment.getBlockHash(number)
+      opPromise = this.state.get(['blockchain', number]).then(vertex => vertex.hash())
     }
 
     // wait for all the prevouse async ops to finish before running the callback
-    this.kernel.pushOpsQueue(opPromise, cbOffset, hash => {
+    this.vm.pushOpsQueue(opPromise, cbOffset, hash => {
       this.setMemory(offset, U256_SIZE_BYTES, hash.toMemory())
     })
   }
@@ -338,7 +334,7 @@ module.exports = class Interface {
   getBlockCoinbase (offset) {
     this.takeGas(2)
 
-    this.setMemory(offset, ADDRESS_SIZE_BYTES, this.kernel.environment.block.header.coinbase)
+    this.setMemory(offset, ADDRESS_SIZE_BYTES, this.message.block.header.coinbase)
   }
 
   /**
@@ -348,7 +344,7 @@ module.exports = class Interface {
   getBlockTimestamp () {
     this.takeGas(2)
 
-    return this.kernel.environment.block.timestamp
+    return this.message.block.timestamp
   }
 
   /**
@@ -358,7 +354,7 @@ module.exports = class Interface {
   getBlockNumber () {
     this.takeGas(2)
 
-    return this.kernel.environment.block.number
+    return this.message.block.number
   }
 
   /**
@@ -368,7 +364,7 @@ module.exports = class Interface {
   getBlockDifficulty (offset) {
     this.takeGas(2)
 
-    this.setMemory(offset, U256_SIZE_BYTES, this.kernel.environment.block.difficulty.toMemory())
+    this.setMemory(offset, U256_SIZE_BYTES, this.message.block.difficulty.toMemory())
   }
 
   /**
@@ -378,7 +374,7 @@ module.exports = class Interface {
   getBlockGasLimit () {
     this.takeGas(2)
 
-    return this.kernel.environment.block.gasLimit
+    return this.message.gasLimit
   }
 
   /**
@@ -413,10 +409,10 @@ module.exports = class Interface {
       topics.push(U256.fromMemory(this.getMemory(topic4, U256_SIZE_BYTES)))
     }
 
-    this.kernel.environment.logs.push({
+    this.kernel.sendMessage([this.kernel.root, 'logs'], new Message({
       data: data,
       topics: topics
-    })
+    }))
   }
 
   /**
@@ -445,7 +441,7 @@ module.exports = class Interface {
     }
 
     // wait for all the prevouse async ops to finish before running the callback
-    this.kernel.pushOpsQueue(opPromise, cbIndex, address => {
+    this.vm.pushOpsQueue(opPromise, cbIndex, address => {
       this.setMemory(resultOffset, ADDRESS_SIZE_BYTES, address)
     })
   }
@@ -463,10 +459,9 @@ module.exports = class Interface {
    */
   _call (gasHigh, gasLow, addressOffset, valueOffset, dataOffset, dataLength, resultOffset, resultLength, cbIndex) {
     this.takeGas(40)
-
     const gas = from64bit(gasHigh, gasLow)
     // Load the params from mem
-    const address = [...this.getMemory(addressOffset, ADDRESS_SIZE_BYTES)]
+    const address = [common.PARENT, common.PARENT, ...this.getMemory(addressOffset, ADDRESS_SIZE_BYTES)]
     const value = new U256(this.getMemory(valueOffset, U128_SIZE_BYTES))
 
     // Special case for non-zero value; why does this exist?
@@ -475,14 +470,19 @@ module.exports = class Interface {
       this.takeGas(-gas)
     }
 
-    let opPromise = this.kernel.environment.state.root.get(address)
-    .catch(() => {
-      // why does this exist?
-      this.takeGas(25000)
+    const message = new Message({
+      to: address,
+      value: value
+    })
+
+    const messagePromise = this.kernel.send(message).then(result => {
+      if (result.exception) {
+        this.takeGas(25000)
+      }
     })
 
     // wait for all the prevouse async ops to finish before running the callback
-    this.kernel.pushOpsQueue(opPromise, cbIndex, () => {
+    this.vm.pushOpsQueue(messagePromise, cbIndex, () => {
       return 1
     })
   }
@@ -501,7 +501,7 @@ module.exports = class Interface {
   callCode (gas, addressOffset, valueOffset, dataOffset, dataLength, resultOffset, resultLength, cbIndex) {
     this.takeGas(40)
     // Load the params from mem
-    const path = [...this.getMemory(addressOffset, ADDRESS_SIZE_BYTES), 'code']
+    const path = ['accounts', ...this.getMemory(addressOffset, ADDRESS_SIZE_BYTES), 'code']
     const value = U256.fromMemory(this.getMemory(valueOffset, U128_SIZE_BYTES))
 
     // Special case for non-zero value; why does this exist?
@@ -510,14 +510,14 @@ module.exports = class Interface {
     }
 
     // TODO: should be message?
-    const opPromise = this.kernel.environment.state.root.get(path)
+    const opPromise = this.state.root.get(path)
     .catch(() => {
       // TODO: handle errors
       // the value was not found
       return null
     })
 
-    this.kernel.pushOpsQueue(opPromise, cbIndex, oldValue => {
+    this.vm.pushOpsQueue(opPromise, cbIndex, oldValue => {
       return 1
     })
   }
@@ -553,26 +553,26 @@ module.exports = class Interface {
    */
   storageStore (pathOffset, valueOffset, cbIndex) {
     this.takeGas(5000)
-    const path = ['storage', ...this.getMemory(pathOffset, U256_SIZE_BYTES)]
+    const key = new Buffer(this.getMemory(pathOffset, U256_SIZE_BYTES)).toString('hex')
     // copy the value
     const value = this.getMemory(valueOffset, U256_SIZE_BYTES).slice(0)
     const valIsZero = value.every((i) => i === 0)
-    const opPromise = this.kernel.environment.state.get(path)
+    const opPromise = this.kernel.state.get(key)
       .then(vertex => vertex.value)
       .catch(() => null)
 
-    this.kernel.pushOpsQueue(opPromise, cbIndex, oldValue => {
+    this.vm.pushOpsQueue(opPromise, cbIndex, oldValue => {
       if (valIsZero && oldValue) {
         // delete a value
-        this.kernel.environment.gasRefund += 15000
-        this.kernel.environment.state.del(path)
+        this.results.gasRefund += 15000
+        this.kernel.state.del(key)
       } else {
         if (!valIsZero && !oldValue) {
           // creating a new value
           this.takeGas(15000)
         }
         // update
-        this.kernel.environment.state.set(path, new Vertex({
+        this.kernel.state.set(key, new Vertex({
           value: value
         }))
       }
@@ -588,13 +588,13 @@ module.exports = class Interface {
     this.takeGas(50)
 
     // convert the path to an array
-    const path = ['storage', ...this.getMemory(pathOffset, U256_SIZE_BYTES)]
+    const key = new Buffer(this.getMemory(pathOffset, U256_SIZE_BYTES)).toString('hex')
     // get the value from the state
-    const opPromise = this.kernel.environment.state.get(path)
+    const opPromise = this.kernel.state.get([key])
       .then(vertex => vertex.value)
       .catch(() => new Uint8Array(32))
 
-    this.kernel.pushOpsQueue(opPromise, cbIndex, value => {
+    this.vm.pushOpsQueue(opPromise, cbIndex, value => {
       this.setMemory(resultOffset, U256_SIZE_BYTES, value)
     })
   }
@@ -605,7 +605,9 @@ module.exports = class Interface {
    * @param {integer} length the length of the output data.
    */
   return (offset, length) {
-    this.kernel.environment.returnValue = this.getMemory(offset, length).slice(0)
+    if (length) {
+      this.results.returnValue = this.getMemory(offset, length).slice(0)
+    }
   }
 
   /**
@@ -614,24 +616,18 @@ module.exports = class Interface {
    * @param {integer} offset the offset to load the address from
    */
   selfDestruct (addressOffset) {
-    this.kernel.environment.selfDestruct = true
-    this.kernel.environment.selfDestructAddress = this.getMemory(addressOffset, ADDRESS_SIZE_BYTES)
-    this.kernel.environment.gasRefund += 24000
+    this.results.selfDestruct = true
+    this.results.selfDestructAddress = this.getMemory(addressOffset, ADDRESS_SIZE_BYTES)
+    this.results.gasRefund += 24000
   }
 
   getMemory (offset, length) {
-    if (offset >= 0 && length > 0) {
-      return new Uint8Array(this.kernel.memory, offset, length)
-    } else {
-      return new Uint8Array([])
-    }
+    return new Uint8Array(this.vm.memory(), offset, length)
   }
 
   setMemory (offset, length, value) {
-    if (offset >= 0 && length > 0) {
-      const memory = new Uint8Array(this.kernel.memory, offset, length)
-      memory.set(value)
-    }
+    const memory = new Uint8Array(this.vm.memory(), offset, length)
+    memory.set(value)
   }
 
   /*
@@ -639,10 +635,10 @@ module.exports = class Interface {
    * because every caller of this method is trusted.
    */
   takeGas (amount) {
-    if (this.kernel.environment.gasLeft < amount) {
+    if (this.message.gas < amount) {
       throw new Error('Ran out of gas')
     }
-    this.kernel.environment.gasLeft -= amount
+    this.message.gas -= amount
   }
 }
 

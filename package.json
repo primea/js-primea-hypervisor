@@ -29,7 +29,7 @@
   "devDependencies": {
     "coveralls": "^2.11.16",
     "istanbul": "^0.4.5",
-    "standard": "*",
+    "standard": "8.6.0",
     "tape": "^4.5.1"
   },
   "standard": {

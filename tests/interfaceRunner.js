@@ -14,7 +14,6 @@ const dir = path.join(__dirname, '/interface')
 const EVMinterface = require('../EVMinterface.js')
 // get the test names
 let tests = fs.readdirSync(dir).filter((file) => file.endsWith('.wast'))
-// tests = ['sstore.wast']
 
 runTests(tests)
 
@@ -60,7 +59,7 @@ function runTests (tests) {
       message.to = ['accounts', envData.caller, common.PARENT, envData.address, 'code']
       message.data = new Buffer(envData.callData.slice(2), 'hex')
       message.value = new U256(envData.callValue)
-      message.gas = 1000000
+      message.gas = envData.gasLeft
       message.block = block
       message.blockchain = fakeBlockChain
 

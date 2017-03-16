@@ -3,7 +3,6 @@
  * enables to interact with the Ethereum Environment
  */
 const fs = require('fs')
-const path = require('path')
 const ethUtil = require('ethereumjs-util')
 const Vertex = require('merkle-trie')
 const U256 = require('./deps/u256.js')
@@ -22,8 +21,10 @@ module.exports = class Interface {
     this.kernel = opts.kernel
     this.vm = opts.vm
     this.results = opts.response
-    const shimBin = fs.readFileSync(path.join(__dirname, '/wasm/interface.wasm'))
+
+    const shimBin = fs.readFileSync(`${__dirname}/wasm/interface.wasm`)
     const shimMod = WebAssembly.Module(shimBin)
+
     this.shims = WebAssembly.Instance(shimMod, {
       'interface': {
         'useGas': this._useGas.bind(this),
@@ -32,53 +33,17 @@ module.exports = class Interface {
         'call': this._call.bind(this)
       }
     })
+    this.useGas = this.shims.exports.useGas
+    this.getGasLeft = this.shims.exports.getGasLeft
+    this.call = this.shims.exports.call
   }
 
   static get name () {
     return 'ethereum'
   }
 
-  get exports () {
-    let exportMethods = [
-      // include all the public methods according to the Ethereum Environment Interface (EEI) r1
-      'getAddress',
-      'getBalance',
-      'getTxOrigin',
-      'getCaller',
-      'getCallValue',
-      'getCallDataSize',
-      'callDataCopy',
-      'callDataCopy256',
-      'getCodeSize',
-      'codeCopy',
-      'getExternalCodeSize',
-      'externalCodeCopy',
-      'getTxGasPrice',
-      'getBlockHash',
-      'getBlockCoinbase',
-      'getBlockTimestamp',
-      'getBlockNumber',
-      'getBlockDifficulty',
-      'getBlockGasLimit',
-      'log',
-      'create',
-      'callCode',
-      'callDelegate',
-      'storageStore',
-      'storageLoad',
-      'return',
-      'selfDestruct'
-    ]
-    let ret = {}
-    exportMethods.forEach((method) => {
-      ret[method] = this[method].bind(this)
-    })
-
-    // add shims
-    ret.useGas = this.shims.exports.useGas
-    ret.getGasLeft = this.shims.exports.getGasLeft
-    ret.call = this.shims.exports.call
-    return ret
+  static get hostContainer () {
+    return 'wasm'
   }
 
   setModule (mod) {
@@ -485,6 +450,7 @@ module.exports = class Interface {
     this.vm.pushOpsQueue(messagePromise, cbIndex, () => {
       return 1
     })
+    return 1
   }
 
   /**
@@ -560,6 +526,7 @@ module.exports = class Interface {
     const opPromise = this.kernel.state.get(key)
       .then(vertex => vertex.value)
       .catch(() => null)
+      .then()
 
     this.vm.pushOpsQueue(opPromise, cbIndex, oldValue => {
       if (valIsZero && oldValue) {

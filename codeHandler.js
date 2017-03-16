@@ -1,4 +1,4 @@
-const Wasm = require('./wasmAgent.js')
+const Wasm = require('prima-wasm-container')
 
 const defaultHandler = {
   test: (code) => {

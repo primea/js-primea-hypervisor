@@ -1,9 +1,9 @@
 ;; starts with 1000 gas
 (module
   (import "ethereum" "useGas" (func $useGas (param i64)))
-  (import  "ethereum" "getGasLeft" (func $gas (result i64)))
+  (import "ethereum" "getGasLeft" (func $gas (result i64)))
 
-  (export "test" (func $main))
+  (export "main" (func $main))
   (func $main
     ;; test adding gas
     (block

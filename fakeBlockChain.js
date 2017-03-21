@@ -1,5 +1,5 @@
 const utils = require('ethereumjs-util')
-const U256 = require('./deps/u256.js')
+const U256 = require('fixed-bn.js').U256
 
 module.exports = {
   getBlock: (n) => {

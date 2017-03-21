@@ -1,7 +1,7 @@
-const Address = require('./address.js')
+const Address = require('fixed-bn.js').Address
+const U256 = require('fixed-bn.js').U256
 const ethUtil = require('ethereumjs-util')
 const OldBlock = require('ethereumjs-block')
-const U256 = require('./u256.js')
 
 module.exports = class Block extends OldBlock {
   get number () {

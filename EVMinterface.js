@@ -5,7 +5,8 @@
 const fs = require('fs')
 const ethUtil = require('ethereumjs-util')
 const Vertex = require('merkle-trie')
-const U256 = require('./deps/u256.js')
+const U256 = require('fixed-bn.js').U256
+const U128 = require('fixed-bn.js').U128
 const Message = require('./message.js')
 const common = require('./common.js')
 
@@ -44,10 +45,6 @@ module.exports = class Interface {
 
   static get hostContainer () {
     return 'wasm'
-  }
-
-  setModule (mod) {
-    this.module = mod
   }
 
   /**
@@ -105,7 +102,7 @@ module.exports = class Interface {
       .catch(() => new Buffer([]))
 
     this.vm.pushOpsQueue(opPromise, cbIndex, balance => {
-      this.setMemory(offset, U128_SIZE_BYTES, new U256(balance).toMemory(U128_SIZE_BYTES))
+      this.setMemory(offset, U128_SIZE_BYTES, new U128(balance).toBuffer())
     })
   }
 
@@ -141,7 +138,7 @@ module.exports = class Interface {
   getCallValue (offset) {
     this.takeGas(2)
 
-    this.setMemory(offset, U128_SIZE_BYTES, this.message.value.toMemory(U128_SIZE_BYTES))
+    this.setMemory(offset, U128_SIZE_BYTES, this.message.value.toBuffer())
   }
 
   /**
@@ -288,7 +285,7 @@ module.exports = class Interface {
 
     // wait for all the prevouse async ops to finish before running the callback
     this.vm.pushOpsQueue(opPromise, cbOffset, hash => {
-      this.setMemory(offset, U256_SIZE_BYTES, hash.toMemory())
+      this.setMemory(offset, U256_SIZE_BYTES, hash.toBuffer())
     })
   }
 
@@ -329,7 +326,7 @@ module.exports = class Interface {
   getBlockDifficulty (offset) {
     this.takeGas(2)
 
-    this.setMemory(offset, U256_SIZE_BYTES, this.message.block.difficulty.toMemory())
+    this.setMemory(offset, U256_SIZE_BYTES, this.message.block.difficulty.toBuffer())
   }
 
   /**
@@ -359,19 +356,19 @@ module.exports = class Interface {
     const topics = []
 
     if (numberOfTopics > 0) {
-      topics.push(U256.fromMemory(this.getMemory(topic1, U256_SIZE_BYTES)))
+      topics.push(U256.fromBuffer(this.getMemory(topic1, U256_SIZE_BYTES)))
     }
 
     if (numberOfTopics > 1) {
-      topics.push(U256.fromMemory(this.getMemory(topic2, U256_SIZE_BYTES)))
+      topics.push(U256.fromBuffer(this.getMemory(topic2, U256_SIZE_BYTES)))
     }
 
     if (numberOfTopics > 2) {
-      topics.push(U256.fromMemory(this.getMemory(topic3, U256_SIZE_BYTES)))
+      topics.push(U256.fromBuffer(this.getMemory(topic3, U256_SIZE_BYTES)))
     }
 
     if (numberOfTopics > 3) {
-      topics.push(U256.fromMemory(this.getMemory(topic4, U256_SIZE_BYTES)))
+      topics.push(U256.fromBuffer(this.getMemory(topic4, U256_SIZE_BYTES)))
     }
 
     this.kernel.sendMessage([this.kernel.root, 'logs'], new Message({
@@ -391,7 +388,7 @@ module.exports = class Interface {
   create (valueOffset, dataOffset, length, resultOffset, cbIndex) {
     this.takeGas(32000)
 
-    const value = U256.fromMemory(this.getMemory(valueOffset, U128_SIZE_BYTES))
+    const value = U256.fromBuffer(this.getMemory(valueOffset, U128_SIZE_BYTES))
     // if (length) {
     //   const code = this.getMemory(dataOffset, length).slice(0)
     // }

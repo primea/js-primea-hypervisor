@@ -1,4 +1,4 @@
-const U256 = require('./deps/u256.js')
+const U128 = require('fixed-bn.js').U128
 
 module.exports = class Message {
   constructor (opts = {}) {
@@ -9,8 +9,8 @@ module.exports = class Message {
       data: new Uint8Array(),
       atomic: true,
       // resource info
-      gas: new U256(0),
-      gasPrices: new U256(0)
+      gas: new U128(0),
+      gasPrices: new U128(0)
     }
     Object.assign(this, defaults, opts)
     this.hops = 0

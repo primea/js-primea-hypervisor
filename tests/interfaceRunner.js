@@ -1,20 +1,20 @@
 const tape = require('tape')
 const fs = require('fs')
-const path = require('path')
 const Vertex = require('merkle-trie')
-const Address = require('../deps/address')
 const Block = require('../deps/block')
-const U256 = require('../deps/u256')
+const U128 = require('fixed-bn.js').U128
+const Address = require('fixed-bn.js').Address
 // TODO remove fakeblockchain
 const fakeBlockChain = require('../fakeBlockChain.js')
 const Hypervisor = require('../hypervisor.js')
 const Message = require('../message.js')
 const common = require('../common')
-const dir = path.join(__dirname, '/interface')
 const EVMinterface = require('../EVMinterface.js')
+
+const dir = `${__dirname}/interface`
 // get the test names
 let tests = fs.readdirSync(dir).filter((file) => file.endsWith('.wast'))
-
+// tests = ['callValue']
 runTests(tests)
 
 function runTests (tests) {
@@ -58,7 +58,7 @@ function runTests (tests) {
       const message = new Message()
       message.to = ['accounts', envData.caller, common.PARENT, envData.address, 'code']
       message.data = new Buffer(envData.callData.slice(2), 'hex')
-      message.value = new U256(envData.callValue)
+      message.value = new U128(envData.callValue)
       message.gas = envData.gasLeft
       message.block = block
       message.blockchain = fakeBlockChain

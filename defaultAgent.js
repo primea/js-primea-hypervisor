@@ -1,6 +1,6 @@
 exports.run = async (message, kernel) => {
   const to = message.to[message.hops]
-  if (to) {
+  if (to !== undefined) {
     return kernel.send(message)
   } else if (message.data.getValue) {
     console.log('get value')

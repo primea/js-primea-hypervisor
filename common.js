@@ -1,7 +1,7 @@
 const Message = require('./message')
 
-exports.PARENT = Symbol('parent')
-exports.ROOT = Symbol('root')
+exports.PARENT = 0
+exports.ROOT = 1
 exports.getterMessage = (name, path) => {
   const message = new Message({
     data: {

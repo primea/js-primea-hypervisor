@@ -14,7 +14,6 @@ const EVMinterface = require('../EVMinterface.js')
 const dir = `${__dirname}/interface`
 // get the test names
 let tests = fs.readdirSync(dir).filter((file) => file.endsWith('.wast'))
-// tests = ['callValue']
 runTests(tests)
 
 function runTests (tests) {

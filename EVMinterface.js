@@ -465,7 +465,7 @@ module.exports = class Interface {
     this.takeGas(40)
     // Load the params from mem
     const path = ['accounts', ...this.getMemory(addressOffset, ADDRESS_SIZE_BYTES), 'code']
-    const value = U256.fromMemory(this.getMemory(valueOffset, U128_SIZE_BYTES))
+    const value = U256.fromBuffer(this.getMemory(valueOffset, U128_SIZE_BYTES))
 
     // Special case for non-zero value; why does this exist?
     if (!value.isZero()) {

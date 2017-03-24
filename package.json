@@ -45,7 +45,7 @@
     "ethereumjs-block": "^1.5.0",
     "ethereumjs-tx": "^1.2.5",
     "ethereumjs-util": "^5.1.0",
-    "fixed-bn.js": "0.0.1",
+    "fixed-bn.js": "0.0.2",
     "merkle-trie": "0.2.0",
     "prima-wasm-container": "0.0.0"
   }

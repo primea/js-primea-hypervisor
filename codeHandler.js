@@ -1,4 +1,4 @@
-const Wasm = require('prima-wasm-container')
+const Wasm = require('primea-wasm-container')
 
 const defaultHandler = {
   test: (code) => {

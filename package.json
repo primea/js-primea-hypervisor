@@ -28,7 +28,7 @@
   "license": "MPL-2.0",
   "devDependencies": {
     "coveralls": "^2.11.16",
-    "istanbul": "^0.4.5",
+    "istanbul": "^1.1.0-alpha.1",
     "standard": "10.0.0-beta.0",
     "tape": "^4.5.1"
   },
@@ -41,12 +41,12 @@
     ]
   },
   "dependencies": {
-    "bn.js": "^4.11.6",
     "ethereumjs-block": "^1.5.0",
     "ethereumjs-tx": "^1.2.5",
     "ethereumjs-util": "^5.1.0",
     "fixed-bn.js": "0.0.2",
-    "merkle-trie": "0.2.0",
-    "prima-wasm-container": "0.0.0"
+    "ipld-graph-builder": "1.0.0",
+    "primea-message": "0.0.0",
+    "primea-wasm-container": "0.0.0"
   }
 }

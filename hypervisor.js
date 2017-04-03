@@ -1,22 +1,19 @@
 const Kernel = require('./index.js')
-const Vertex = require('merkle-trie')
-// const Block = require('./deps/block.js')
-// const blockchain = require('./fakeBlockChain.js')
 const codeHandlers = require('./codeHandler.js')
 
 module.exports = class Hypervisor {
-  constructor (state = new Vertex(), imports = []) {
+  constructor (graph, state, imports = []) {
     this.state = state
+    this.graph = graph
     this.root = new Kernel({
       imports: imports,
+      graph: graph,
       state: state
     })
   }
 
-  set (path, kernel) {
-    this.state.set(path, new Vertex({
-      value: kernel
-    }))
+  set (path, value) {
+    return this.graph.set(this.state, path, value)
   }
 
   send (message) {

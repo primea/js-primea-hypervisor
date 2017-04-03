@@ -1,5 +1,4 @@
 const EventEmitter = require('events')
-const Vertex = require('merkle-trie')
 const PortManager = require('./portManager.js')
 const codeHandler = require('./codeHandler.js')
 
@@ -7,26 +6,34 @@ module.exports = class Kernel extends EventEmitter {
   constructor (opts = {}) {
     super()
     // set up the state
-    const state = this.state = opts.state || new Vertex()
-    this.path = state.path
+    this.graph = opts.graph
+    this.path = opts.path || ''
+    this.imports = opts.imports
+    const state = this.state = opts.state || {}
 
     // set up the vm
-    this.imports = opts.imports
-    this._vm = (opts.codeHandler || codeHandler).init(opts.code || state.value)
+    this._vm = (opts.codeHandler || codeHandler).init(opts.code || state)
     this._vmstate = 'idle'
 
     // set up ports
-    this.ports = new PortManager(state, opts.parentPort, Kernel, this.imports)
+    this.ports = new PortManager({
+      state: state,
+      graph: this.graph,
+      parentPort: opts.parentPort,
+      Kernel: Kernel,
+      imports: this.imports,
+      path: this.path
+    })
+
     this.ports.on('message', index => {
       this.runNextMessage(index)
     })
-    this._sentAtomicMessages = []
   }
 
   runNextMessage (index = 0) {
     // load the next message from port space
     return this.ports.peek(index).then(message => {
-      if (message && (message._isCyclic(this) || this._vmstate === 'idle')) {
+      if (message && (message.isCyclic(this) || this._vmstate === 'idle')) {
         this._currentMessage = message
         this.ports.remove(index)
         return this.run(message)
@@ -43,16 +50,15 @@ module.exports = class Kernel extends EventEmitter {
    * to by the VM to retrive infromation from the Environment.
    */
   async run (message, imports = this.imports) {
+    const self = this
     function revert (oldState) {
       // revert the state
-      this.state.set([], oldState)
-      // revert all the sent messages
-      for (let msg in this._sentAtomicMessages) {
-        msg.revert()
-      }
+      clearObject(self.state)
+      Object.assign(self.state, oldState)
     }
 
-    const oldState = this.state.copy()
+    // shallow copy
+    const oldState = Object.assign({}, this.state)
     let result
     this._vmstate = 'running'
     try {
@@ -64,28 +70,20 @@ module.exports = class Kernel extends EventEmitter {
       }
     }
 
-    if (message.atomic) {
-      // if we trapped revert all the sent messages
-      if (result.execption) {
-        // revert to the old state
-        revert(oldState)
-      }
-      message._finish()
-      message.result().then(result => {
-        if (result.execption) {
-          revert()
-        } else {
-          this.runNextMessage(0)
-        }
-      })
-
-      if (message.hops === message.to.length || result.exception) {
-        message._respond(result)
-      }
-    } else {
-      // non-atomic messages
-      this.runNextMessage(0)
+    // if we trapped revert all the sent messages
+    if (result.exception) {
+      // revert to the old state
+      revert(oldState)
+      message.reject(result)
+    } else if (!message.hasResponded) {
+      message.respond(result)
     }
+
+    message.committed().then(() => {
+      this.runNextMessage(0)
+    }).catch((e) => {
+      revert(oldState)
+    })
     return result
   }
 
@@ -94,13 +92,17 @@ module.exports = class Kernel extends EventEmitter {
       // record that this message has traveled thourgh this kernel. This is used
       // to detect re-entry
       message._visited(this, this._currentMessage)
-      // recoded that this message was sent, so that we can revert it if needed
-      this._sentAtomicMessages.push(message)
     }
     return this.ports.send(message)
   }
 
   shutdown () {
     this.ports.close()
+  }
+}
+
+function clearObject (myObject) {
+  for (var member in myObject) {
+    delete myObject[member]
   }
 }

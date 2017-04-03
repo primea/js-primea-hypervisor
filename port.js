@@ -16,7 +16,7 @@ module.exports = class Port extends EventEmitter {
   }
 
   async send (message) {
-    message.hops++
+    message._hops++
     this.destPort.recieve(message)
   }
 

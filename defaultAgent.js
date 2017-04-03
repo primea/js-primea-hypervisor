@@ -1,9 +1,9 @@
 exports.run = async (message, kernel) => {
-  const to = message.to[message.hops]
+  const to = message.nextPort()
   if (to !== undefined) {
-    return kernel.send(message)
+    await kernel.send(message)
+    return
   } else if (message.data.getValue) {
-    console.log('get value')
     return (await kernel.state.get(message.data.getValue)).value
   }
 }

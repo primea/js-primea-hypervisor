@@ -1,13 +1,13 @@
 const tape = require('tape')
 const fs = require('fs')
-const Vertex = require('merkle-trie')
+const Vertex = require('ipld-graph-builder')
 const Block = require('../deps/block')
 const U128 = require('fixed-bn.js').U128
 const Address = require('fixed-bn.js').Address
 // TODO remove fakeblockchain
 const fakeBlockChain = require('../fakeBlockChain.js')
 const Hypervisor = require('../hypervisor.js')
-const Message = require('../message.js')
+const Message = require('primea-message')
 const common = require('../common')
 const EVMinterface = require('../EVMinterface.js')
 

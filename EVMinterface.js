@@ -4,10 +4,10 @@
  */
 const fs = require('fs')
 const ethUtil = require('ethereumjs-util')
-const Vertex = require('merkle-trie')
+const Vertex = require('ipld-graph-builder')
 const U256 = require('fixed-bn.js').U256
 const U128 = require('fixed-bn.js').U128
-const Message = require('./message.js')
+const Message = require('primea-message')
 const common = require('./common.js')
 
 const U128_SIZE_BYTES = 16

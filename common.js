@@ -1,7 +1,7 @@
-const Message = require('./message')
+const Message = require('primea-message')
 
-exports.PARENT = 0
-exports.ROOT = 1
+exports.PARENT = '..'
+exports.ROOT = '/'
 exports.getterMessage = (name, path) => {
   const message = new Message({
     data: {

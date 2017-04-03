@@ -1,8 +1,8 @@
 const Wasm = require('primea-wasm-container')
 
 const defaultHandler = {
-  test: (code) => {
-    return !code
+  test: (state) => {
+    return !state.code
   },
   init: () => {
     return require('./defaultAgent.js')
@@ -10,8 +10,8 @@ const defaultHandler = {
 }
 
 const wasm = {
-  test: (code) => {
-    code = new Buffer(code)
+  test: (state) => {
+    const code = new Buffer(state.code)
     return code && code.slice(0, 4).toString() === '\x00asm'
   },
   init: (code) => {
@@ -20,11 +20,13 @@ const wasm = {
 }
 
 const javascript = {
-  test: (code) => {
-    return typeof code === 'object'
+  test: (state) => {
+    return typeof state.code === 'function'
   },
-  init: (code) => {
-    return code
+  init: (state) => {
+    return {
+      run: state.code
+    }
   }
 }
 

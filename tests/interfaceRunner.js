@@ -1,6 +1,6 @@
 const tape = require('tape')
 const fs = require('fs')
-const Vertex = require('ipld-graph-builder')
+const Graph = require('ipld-graph-builder')
 const Block = require('../deps/block')
 const U128 = require('fixed-bn.js').U128
 const Address = require('fixed-bn.js').Address
@@ -10,52 +10,36 @@ const Hypervisor = require('../hypervisor.js')
 const Message = require('primea-message')
 const common = require('../common')
 const EVMinterface = require('../EVMinterface.js')
+const IPFS = require('ipfs')
+
+const ipfs = new IPFS()
+const graph = new Graph(ipfs)
 
 const dir = `${__dirname}/interface`
 // get the test names
 let tests = fs.readdirSync(dir).filter((file) => file.endsWith('.wast'))
-runTests(tests)
+// tests = ['address.js']
+
+ipfs.on('start', async () => {
+  runTests(tests)
+})
 
 function runTests (tests) {
-  for (let testName of tests) {
-    testName = testName.split('.')[0]
-    tape(testName, async (t) => {
-      const hypervisor = new Hypervisor(new Vertex(), [EVMinterface])
-      const rootVertex = hypervisor.state
-      const code = fs.readFileSync(`${dir}/${testName}.wasm`)
+  tape('EVM interface tests', async(t) => {
+    for (let testName of tests) {
+      t.comment(testName)
+      testName = testName.split('.')[0]
+      const hypervisor = new Hypervisor(graph, {}, [EVMinterface])
       const envData = JSON.parse(fs.readFileSync(`${dir}/${testName}.json`).toString())
-
-      for (let address in envData.state) {
-        const account = envData.state[address]
-        const accountVertex = new Vertex()
-
-        accountVertex.set('code', new Vertex({
-          value: code
-        }))
-
-        accountVertex.set('balance', new Vertex({
-          value: new Buffer(account.balance.slice(2), 'hex')
-        }))
-
-        for (let key in account.storage) {
-          accountVertex.set(['storage', ...new Buffer(key.slice(2), 'hex')], new Vertex({
-            value: new Buffer(account.storage[key].slice(2), 'hex')
-          }))
-        }
-
-        const path = ['accounts', address]
-        rootVertex.set(path, accountVertex)
-      }
-
-      rootVertex.set('blockchain', new Vertex({
-        value: fakeBlockChain
-      }))
+      const code = fs.readFileSync(`${dir}/${testName}.wasm`)
+      envData.state[envData.address].code = code
 
       const block = new Block()
       block.header.coinbase = new Address(envData.coinbase)
 
-      const message = new Message()
-      message.to = ['accounts', envData.caller, common.PARENT, envData.address, 'code']
+      const message = new Message({
+        to: `/accounts/${envData.caller}/${common.PARENT}/${envData.address}/code`
+      })
       message.data = new Buffer(envData.callData.slice(2), 'hex')
       message.value = new U128(envData.callValue)
       message.gas = envData.gasLeft
@@ -64,7 +48,8 @@ function runTests (tests) {
 
       const results = await hypervisor.send(message)
       t.equals(results.exception, undefined)
-      t.end()
-    })
-  }
+    }
+    t.end()
+    process.exit()
+  })
 }

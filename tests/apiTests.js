@@ -1,8 +1,8 @@
 const tape = require('tape')
 const Hypervisor = require('../hypervisor.js')
 const Message = require('primea-message')
-const IPFS = require('ipfs')
 const Graph = require('ipld-graph-builder')
+const IPFS = require('ipfs')
 
 const ipfs = new IPFS()
 const graph = new Graph(ipfs)

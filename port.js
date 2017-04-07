@@ -20,8 +20,7 @@ module.exports = class Port extends EventEmitter {
     this.destPort.recieve(message)
   }
 
-  async recieve (message) {
-    message.from.push(this.name)
+  recieve (message) {
     this.emit('message', message)
   }
 }

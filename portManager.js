@@ -1,5 +1,6 @@
 const EventEmitter = require('events')
 const path = require('path')
+const AtomicMessage = require('primea-message/atomic')
 const Port = require('./port.js')
 const common = require('./common.js')
 
@@ -64,11 +65,10 @@ module.exports = class PortManager extends EventEmitter {
     return this._queue.splice(index, index + 1)
   }
 
-  async send (message) {
-    let portName = message.nextPort()
+  async send (portName, message) {
     const port = await this.get(portName)
     port.send(message)
-    return message.result()
+    return AtomicMessage.isAtomic(message) ? message.result() : {}
   }
 
   close () {

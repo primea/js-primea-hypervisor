@@ -79,7 +79,7 @@ module.exports = class Interface {
   getAddress (offset) {
     this.takeGas(2)
     const path = this.kernel.path
-    this.setMemory(offset, ADDRESS_SIZE_BYTES, new Buffer(path[1].slice(2), 'hex'))
+    this.setMemory(offset, ADDRESS_SIZE_BYTES, Buffer.from(path[1].slice(2), 'hex'))
   }
 
   /**
@@ -91,7 +91,7 @@ module.exports = class Interface {
   getBalance (addressOffset, offset, cbIndex) {
     this.takeGas(20)
 
-    const path = [common.PARENT, common.PARENT, '0x' + new Buffer(this.getMemory(addressOffset, ADDRESS_SIZE_BYTES)).toString('hex')]
+    const path = [common.PARENT, common.PARENT, '0x' + Buffer.from(this.getMemory(addressOffset, ADDRESS_SIZE_BYTES)).toString('hex')]
     const opPromise = this.kernel.send(new Message({
       to: path,
       data: {
@@ -99,7 +99,7 @@ module.exports = class Interface {
       },
       sync: true
     }))
-      .catch(() => new Buffer([]))
+      .catch(() => Buffer.from([]))
 
     this.vm.pushOpsQueue(opPromise, cbIndex, balance => {
       this.setMemory(offset, U128_SIZE_BYTES, new U128(balance).toBuffer())
@@ -115,7 +115,7 @@ module.exports = class Interface {
   getTxOrigin (offset) {
     this.takeGas(2)
 
-    const origin = new Buffer(this.message.from[2].slice(2), 'hex')
+    const origin = Buffer.from(this.message.from[2].slice(2), 'hex')
     this.setMemory(offset, ADDRESS_SIZE_BYTES, origin)
   }
 
@@ -127,7 +127,7 @@ module.exports = class Interface {
   getCaller (offset) {
     this.takeGas(2)
     const caller = this.message.from[2]
-    this.setMemory(offset, ADDRESS_SIZE_BYTES, new Buffer(caller.slice(2), 'hex'))
+    this.setMemory(offset, ADDRESS_SIZE_BYTES, Buffer.from(caller.slice(2), 'hex'))
   }
 
   /**
@@ -160,7 +160,7 @@ module.exports = class Interface {
    * @param {integer} length the length of data to copy
    */
   callDataCopy (offset, dataOffset, length) {
-    this.takeGas(3 + Math.ceil(length / 32) * 3)
+    this.takeGas(3 + (3 * Math.ceil(length / 32)))
 
     if (length) {
       const callData = this.message.data.slice(dataOffset, dataOffset + length)
@@ -198,7 +198,7 @@ module.exports = class Interface {
    * @param {integer} length the length of code to copy
    */
   codeCopy (resultOffset, codeOffset, length, cbIndex) {
-    this.takeGas(3 + Math.ceil(length / 32) * 3)
+    this.takeGas(3 + (Math.ceil(length / 32) * 3))
 
     // wait for all the prevouse async ops to finish before running the callback
     this.vm.pushOpsQueue(this.kernel.code, cbIndex, code => {
@@ -233,7 +233,7 @@ module.exports = class Interface {
    * @param {integer} length the length of code to copy
    */
   externalCodeCopy (addressOffset, resultOffset, codeOffset, length, cbIndex) {
-    this.takeGas(20 + Math.ceil(length / 32) * 3)
+    this.takeGas(20 + (Math.ceil(length / 32) * 3))
 
     const address = ['accounts', ...this.getMemory(addressOffset, ADDRESS_SIZE_BYTES)]
     let opPromise
@@ -350,7 +350,7 @@ module.exports = class Interface {
       throw new Error('Invalid numberOfTopics')
     }
 
-    this.takeGas(375 + length * 8 + numberOfTopics * 375)
+    this.takeGas(375 + (length * 8) + (numberOfTopics * 375))
 
     const data = length ? this.getMemory(dataOffset, length).slice(0) : new Uint8Array([])
     const topics = []
@@ -396,7 +396,7 @@ module.exports = class Interface {
     let opPromise
 
     if (value.gt(this.kernel.environment.value)) {
-      opPromise = Promise.resolve(new Buffer(20).fill(0))
+      opPromise = Promise.resolve(Buffer.alloc(20).fill(0))
     } else {
       // todo actully run the code
       opPromise = Promise.resolve(ethUtil.generateAddress(this.kernel.environment.address, this.kernel.environment.nonce))
@@ -516,7 +516,7 @@ module.exports = class Interface {
    */
   storageStore (pathOffset, valueOffset, cbIndex) {
     this.takeGas(5000)
-    const key = new Buffer(this.getMemory(pathOffset, U256_SIZE_BYTES)).toString('hex')
+    const key = Buffer.from(this.getMemory(pathOffset, U256_SIZE_BYTES)).toString('hex')
     // copy the value
     const value = this.getMemory(valueOffset, U256_SIZE_BYTES).slice(0)
     const valIsZero = value.every((i) => i === 0)
@@ -552,7 +552,7 @@ module.exports = class Interface {
     this.takeGas(50)
 
     // convert the path to an array
-    const key = new Buffer(this.getMemory(pathOffset, U256_SIZE_BYTES)).toString('hex')
+    const key = Buffer.from(this.getMemory(pathOffset, U256_SIZE_BYTES)).toString('hex')
     // get the value from the state
     const opPromise = this.kernel.state.get([key])
       .then(vertex => vertex.value)

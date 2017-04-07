@@ -3,7 +3,7 @@ const U256 = require('fixed-bn.js').U256
 
 module.exports = {
   getBlock: (n) => {
-    const hash = utils.sha3(new Buffer(utils.bufferToInt(n).toString()))
+    const hash = utils.sha3(Buffer.from(utils.bufferToInt(n).toString()))
     const block = {
       hash: () => {
         return new U256(hash)

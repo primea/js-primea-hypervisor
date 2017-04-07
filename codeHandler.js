@@ -11,7 +11,7 @@ const defaultHandler = {
 
 const wasm = {
   test: (state) => {
-    const code = new Buffer(state.code)
+    const code = Buffer.from(state.code)
     return code && code.slice(0, 4).toString() === '\x00asm'
   },
   init: (code) => {

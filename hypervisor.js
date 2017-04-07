@@ -16,8 +16,8 @@ module.exports = class Hypervisor {
     return this.graph.set(this.state, path, value)
   }
 
-  send (message) {
-    return this.root.send(message)
+  send (portName, message) {
+    return this.root.send(portName, message)
   }
 
   addVM (type, handler) {

@@ -1,6 +1,7 @@
 const EventEmitter = require('events')
 const PortManager = require('./portManager.js')
 const codeHandler = require('./codeHandler.js')
+const AtomicMessage = require('primea-message/atomic')
 
 module.exports = class Kernel extends EventEmitter {
   constructor (opts = {}) {
@@ -33,7 +34,9 @@ module.exports = class Kernel extends EventEmitter {
   runNextMessage (index = 0) {
     // load the next message from port space
     return this.ports.peek(index).then(message => {
-      if (message && (message.isCyclic(this) || this._vmstate === 'idle')) {
+      if (message &&
+          (this._vmstate === 'idle' ||
+           (AtomicMessage.isAtomic(message) && message.isCyclic(this)))) {
         this._currentMessage = message
         this.ports.remove(index)
         return this.run(message)
@@ -74,12 +77,12 @@ module.exports = class Kernel extends EventEmitter {
     if (result.exception) {
       // revert to the old state
       revert(oldState)
-      message.reject(result)
-    } else if (!message.hasResponded) {
+      message._reject(result)
+    } else if (AtomicMessage.isAtomic(message) && !message.hasResponded) {
       message.respond(result)
     }
 
-    message.committed().then(() => {
+    message._committed().then(() => {
       this.runNextMessage(0)
     }).catch((e) => {
       revert(oldState)
@@ -87,13 +90,13 @@ module.exports = class Kernel extends EventEmitter {
     return result
   }
 
-  async send (message) {
-    if (message.atomic) {
+  async send (portName, message) {
+    if (AtomicMessage.isAtomic(message)) {
       // record that this message has traveled thourgh this kernel. This is used
       // to detect re-entry
       message._visited(this, this._currentMessage)
     }
-    return this.ports.send(message)
+    return this.ports.send(portName, message)
   }
 
   shutdown () {

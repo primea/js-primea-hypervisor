@@ -7,7 +7,7 @@ const Address = require('fixed-bn.js').Address
 // TODO remove fakeblockchain
 const fakeBlockChain = require('../fakeBlockChain.js')
 const Hypervisor = require('../hypervisor.js')
-const Message = require('primea-message')
+const Message = require('primea-message/atomic')
 const common = require('../common')
 const EVMinterface = require('../EVMinterface.js')
 const IPFS = require('ipfs')
@@ -38,16 +38,20 @@ function runTests (tests) {
       block.header.coinbase = new Address(envData.coinbase)
 
       const message = new Message({
-        to: `/accounts/${envData.caller}/${common.PARENT}/${envData.address}/code`
+        to: `${envData.caller}/${common.PARENT}/${envData.address}/code`,
+        data: Buffer.from(envData.callData.slice(2), 'hex'),
+        value: new U128(envData.callValue),
+        gas: envData.gasLeft,
+        block: block,
+        blockchain: fakeBlockChain
       })
-      message.data = new Buffer(envData.callData.slice(2), 'hex')
-      message.value = new U128(envData.callValue)
-      message.gas = envData.gasLeft
-      message.block = block
-      message.blockchain = fakeBlockChain
 
-      const results = await hypervisor.send(message)
-      t.equals(results.exception, undefined)
+      try {
+        const results = await hypervisor.send('accounts', message)
+        t.equals(results.exception, undefined)
+      } catch (e) {
+        console.log(e)
+      }
     }
     t.end()
     process.exit()

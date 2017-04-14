@@ -30,7 +30,7 @@
     "coveralls": "^2.13.0",
     "ipfs": "^0.23.1",
     "istanbul": "^1.1.0-alpha.1",
-    "standard": "10.0.1",
+    "standard": "10.0.2",
     "tape": "^4.5.1"
   },
   "standard": {

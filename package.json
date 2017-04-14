@@ -49,6 +49,7 @@
     "fixed-bn.js": "0.0.2",
     "ipld-graph-builder": "1.0.1",
     "primea-message": "0.0.0",
-    "primea-wasm-container": "0.0.0"
+    "primea-wasm-container": "0.0.0",
+    "webcrypto-liner": "^0.1.20"
   }
 }

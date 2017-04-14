@@ -1,80 +1,98 @@
-const EventEmitter = require('events')
-const path = require('path')
-const AtomicMessage = require('primea-message/atomic')
 const Port = require('./port.js')
 const common = require('./common.js')
 
-module.exports = class PortManager extends EventEmitter {
-  constructor (opts) {
-    super()
-    Object.assign(this, opts)
-    this._queue = []
-    // set up the parent port
-    const parentPort = new Port(common.PARENT)
-    parentPort.on('message', message => {
-      this._recieveMessage(message)
+module.exports = class PortManager {
+  constructor (ports, kernel) {
+    this.kernel = kernel
+    this.ports = ports
+    this._portMap = new Map()
+    this._hasMappedPorts = false
+    this._tempQueue = []
+    this._mapPorts(this.ports).then(ports => {
+      this._portMap = ports
+      this.queue = this._queue
+      for (const message of this._tempQueue) {
+        this.queue(message)
+      }
     })
-
-    // create the cache
-    this.cache = new Map()
-    this.cache.set(common.PARENT, parentPort)
   }
 
-  _recieveMessage (message) {
-    const index = this._queue.push(message) - 1
-    this.emit('message', index)
+  queue (message) {
+    this._tempQueue.push(message)
+  }
+
+  _queue (message) {
+    this._portMap.get(message.from).push(message)
+  }
+
+  async _mapPorts (ports) {
+    ports = Object.key(ports).map(name => {
+      const port = ports[name]
+      this.kernel.id(port).then(id => {
+        return [id, new Port(name)]
+      })
+    })
+    ports = await Promise.all(ports)
+    return new Map(ports)
+  }
+
+  create (name, value) {
+    this.ports[name] = value
+  }
+
+  del (name) {
+    delete this.ports[name]
+  }
+
+  move (from, to) {
+    this.ports[to] = this.ports[from]
+    delete this.ports[from]
   }
 
   async get (name) {
-    let port = this.cache.get(name)
-    if (!port) {
-      port = new Port(name)
-      port.on('message', message => {
-        this._recieveMessage(message)
-      })
-      // create destination kernel
-      const state = await this.graph.get(this.state, name)
+    const port = await name === common.PARENT ? this.graph.get(this.state.ports, name) : this.parentId
+    const id = await this.kernel.id(port)
+    return this._portMap.get(id)
+  }
 
-      const destKernel = new this.Kernel({
-        state: state,
-        graph: this.graph,
-        parentPort: port,
-        imports: this.imports,
-        path: path.join(this.path, name)
-      })
+  // waits till all ports have reached a threshold tick count
+  async wait (ticks) {
+    const unkownPorts = [...this._ports].filter((id, port) => {
+      const message = port.peek()
+      return !message || message.ticks < ticks
+    })
 
-      // shutdown the kernel when it is done doing it work
-      destKernel.on('idle', () => {
-        destKernel.shutdown()
-        this.cache.delete(name)
-      })
-
-      // find and connect the destination port
-      const destPort = await destKernel.ports.get(common.PARENT)
-      port.connect(destPort)
-      this.cache.set(name, port)
+    const promises = []
+    for (const id in unkownPorts) {
+      promises.push(this.hypervisor.waitOnVM(id, ticks))
     }
-    return port
+    await Promise.all(promises)
   }
 
-  async peek (index = 0) {
-    return this._queue[index]
+  async getNextMessage (ticks) {
+    await this.wait(ticks)
+    return [...this._ports].reduce(messageArbiter).shift()
+  }
+}
+
+// decides which message to go firts
+function messageArbiter (portA, portB) {
+  const a = portA.peek()
+  const b = portB.peek()
+
+  if (!a) {
+    return b
+  } else if (!b) {
+    return a
   }
 
-  remove (index) {
-    return this._queue.splice(index, index + 1)
-  }
-
-  async send (portName, message) {
-    const port = await this.get(portName)
-    port.send(message)
-    return AtomicMessage.isAtomic(message) ? message.result() : {}
-  }
-
-  close () {
-    for (let port in this.cache) {
-      port.emit('close')
-    }
-    this.cache.clear()
+  const aGasPrice = a.resources.gasPrice
+  const bGasPrice = b.resources.gasPrice
+  if (a.ticks !== b.ticks) {
+    return a.ticks < b.ticks ? a : b
+  } else if (aGasPrice === bGasPrice) {
+    return a.hash() > b.hash() ? a : b
+  } else {
+    return aGasPrice > bGasPrice ? a : b
   }
 }

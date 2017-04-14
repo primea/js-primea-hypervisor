@@ -1,26 +1,37 @@
-const EventEmitter = require('events')
-
-module.exports = class Port extends EventEmitter {
+module.exports = class Port {
   constructor (name) {
-    super()
     this.name = name
-    this.connected = false
+    this._queue = []
+    this.ticks = 0
   }
 
-  connect (destPort) {
-    if (!this.connected) {
-      this.destPort = destPort
-      destPort.destPort = this
-      this.connected = true
+  queue (message) {
+    this.ticks = message.ticks
+    if (this._resolve) {
+      return this._resolve(message)
+    } else {
+      this.queue.push(message)
     }
   }
 
-  async send (message) {
-    message._hops++
-    this.destPort.recieve(message)
+  // this only workls for one Promise
+  nextMessage () {
+    const message = this.queue.shift()
+
+    return new Promise((resolve, reject) => {
+      if (message) {
+        resolve(message)
+      } else {
+        this._resolve = resolve
+      }
+    })
   }
 
-  recieve (message) {
-    this.emit('message', message)
+  peek () {
+    return this._queue[0]
+  }
+
+  shift () {
+    this._queue.shift()
   }
 }

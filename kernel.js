@@ -33,10 +33,7 @@ module.exports = class Kernel extends EventEmitter {
 
   queue (message) {
     this.portManager.queue(message)
-    // handle system messages
-    if (message.isPoll) {
-      message.respond(this.wait(message.threshold))
-    } else if (this.state === 'idle') {
+    if (this.state === 'idle') {
       this._runNextMessage()
     }
   }

@@ -18,7 +18,6 @@ module.exports = class Kernel extends EventEmitter {
     this._waitingQueue = new PriorityQueue((a, b) => {
       return a.threshold > b.threshold
     })
-
     this.on('result', this._runNextMessage)
   }
 
@@ -34,7 +33,10 @@ module.exports = class Kernel extends EventEmitter {
 
   queue (message) {
     this.portManager.queue(message)
-    if (this.state === 'idle') {
+    // handle system messages
+    if (message.isPoll) {
+      message.respond(this.wait(message.threshold))
+    } else if (this.state === 'idle') {
       this._runNextMessage()
     }
   }

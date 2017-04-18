@@ -17,6 +17,8 @@ module.exports = class PortManager {
     })
   }
 
+  // temporaly queue message untill the ports have been mapped. Mapping the
+  // ports is async since the ports could just be merkle links
   queue (message) {
     this._tempQueue.push(message)
   }
@@ -56,16 +58,19 @@ module.exports = class PortManager {
   }
 
   // waits till all ports have reached a threshold tick count
-  async wait (ticks) {
+  async wait (threshold) {
+    // find the ports that have a smaller tick count then the threshold tick count
     const unkownPorts = [...this._ports].filter((id, port) => {
       const message = port.peek()
-      return !message || message.ticks < ticks
+      return !message || message.ticks < threshold
     })
 
-    const promises = []
-    for (const id in unkownPorts) {
-      promises.push(this.hypervisor.waitOnVM(id, ticks))
-    }
+    const promises = unkownPorts.map(port => {
+      this.hypervisor.waitOnVM(port, threshold).then(ticks => {
+        // update the port's tick count
+        port.ticks = ticks
+      })
+    })
     await Promise.all(promises)
   }
 

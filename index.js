@@ -1,4 +1,5 @@
 const Kernel = require('./index.js')
+const PollMessage = require('./pollMessage.js')
 
 module.exports = class Hypervisor {
   constructor (opts) {
@@ -35,10 +36,10 @@ module.exports = class Hypervisor {
 
   // given a port, wait untill its source contract has reached the threshold
   // tick count
-  async waitOnPort (port, ticks) {
-    let kernel = this.getVMFromPort(port)
-    const tickCount = await kernel.wait(ticks)
-    port.ticks = tickCount
-    return tickCount
+  waitOnPort (port, ticks) {
+    const kernel = this.getVMFromPort(port)
+    const message = new PollMessage(ticks)
+    kernel.queue(message)
+    return message.response()
   }
 }

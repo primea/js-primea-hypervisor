@@ -7,7 +7,9 @@ module.exports = class Port {
 
   queue (message) {
     this.ticks = message.ticks
-    if (this._resolve) {
+    if (message.isSystem) {
+      return
+    } if (this._resolve) {
       return this._resolve(message)
     } else {
       this.queue.push(message)

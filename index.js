@@ -21,11 +21,13 @@ module.exports = class Hypervisor {
     vm.queue(message)
   }
 
-  getVMFromPort (port) {
+  async getVMFromPort (port) {
     const id = Kernel.id(port)
     let kernel = this._vms.get(id)
     if (!kernel) {
-      kernel = new Kernel(port)
+      // load the container from the state
+      await this.graph.tree(port, 2)
+      kernel = new Kernel()
       kernel.on('idle', () => {
         this._vms.delete(id)
       })
@@ -35,8 +37,12 @@ module.exports = class Hypervisor {
 
   // given a port, wait untill its source contract has reached the threshold
   // tick count
-  waitOnPort (port, ticks) {
-    let kernel = this.getVMFromPort(port)
+  async waitOnPort (port, ticks) {
+    let kernel = await this.getVMFromPort(port)
     return kernel.wait(ticks)
+  }
+
+  addVM (container) {
+    this._vms.type = container.type
   }
 }

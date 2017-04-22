@@ -12,8 +12,6 @@ module.exports = class Kernel extends EventEmitter {
     this.opts = {}
     this._stateIndex = 0
     Object.assign(this.opts, opts)
-    // set up the vm
-    this.vm = (this.opts.codeHandler).init(this.opts.state)
     this.ports = new PortManager(this)
     this._waitingQueue = new PriorityQueue((a, b) => {
       return a.threshold > b.threshold

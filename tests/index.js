@@ -10,17 +10,19 @@ node.on('error', err => {
 
 node.on('start', () => {
   tape.only('basic', async t => {
-    const testVM = {
-      run (message) {
-        console.log('made it!!!!')
+    const message = new Message()
+    class testVM {
+      run (m) {
+        t.true(m === message, 'should recive a message')
+        t.end()
       }
     }
 
     try {
       const state = {
         id: {
-          nonce: new Uint8Array([0]),
-          parent: new Uint8Array()
+          nonce: new Buffer([0]),
+          parent: new Buffer([])
         },
         type: 'test',
         vm: {
@@ -28,17 +30,19 @@ node.on('start', () => {
         }
       }
 
-      const hypervisor = new Hypervisor(node.dag)
+      const expectedState = { '/': 'zdpuApqUjZFhw8LTkw8gXAbVcqc5Y7TsbTVadU879TgucoqSF' }
+
+      const hypervisor = new Hypervisor({
+        dag: node.dag
+      })
       hypervisor.addVM('test', testVM)
 
-      const message = new Message()
       await hypervisor.send(state, message)
 
       await hypervisor.createStateRoot(state, Infinity)
-      console.log(state)
+      t.deepEquals(state, expectedState, 'expected')
 
       node.stop(() => {
-        t.end()
         process.exit()
       })
     } catch (e) {

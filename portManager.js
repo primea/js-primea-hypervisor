@@ -1,5 +1,27 @@
 const Port = require('./port.js')
 
+// decides which message to go firts
+function messageArbiter (portA, portB) {
+  const a = portA.peek()
+  const b = portB.peek()
+
+  if (!a) {
+    return b
+  } else if (!b) {
+    return a
+  }
+
+  const aGasPrice = a.resources.gasPrice
+  const bGasPrice = b.resources.gasPrice
+  if (a.ticks !== b.ticks) {
+    return a.ticks < b.ticks ? a : b
+  } else if (aGasPrice === bGasPrice) {
+    return a.hash() > b.hash() ? a : b
+  } else {
+    return aGasPrice > bGasPrice ? a : b
+  }
+}
+
 module.exports = class PortManager {
   constructor (kernel) {
     this.kernel = kernel
@@ -18,11 +40,11 @@ module.exports = class PortManager {
     })
 
     // create the parent port
-    ports.push(this.hypervisor.generateID(this.kernel._opts.id).then(id => {
-      return [id, new Port('parent')]
-    }))
     ports = await Promise.all(ports)
     this._portMap = new Map(ports)
+    // add the parent port
+    const parent = this.kernel._opts.id.parent.length === 0 ? 'root' : this.kernel._opts.id.parent
+    this._portMap.set(parent, new Port('parent'))
   }
 
   queue (message) {
@@ -49,20 +71,19 @@ module.exports = class PortManager {
   }
 
   async getParent () {
-    const id = await this.hypervisor.generateID(this.kernel._opts.id)
+    const id = await this.hypervisor.generateID(this.kernel._opts)
     return this._portMap.get(id)
   }
 
   // waits till all ports have reached a threshold tick count
   async wait (threshold) {
     // find the ports that have a smaller tick count then the threshold tick count
-    const unkownPorts = [...this._ports].filter((id, port) => {
-      const message = port.peek()
-      return !message || message.ticks < threshold
+    const unkownPorts = [...this._portMap].filter(([id, port]) => {
+      return port._ticks < threshold
     })
 
-    const promises = unkownPorts.map(port => {
-      this.hypervisor.wait(port, threshold).then(ticks => {
+    const promises = unkownPorts.map(([id, port]) => {
+      this.hypervisor.wait(id, threshold).then(ticks => {
         // update the port's tick count
         port.ticks = ticks
       })
@@ -72,28 +93,7 @@ module.exports = class PortManager {
 
   async getNextMessage (ticks) {
     await this.wait(ticks)
-    return [...this._portMap].reduce(messageArbiter).shift()
+    return [...this._portMap].reduce(messageArbiter)[1].shift()
   }
 }
 
-// decides which message to go firts
-function messageArbiter (portA, portB) {
-  const a = portA.peek()
-  const b = portB.peek()
-
-  if (!a) {
-    return b
-  } else if (!b) {
-    return a
-  }
-
-  const aGasPrice = a.resources.gasPrice
-  const bGasPrice = b.resources.gasPrice
-  if (a.ticks !== b.ticks) {
-    return a.ticks < b.ticks ? a : b
-  } else if (aGasPrice === bGasPrice) {
-    return a.hash() > b.hash() ? a : b
-  } else {
-    return aGasPrice > bGasPrice ? a : b
-  }
-}

@@ -15,16 +15,18 @@ module.exports = class Hypervisor {
   }
 
   async getInstance (port) {
-    const id = await this.generateID(port.id)
+    const id = await this.generateID(port)
     let kernel = this._vmInstances.get(id)
     if (!kernel) {
       // load the container from the state
       await this.graph.tree(port, 2)
 
       // create a new kernel instance
+      const VM = this._opts.VMs[port.type]
       const opts = Object.assign({
         state: port.vm,
-        id: port.id
+        id: port.id,
+        VM: VM
       }, this._opts)
 
       kernel = new Kernel(opts)
@@ -39,8 +41,7 @@ module.exports = class Hypervisor {
 
   async send (port, message) {
     const vm = await this.getInstance(port)
-    const id = await this.generateID(port.id)
-    message._fromPort = id
+    message._fromPort = 'root'
     vm.queue(message)
   }
 
@@ -53,14 +54,18 @@ module.exports = class Hypervisor {
   }
 
   async createStateRoot (port, ticks) {
-    const kernel = await this.wait(port, ticks)
-    return this.graph.flush(kernel.state)
+    await this.wait(port, ticks)
+    return this.graph.flush(port)
   }
 
   async generateID (port) {
-    let id = Buffer.concat([port.nonce, port.parent])
-    id = await crypto.subtle.digest('SHA-256', id)
-    return new Buffer(id).toString('hex')
+    if (typeof port === 'object') {
+      let id = Buffer.concat([port.id.nonce, port.id.parent])
+      id = await crypto.subtle.digest('SHA-256', id)
+      return new Buffer(id).toString('hex')
+    } else {
+      return port
+    }
   }
 
   addVM (type, vm) {

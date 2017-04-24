@@ -6,7 +6,7 @@ module.exports = class Port {
   }
 
   queue (message) {
-    this.ticks = message.ticks
+    this.ticks = message._ticks
     if (this._resolve) {
       return this._resolve(message)
     } else {
@@ -32,6 +32,6 @@ module.exports = class Port {
   }
 
   shift () {
-    this._queue.shift()
+    return this._queue.shift()
   }
 }

@@ -1,41 +1,32 @@
 const Port = require('./port.js')
-const common = require('./common.js')
 
 module.exports = class PortManager {
-  constructor (ports, kernel) {
+  constructor (kernel) {
     this.kernel = kernel
-    this.ports = ports
+    this.hypervisor = kernel._opts.hypervisor
+    this.ports = kernel._opts.state.ports
     this._portMap = new Map()
-    this._hasMappedPorts = false
-    this._tempQueue = []
-    this._mapPorts(this.ports).then(ports => {
-      this._portMap = ports
-      this.queue = this._queue
-      for (const message of this._tempQueue) {
-        this.queue(message)
-      }
-    })
   }
 
-  // temporaly queue message untill the ports have been mapped. Mapping the
-  // ports is async since the ports could just be merkle links
-  queue (message) {
-    this._tempQueue.push(message)
-  }
-
-  _queue (message) {
-    this._portMap.get(message.from).push(message)
-  }
-
-  async _mapPorts (ports) {
-    ports = Object.key(ports).map(name => {
-      const port = ports[name]
-      this.kernel.id(port).then(id => {
+  async start () {
+    // map ports to thier id's
+    let ports = Object.keys(this.ports).map(name => {
+      const port = this.ports[name]
+      this.hypervisor.generateID(port).then(id => {
         return [id, new Port(name)]
       })
     })
+
+    // create the parent port
+    ports.push(this.hypervisor.generateID(this.kernel._opts.id).then(id => {
+      return [id, new Port('parent')]
+    }))
     ports = await Promise.all(ports)
-    return new Map(ports)
+    this._portMap = new Map(ports)
+  }
+
+  queue (message) {
+    this._portMap.get(message.fromPort).queue(message)
   }
 
   create (name, value) {
@@ -52,8 +43,13 @@ module.exports = class PortManager {
   }
 
   async get (name) {
-    const port = await name === common.PARENT ? this.graph.get(this.state.ports, name) : this.parentId
-    const id = await this.kernel.id(port)
+    const port = await this.graph.get(this.state.ports, name)
+    const id = await this.hypervisor.generateID(port)
+    return this._portMap.get(id)
+  }
+
+  async getParent () {
+    const id = await this.hypervisor.generateID(this.kernel._opts.id)
     return this._portMap.get(id)
   }
 
@@ -66,7 +62,7 @@ module.exports = class PortManager {
     })
 
     const promises = unkownPorts.map(port => {
-      this.hypervisor.waitOnVM(port, threshold).then(ticks => {
+      this.hypervisor.wait(port, threshold).then(ticks => {
         // update the port's tick count
         port.ticks = ticks
       })
@@ -76,7 +72,7 @@ module.exports = class PortManager {
 
   async getNextMessage (ticks) {
     await this.wait(ticks)
-    return [...this._ports].reduce(messageArbiter).shift()
+    return [...this._portMap].reduce(messageArbiter).shift()
   }
 }
 

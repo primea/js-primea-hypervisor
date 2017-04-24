@@ -1,17 +1,15 @@
-const crypto = require('webcrypto-liner')
 const PriorityQueue = require('fastpriorityqueue')
 const EventEmitter = require('events')
+const BN = require('bn.js')
 const PortManager = require('./portManager.js')
 
-const STATES = ['idle', 'running', 'result']
+const VMSTATES = ['idle', 'running', 'result']
 
 module.exports = class Kernel extends EventEmitter {
-  constructor (opts = {}) {
+  constructor (opts) {
     super()
-    // set up the state
-    this.opts = {}
-    this._stateIndex = 0
-    Object.assign(this.opts, opts)
+    this._opts = opts
+    this._vmStateIndex = 0
     this.ports = new PortManager(this)
     this._waitingQueue = new PriorityQueue((a, b) => {
       return a.threshold > b.threshold
@@ -19,25 +17,29 @@ module.exports = class Kernel extends EventEmitter {
     this.on('result', this._runNextMessage)
   }
 
-  _updateState (message) {
-    this._stateIndex++
-    const state = STATES[this._stateIndex]
-    this._emit(state, message)
+  start () {
+    return this.ports.start()
   }
 
-  get state () {
-    return STATES[this._stateIndex]
+  _updateVmState (message) {
+    this._vmStateIndex++
+    const vmState = VMSTATES[this._stateVmIndex]
+    this._emit(vmState, message)
+  }
+
+  get vmState () {
+    return VMSTATES[this._stateVmIndex]
   }
 
   queue (message) {
-    this.portManager.queue(message)
-    if (this.state === 'idle') {
+    this.ports.queue(message)
+    if (this.vmState === 'idle') {
       this._runNextMessage()
     }
   }
 
   _runNextMessage () {
-    this.portManager.getNextMessage(this.ticks).then(message => {
+    this.ports.getNextMessage(this.ticks).then(message => {
       if (message) {
         this.run(message)
       } else {
@@ -53,7 +55,7 @@ module.exports = class Kernel extends EventEmitter {
    */
   async run (message, imports = this.imports) {
     // shallow copy
-    const oldState = Object.assign({}, this.state)
+    const oldState = Object.assign({}, this._opts.state)
     let result
     this._updateState(message)
     try {
@@ -67,18 +69,18 @@ module.exports = class Kernel extends EventEmitter {
 
     if (result.exception) {
       // revert to the old state
-      clearObject(this.opts.state)
-      Object.assign(this.opts.state, oldState)
+      clearObject(this._opts.state)
+      Object.assign(this._opts.state, oldState)
     }
 
-    this._updateState(result)
+    this._updateVmState(result)
     return result
   }
 
   // returns a promise that resolves once the kernel hits the threshould tick
   // count
   async wait (threshold) {
-    if (this._state === 'idle' && threshold > this.ticks) {
+    if (this._vmState === 'idle' && threshold > this.ticks) {
       // the cotract is at idle so wait
       return this.portManager.wait(threshold)
     } else {
@@ -103,9 +105,15 @@ module.exports = class Kernel extends EventEmitter {
   }
 
   createPort () {
+    const nonce = new BN(this.nonce)
+    nonce.iaddn(1)
+    this.nonce = nonce.toArrayLike(Uint8Array)
     return {
       id: {
-        '/': [this.nonce++, this.id]
+        '/': {
+          nonce: this.nonce,
+          parent: this.id
+        }
       },
       link: {
         '/': {}
@@ -114,15 +122,7 @@ module.exports = class Kernel extends EventEmitter {
   }
 
   async send (port, message) {
-    return this.opts.hypervisor.send(port, message)
-  }
-
-  id () {
-    return Kernel.id(this._opts, this._opts)
-  }
-
-  static id (id) {
-    return crypto.subtle.digest('SHA-256', Buffer.concat(id.parentId, id.nonce))
+    return this._opts.hypervisor.send(port, message)
   }
 }
 

@@ -10,7 +10,7 @@ module.exports = class Port {
     if (this._resolve) {
       return this._resolve(message)
     } else {
-      this.queue.push(message)
+      this._queue.push(message)
     }
   }
 

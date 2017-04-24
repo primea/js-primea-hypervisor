@@ -1,7 +1,7 @@
 {
-  "name": "ewasm-kernel",
+  "name": "primea-hypervisor",
   "version": "0.0.0",
-  "description": "This is a JS prototype of the eWASM kernal.",
+  "description": "this is a JS implemention of the primea hypervisor",
   "scripts": {
     "coverage": "node --harmony ./node_modules/istanbul/lib/cli.js cover ./tests/apiTests.js",
     "coveralls": "npm run coverage && coveralls <coverage/lcov.info",
@@ -18,39 +18,26 @@
   },
   "homepage": "https://github.com/ewasm/ewasm-kernel",
   "keywords": [
-    "ethereum",
-    "webassembly",
-    "wasm",
-    "ewasm"
+    "primea",
+    "hypervisor",
+    "kernel"
   ],
   "author": "mjbecze <mjbecze@gmail.com>",
   "contributors": "Alex Beregszaszi <alex@rtfs.hu>",
   "license": "MPL-2.0",
+  "dependencies": {
+    "bn.js": "^4.11.6",
+    "deepcopy": "^0.6.3",
+    "fastpriorityqueue": "^0.2.4",
+    "ipld-graph-builder": "1.0.1",
+    "node-webcrypto-ossl": "^1.0.21",
+    "primea-message": "0.0.0"
+  },
   "devDependencies": {
     "coveralls": "^2.13.0",
     "ipfs": "^0.23.1",
     "istanbul": "^1.1.0-alpha.1",
     "standard": "10.0.1",
     "tape": "^4.5.1"
-  },
-  "standard": {
-    "ignore": [
-      "/tools/"
-    ],
-    "globals": [
-      "WebAssembly"
-    ]
-  },
-  "dependencies": {
-    "deepcopy": "^0.6.3",
-    "ethereumjs-block": "^1.5.0",
-    "ethereumjs-tx": "^1.2.5",
-    "ethereumjs-util": "^5.1.0",
-    "file-type": "^4.2.0",
-    "fixed-bn.js": "0.0.2",
-    "ipld-graph-builder": "1.0.1",
-    "primea-message": "0.0.0",
-    "primea-wasm-container": "0.0.0",
-    "webcrypto-liner": "^0.1.20"
   }
 }

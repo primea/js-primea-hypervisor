@@ -24,7 +24,7 @@ module.exports = class Hypervisor {
       // create a new kernel instance
       const VM = this._opts.VMs[port.type]
       const opts = Object.assign({
-        state: port.vm,
+        state: port.link,
         id: port.id,
         VM: VM
       }, this._opts)
@@ -41,7 +41,8 @@ module.exports = class Hypervisor {
 
   async send (port, message) {
     const vm = await this.getInstance(port)
-    message._fromPort = 'root'
+    const id = await this.generateID(port)
+    message._fromPort = id
     vm.queue(message)
   }
 
@@ -53,13 +54,27 @@ module.exports = class Hypervisor {
     return kernel
   }
 
+  createPort (type, payload = {}, id = {nonce: [0], parent: null}) {
+    const VM = this._opts.VMs[type]
+    return {
+      'messages': [],
+      'id': {
+        '/': id
+      },
+      'type': type,
+      'link': {
+        '/': VM.createState(payload)
+      }
+    }
+  }
+
   async createStateRoot (port, ticks) {
     await this.wait(port, ticks)
     return this.graph.flush(port)
   }
 
   generateID (port) {
-    this.graph.flush(port.id)
+    return this.graph.flush(port.id)
   }
 
   addVM (type, vm) {

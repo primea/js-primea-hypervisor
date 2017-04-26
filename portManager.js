@@ -34,26 +34,27 @@ module.exports = class PortManager {
     // map ports to thier id's
     let ports = Object.keys(this.ports).map(name => {
       const port = this.ports[name]
-      this.hypervisor.generateID(port).then(id => {
-        return [id, new Port(name)]
-      })
+      this._mapPort(name, port)
     })
 
     // create the parent port
-    ports = await Promise.all(ports)
-    this._portMap = new Map(ports)
-    // add the parent port
-    let parent = await this.hypervisor.graph.get(this.kernel._opts.id, 'parent')
-    parent = parent === null ? 'root' : parent
-    this._portMap.set(parent, new Port('parent'))
+    await Promise.all(ports)
+    this._portMap.set(this.kernel._opts.id, new Port('parent'))
+  }
+
+  _mapPort (name, port) {
+    this.hypervisor.generateID(port).then(id => {
+      this._portMap.set(id, new Port(name))
+    })
   }
 
   queue (message) {
     this._portMap.get(message.fromPort).queue(message)
   }
 
-  create (name, value) {
-    this.ports[name] = value
+  set (name, port) {
+    this.ports[name] = port
+    return this._mapPort(name, port)
   }
 
   del (name) {

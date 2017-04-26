@@ -4,106 +4,79 @@ const Hypervisor = require('../')
 const Message = require('primea-message')
 
 const node = new IPFS()
+
+class BaseContainer {
+  static createState (code) {
+    return {
+      nonce: Buffer.from([0]),
+      ports: {}
+    }
+  }
+}
+
 node.on('error', err => {
   console.log(err)
 })
 
 node.on('start', () => {
-  tape('basic', async t => {
+  tape.only('basic', async t => {
     const message = new Message()
-    const state = {
-      messages: [],
-      id: {
-        '/': {
-          nonce: new Buffer([0]),
-          parent: {
-            '/': null
-          }
-        }
-      },
-      type: 'test',
-      vm: {
-        '/': {
-          ports: {}
-        }
-      }
-    }
-    const expectedState = { '/': 'zdpuAnCsh9tVFa3asqkC7iNkwK6dYyZqJDxQrB7PMt8foLRKJ' }
+    const expectedState = { '/': 'zdpuB2hzCvqE34W71CFtqqzHLP8kyuwGZm1bz8Cy2kAVCh1fP' }
 
-    class testVMContainer {
+    class testVMContainer extends BaseContainer {
       run (m) {
         t.true(m === message, 'should recive a message')
       }
     }
 
-    const hypervisor = new Hypervisor({
-      dag: node.dag
-    })
+    const hypervisor = new Hypervisor({dag: node.dag})
     hypervisor.addVM('test', testVMContainer)
+    const port = hypervisor.createPort('test')
 
-    await hypervisor.send(state, message)
-    await hypervisor.createStateRoot(state, Infinity)
-    t.deepEquals(state, expectedState, 'expected')
+    await hypervisor.send(port, message)
+    await hypervisor.createStateRoot(port, Infinity)
+    t.deepEquals(port, expectedState, 'expected')
+    // await hypervisor.graph.tree(port, Infinity)
+    // console.log(JSON.stringify(port, null, 2))
     t.end()
   })
 
   tape('one child contract', async t => {
     t.end()
-    node.stop(() => {
-      process.exit()
-    })
-
     const message = new Message()
-    class testVMContainer {
-      constuctor (kernel) {
-        this.kernel = kernel
-      }
+    const expectedState = { '/': 'zdpuAwqyF4X1hAHMBcsn7eDJXcLfcyoyEWWR73eeqXXmFkBe3' }
 
+    class testVMContainer2 extends BaseContainer {
       run (m) {
-        this.kernel.ports.create('child', 'test2', null)
-        this.kernek.send('child', m)
-      }
-    }
-
-    class testVMContainer2 {
-      run (m) {
+        console.log('here!')
         t.true(m === message, 'should recive a message')
       }
     }
 
-    const state = {
-      messages: [],
-      id: {
-        '/': {
-          nonce: new Buffer([0]),
-          parent: {
-            '/': null
-          }
-        }
-      },
-      type: 'test',
-      vm: {
-        '/': {
-          ports: {}
-        }
+    class testVMContainer extends BaseContainer {
+      constructor (kernel) {
+        super()
+        this.kernel = kernel
+      }
+
+      async run (m) {
+        console.log('first')
+        const port = await this.kernel.createPort(this.kernel.ports, 'test2', 'child')
+        return this.kernel.send(port, m)
       }
     }
 
-    const hypervisor = new Hypervisor({
-      dag: node.dag
-    })
+    const hypervisor = new Hypervisor({dag: node.dag})
     hypervisor.addVM('test', testVMContainer)
+    hypervisor.addVM('test2', testVMContainer2)
+    const port = hypervisor.createPort('test')
 
-    await hypervisor.send(state, message)
-    await hypervisor.createStateRoot(state, Infinity)
-    t.deepEquals(state, expectedState, 'expected')
-    t.end()
-    // const message = new Message({
-    //   type: 'create',
-    //   path: 'first',
-    //   data: jsCode
-    // })
-    // hypervisor.send(port, message)
+    await hypervisor.send(port, message)
+    await hypervisor.createStateRoot(port, Infinity)
+    t.deepEquals(port, expectedState, 'expected')
 
+    node.stop(() => {
+      process.exit()
+    })
   })
 })

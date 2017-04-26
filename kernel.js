@@ -56,6 +56,7 @@ module.exports = class Kernel extends EventEmitter {
     try {
       result = await this.vm.run(message) || {}
     } catch (e) {
+      console.log(e)
       result = {
         exception: true,
         exceptionError: e
@@ -99,21 +100,22 @@ module.exports = class Kernel extends EventEmitter {
     }
   }
 
-  createPort () {
+  async createPort (manager, type, name, payload) {
+    // incerment the nonce
     const nonce = new BN(this.nonce)
     nonce.iaddn(1)
     this.nonce = nonce.toArrayLike(Buffer)
-    return {
-      id: {
-        '/': {
-          nonce: this.nonce,
-          parent: this.id
-        }
-      },
-      link: {
-        '/': {}
-      }
-    }
+
+    const parentID = await this._opts.hypervisor.generateID({
+      id: this._opts.id
+    })
+
+    const port = this._opts.hypervisor.createPort(type, payload, {
+      nonce: this.nonce,
+      parent: parentID
+    })
+    manager.set(name, port)
+    return port
   }
 
   async send (port, message) {

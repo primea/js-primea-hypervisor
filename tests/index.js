@@ -9,48 +9,66 @@ node.on('error', err => {
 })
 
 node.on('start', () => {
-  tape.only('basic', async t => {
+  tape('basic', async t => {
     const message = new Message()
-    class testVM {
+    const state = {
+      messages: [],
+      id: {
+        '/': {
+          nonce: new Buffer([0]),
+          parent: {
+            '/': null
+          }
+        }
+      },
+      type: 'test',
+      vm: {
+        '/': {
+          ports: {}
+        }
+      }
+    }
+    const expectedState = { '/': 'zdpuAnCsh9tVFa3asqkC7iNkwK6dYyZqJDxQrB7PMt8foLRKJ' }
+
+    class testVMContainer {
       run (m) {
         t.true(m === message, 'should recive a message')
-        t.end()
       }
     }
 
     try {
-      const state = {
-        id: {
-          nonce: new Buffer([0]),
-          parent: new Buffer([])
-        },
-        type: 'test',
-        vm: {
-          ports: {}
-        }
-      }
-
-      const expectedState = { '/': 'zdpuApqUjZFhw8LTkw8gXAbVcqc5Y7TsbTVadU879TgucoqSF' }
-
       const hypervisor = new Hypervisor({
         dag: node.dag
       })
-      hypervisor.addVM('test', testVM)
+      hypervisor.addVM('test', testVMContainer)
 
       await hypervisor.send(state, message)
-
       await hypervisor.createStateRoot(state, Infinity)
+      console.log('state root')
       t.deepEquals(state, expectedState, 'expected')
-
-      node.stop(() => {
-        process.exit()
-      })
+      t.end()
     } catch (e) {
       console.log(e)
     }
   })
 
-  tape('messaging', t => {
+  tape('one child contract', t => {
+    t.end()
+    node.stop(() => {
+      process.exit()
+    })
+
+    const message = new Message()
+    class testVMContainer {
+      constuctor (kernel) {
+        this.kernel = kernel
+      }
+
+      run (m) {
+        
+      }
+    }
+
     // const state = {
     //   id: {},
     //   ports: {

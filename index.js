@@ -1,6 +1,5 @@
 const Graph = require('ipld-graph-builder')
 const Kernel = require('./kernel.js')
-const crypto = require('./crypto')
 
 module.exports = class Hypervisor {
   constructor (opts) {
@@ -10,6 +9,7 @@ module.exports = class Hypervisor {
     }
 
     this.graph = new Graph(opts.dag)
+    delete opts.dag
     this._vmInstances = new Map()
     Object.assign(this._opts, opts)
   }
@@ -58,14 +58,8 @@ module.exports = class Hypervisor {
     return this.graph.flush(port)
   }
 
-  async generateID (port) {
-    if (typeof port === 'object') {
-      let id = Buffer.concat([port.id.nonce, port.id.parent])
-      id = await crypto.subtle.digest('SHA-256', id)
-      return new Buffer(id).toString('hex')
-    } else {
-      return port
-    }
+  generateID (port) {
+    this.graph.flush(port.id)
   }
 
   addVM (type, vm) {

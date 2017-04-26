@@ -26,7 +26,7 @@ module.exports = class PortManager {
   constructor (kernel) {
     this.kernel = kernel
     this.hypervisor = kernel._opts.hypervisor
-    this.ports = kernel._opts.state.ports
+    this.ports = kernel._opts.state['/'].ports
     this._portMap = new Map()
   }
 
@@ -43,7 +43,8 @@ module.exports = class PortManager {
     ports = await Promise.all(ports)
     this._portMap = new Map(ports)
     // add the parent port
-    const parent = this.kernel._opts.id.parent.length === 0 ? 'root' : this.kernel._opts.id.parent
+    let parent = await this.hypervisor.graph.get(this.kernel._opts.id, 'parent')
+    parent = parent === null ? 'root' : parent
     this._portMap.set(parent, new Port('parent'))
   }
 
@@ -96,4 +97,3 @@ module.exports = class PortManager {
     return [...this._portMap].reduce(messageArbiter)[1].shift()
   }
 }
-

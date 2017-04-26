@@ -3,10 +3,10 @@
   "version": "0.0.0",
   "description": "this is a JS implemention of the primea hypervisor",
   "scripts": {
-    "coverage": "node --harmony ./node_modules/istanbul/lib/cli.js cover ./tests/index.js",
+    "coverage": "node ./node_modules/istanbul/lib/cli.js cover ./tests/index.js",
     "coveralls": "npm run coverage && coveralls <coverage/lcov.info",
     "lint": "standard",
-    "test": "node --harmony --expose-wasm ./tests/interfaceRunner.js",
+    "test": "node ./tests/index.js",
     "build": "node ./tests/buildTests.js && ./tools/wabt/out/wast2wasm ./wasm/interface.wast -o ./wasm/interface.wasm"
   },
   "repository": {
@@ -30,7 +30,6 @@
     "deepcopy": "^0.6.3",
     "fastpriorityqueue": "^0.2.4",
     "ipld-graph-builder": "1.0.1",
-    "node-webcrypto-ossl": "^1.0.21",
     "primea-message": "0.0.0"
   },
   "devDependencies": {

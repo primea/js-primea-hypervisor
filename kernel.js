@@ -75,7 +75,7 @@ module.exports = class Kernel extends EventEmitter {
   // returns a promise that resolves once the kernel hits the threshould tick
   // count
   async wait (threshold) {
-    if (this.vmState === 'idle' && threshold > this.ticks) {
+    if (this.vmState !== 'running' && threshold > this.ticks) {
       // the cotract is at idle so wait
       return this.ports.wait(threshold)
     } else {

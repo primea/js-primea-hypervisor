@@ -36,23 +36,18 @@ node.on('start', () => {
       }
     }
 
-    try {
-      const hypervisor = new Hypervisor({
-        dag: node.dag
-      })
-      hypervisor.addVM('test', testVMContainer)
+    const hypervisor = new Hypervisor({
+      dag: node.dag
+    })
+    hypervisor.addVM('test', testVMContainer)
 
-      await hypervisor.send(state, message)
-      await hypervisor.createStateRoot(state, Infinity)
-      console.log('state root')
-      t.deepEquals(state, expectedState, 'expected')
-      t.end()
-    } catch (e) {
-      console.log(e)
-    }
+    await hypervisor.send(state, message)
+    await hypervisor.createStateRoot(state, Infinity)
+    t.deepEquals(state, expectedState, 'expected')
+    t.end()
   })
 
-  tape('one child contract', t => {
+  tape('one child contract', async t => {
     t.end()
     node.stop(() => {
       process.exit()
@@ -65,26 +60,44 @@ node.on('start', () => {
       }
 
       run (m) {
-        
+        this.kernel.ports.create('child', 'test2', null)
+        this.kernek.send('child', m)
       }
     }
 
-    // const state = {
-    //   id: {},
-    //   ports: {
-    //     first: {
-    //       id: {
-    //         nonce: 1,
-    //         parent: 'hash'
-    //       },
-    //       code: 'js code',
-    //       type: 'test',
-    //       ports: {
+    class testVMContainer2 {
+      run (m) {
+        t.true(m === message, 'should recive a message')
+      }
+    }
 
-    //       }
-    //     }
-    //   }
-    // }
+    const state = {
+      messages: [],
+      id: {
+        '/': {
+          nonce: new Buffer([0]),
+          parent: {
+            '/': null
+          }
+        }
+      },
+      type: 'test',
+      vm: {
+        '/': {
+          ports: {}
+        }
+      }
+    }
+
+    const hypervisor = new Hypervisor({
+      dag: node.dag
+    })
+    hypervisor.addVM('test', testVMContainer)
+
+    await hypervisor.send(state, message)
+    await hypervisor.createStateRoot(state, Infinity)
+    t.deepEquals(state, expectedState, 'expected')
+    t.end()
     // const message = new Message({
     //   type: 'create',
     //   path: 'first',

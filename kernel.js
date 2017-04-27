@@ -7,6 +7,7 @@ module.exports = class Kernel extends EventEmitter {
   constructor (opts) {
     super()
     this._opts = opts
+    this.state = opts.parentPort.link['/']
     this.vmState = 'idle'
     this.ticks = 0
     this.ports = new PortManager(this)
@@ -15,6 +16,11 @@ module.exports = class Kernel extends EventEmitter {
       return a.threshold > b.threshold
     })
     this.on('result', this._runNextMessage)
+    this.on('idle', () => {
+      while (!this._waitingQueue.isEmpty()) {
+        this._waitingQueue.poll().resolve()
+      }
+    })
   }
 
   start () {
@@ -34,6 +40,7 @@ module.exports = class Kernel extends EventEmitter {
   }
 
   _runNextMessage () {
+    this._updateVmState('running')
     this.ports.getNextMessage(this.ticks).then(message => {
       if (message) {
         this.run(message)
@@ -49,7 +56,6 @@ module.exports = class Kernel extends EventEmitter {
    * to by the VM to retrive infromation from the Environment.
    */
   async run (message) {
-    this._updateVmState('running', message)
     // shallow copy
     const oldState = Object.assign({}, this._opts.state)
     let result
@@ -61,65 +67,63 @@ module.exports = class Kernel extends EventEmitter {
         exception: true,
         exceptionError: e
       }
-    }
-
-    if (result.exception) {
-      // revert to the old state
       clearObject(this._opts.state)
       Object.assign(this._opts.state, oldState)
     }
 
-    this._updateVmState('result', result)
+    this.emit('result', result)
     return result
   }
 
   // returns a promise that resolves once the kernel hits the threshould tick
   // count
   async wait (threshold) {
-    if (this.vmState !== 'running' && threshold > this.ticks) {
-      // the cotract is at idle so wait
-      return this.ports.wait(threshold)
-    } else {
-      return new Promise((resolve, reject) => {
-        if (threshold <= this.ticks) {
-          resolve(this.ticks)
-        } else {
-          this._waitingQueue.add({
-            threshold: threshold,
-            resolve: resolve
-          })
-        }
-      })
-    }
+    return new Promise((resolve, reject) => {
+      if (threshold <= this.ticks) {
+        resolve(this.ticks)
+      } else {
+        this._waitingQueue.add({
+          threshold: threshold,
+          resolve: resolve
+        })
+      }
+    })
   }
 
-  _updateTickCount (count) {
-    this.ticks = count
-    while (this._waitingQueue.peek().threshold <= count) {
-      this._waitingQueue.poll().resolve(count)
+  incrementTicks (count) {
+    this.ticks += count
+    while (!this._waitingQueue.isEmpty()) {
+      const waiter = this._waitingQueue.peek()
+      if (waiter.threshold > this.ticks) {
+        break
+      } else {
+        this._waitingQueue.poll().resolve(this.ticks)
+      }
     }
   }
 
   async createPort (manager, type, name, payload) {
     // incerment the nonce
-    const nonce = new BN(this.nonce)
+    const nonce = new BN(this._opts.state.nonce)
     nonce.iaddn(1)
-    this.nonce = nonce.toArrayLike(Buffer)
+    this._opts.state.nonce = nonce.toArrayLike(Buffer)
 
     const parentID = await this._opts.hypervisor.generateID({
       id: this._opts.id
     })
 
-    const port = this._opts.hypervisor.createPort(type, payload, {
+    let port = this._opts.hypervisor.createPort(type, payload, {
       nonce: this.nonce,
       parent: parentID
     })
-    manager.set(name, port)
+    await manager.set(name, port)
     return port
   }
 
   async send (port, message) {
     message._ticks = this.ticks
+    const portObject = await this.ports.get(port)
+    portObject.hasSent = true
     return this._opts.hypervisor.send(port, message)
   }
 }

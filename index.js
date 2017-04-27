@@ -4,7 +4,6 @@ const Kernel = require('./kernel.js')
 module.exports = class Hypervisor {
   constructor (opts) {
     this._opts = {
-      hypervisor: this,
       VMs: {}
     }
 
@@ -15,21 +14,24 @@ module.exports = class Hypervisor {
   }
 
   async getInstance (port) {
-    const id = await this.generateID(port)
+    let id = await this.generateID(port)
     let kernel = this._vmInstances.get(id)
     if (!kernel) {
       // load the container from the state
       await this.graph.tree(port, 2)
+      // if (port['/']) {
+      //   port = port['/']
+      // }
 
       // create a new kernel instance
       const VM = this._opts.VMs[port.type]
-      const opts = Object.assign({
-        state: port.link,
-        id: port.id,
-        VM: VM
-      }, this._opts)
 
-      kernel = new Kernel(opts)
+      kernel = new Kernel({
+        parentPort: port,
+        hypervisor: this,
+        VM: VM
+      })
+
       await kernel.start()
       kernel.on('idle', () => {
         this._vmInstances.delete(id)
@@ -48,9 +50,9 @@ module.exports = class Hypervisor {
 
   // given a port, wait untill its source contract has reached the threshold
   // tick count
-  async wait (port, ticks) {
+  async wait (port, threshold) {
     let kernel = await this.getInstance(port)
-    await kernel.wait(ticks)
+    await kernel.wait(threshold)
     return kernel
   }
 
@@ -73,8 +75,9 @@ module.exports = class Hypervisor {
     return this.graph.flush(port)
   }
 
-  generateID (port) {
-    return this.graph.flush(port.id)
+  async generateID (port) {
+    const id = await this.graph.flush(port.id)
+    return id['/']
   }
 
   addVM (type, vm) {

@@ -2,26 +2,24 @@ const Port = require('./port.js')
 const PARENT = Symbol('parent')
 
 // decides which message to go firts
-function messageArbiter (portA, portB) {
-  portA = portA[1]
-  portB = portB[1]
-  const a = portA.peek()
-  const b = portB.peek()
+function messageArbiter (pairA, pairB) {
+  const a = pairA[1].peek()
+  const b = pairB[1].peek()
 
   if (!a) {
-    return b
+    return pairB
   } else if (!b) {
-    return a
+    return pairA
   }
 
   const aGasPrice = a.resources.gasPrice
   const bGasPrice = b.resources.gasPrice
   if (a.ticks !== b.ticks) {
-    return a.ticks < b.ticks ? a : b
+    return a.ticks < b.ticks ? pairA : pairB
   } else if (aGasPrice === bGasPrice) {
-    return a.hash() > b.hash() ? a : b
+    return a.hash() > b.hash() ? pairA : pairB
   } else {
-    return aGasPrice > bGasPrice ? a : b
+    return aGasPrice > bGasPrice ? pairA : pairB
   }
 }
 
@@ -62,22 +60,8 @@ module.exports = class PortManager {
     return this._mapPort(name, port)
   }
 
-  del (name) {
-    delete this.ports[name]
-  }
-
-  move (from, to) {
-    this.ports[to] = this.ports[from]
-    delete this.ports[from]
-  }
-
   async get (port) {
     const id = await this.hypervisor.generateID(port)
-    return this._portMap.get(id)
-  }
-
-  async getParent () {
-    const id = await this.hypervisor.generateID(this.kernel._opt.parentPort)
     return this._portMap.get(id)
   }
 

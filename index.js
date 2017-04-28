@@ -1,4 +1,5 @@
 const Graph = require('ipld-graph-builder')
+const multibase = require('multibase')
 const Kernel = require('./kernel.js')
 
 module.exports = class Hypervisor {
@@ -19,9 +20,6 @@ module.exports = class Hypervisor {
     if (!kernel) {
       // load the container from the state
       await this.graph.tree(port, 2)
-      // if (port['/']) {
-      //   port = port['/']
-      // }
 
       // create a new kernel instance
       const VM = this._opts.VMs[port.type]
@@ -55,7 +53,7 @@ module.exports = class Hypervisor {
     return kernel.wait(threshold)
   }
 
-  createPort (type, payload = {}, id = {nonce: [0], parent: null}) {
+  createPort (type, id = {nonce: [0], parent: null}) {
     const VM = this._opts.VMs[type]
     return {
       'messages': [],
@@ -64,7 +62,7 @@ module.exports = class Hypervisor {
       },
       'type': type,
       'link': {
-        '/': VM.createState(payload)
+        '/': VM.createState()
       }
     }
   }
@@ -75,8 +73,12 @@ module.exports = class Hypervisor {
   }
 
   async generateID (port) {
-    const id = await this.graph.flush(port.id)
-    return id['/']
+    let id = await this.graph.flush(port.id)
+    id = id['/']
+    if (Buffer.isBuffer(id)) {
+      id = multibase.encode('base58btc', id).toString()
+    }
+    return id
   }
 
   addVM (type, vm) {

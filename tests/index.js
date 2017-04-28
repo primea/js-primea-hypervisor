@@ -47,9 +47,9 @@ node.on('start', () => {
   })
 
   tape('one child contract', async t => {
-    const message = new Message()
+    let message = new Message()
     const expectedState = { '/': 'zdpuAqtY43BMaTCB5nTt7kooeKAWibqGs44Uwy9jJQHjTnHRK' }
-    let hasResolved= false
+    let hasResolved = false
 
     class testVMContainer2 extends BaseContainer {
       run (m) {
@@ -81,6 +81,27 @@ node.on('start', () => {
     await hypervisor.createStateRoot(port, Infinity)
     t.true(hasResolved, 'should resolve before generating the state root')
     t.deepEquals(port, expectedState, 'expected state')
+
+    class testVMContainer3 extends BaseContainer {
+      async run (m) {
+        console.log('here!!')
+        const port = await this.kernel.getPort(this.kernel.ports, 'child')
+        await this.kernel.send(port, m)
+        this.kernel.incrementTicks(1)
+      }
+    }
+
+    hypervisor.addVM('test', testVMContainer3)
+
+    // revive ports
+    try {
+      message = new Message()
+      await hypervisor.graph.tree(expectedState, 1)
+      console.log(expectedState)
+      await hypervisor.send(expectedState['/'], message)
+    } catch (e) {
+      console.log(e)
+    }
 
     t.end()
     node.stop(() => {

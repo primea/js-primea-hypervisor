@@ -30,6 +30,7 @@
     "deepcopy": "^0.6.3",
     "fastpriorityqueue": "^0.2.4",
     "ipld-graph-builder": "1.0.1",
+    "multibase": "^0.3.4",
     "primea-message": "0.0.0"
   },
   "devDependencies": {

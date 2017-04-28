@@ -1,80 +1,94 @@
-const EventEmitter = require('events')
-const path = require('path')
-const AtomicMessage = require('primea-message/atomic')
 const Port = require('./port.js')
-const common = require('./common.js')
+const PARENT = Symbol('parent')
 
-module.exports = class PortManager extends EventEmitter {
-  constructor (opts) {
-    super()
-    Object.assign(this, opts)
-    this._queue = []
-    // set up the parent port
-    const parentPort = new Port(common.PARENT)
-    parentPort.on('message', message => {
-      this._recieveMessage(message)
+// decides which message to go firts
+function messageArbiter (pairA, pairB) {
+  const a = pairA[1].peek()
+  const b = pairB[1].peek()
+
+  if (!a) {
+    return pairB
+  } else if (!b) {
+    return pairA
+  }
+
+  const aGasPrice = a.resources.gasPrice
+  const bGasPrice = b.resources.gasPrice
+  if (a.ticks !== b.ticks) {
+    return a.ticks < b.ticks ? pairA : pairB
+  } else if (aGasPrice === bGasPrice) {
+    return a.hash() > b.hash() ? pairA : pairB
+  } else {
+    return aGasPrice > bGasPrice ? pairA : pairB
+  }
+}
+
+module.exports = class PortManager {
+  constructor (kernel) {
+    this.kernel = kernel
+    this.hypervisor = kernel._opts.hypervisor
+    this.ports = kernel.state.ports
+    this.parentPort = kernel._opts.parentPort
+    this._portMap = new Map()
+  }
+
+  async start () {
+    // map ports to thier id's
+    let ports = Object.keys(this.ports).map(name => {
+      const port = this.ports[name]
+      this._mapPort(name, port)
     })
 
-    // create the cache
-    this.cache = new Map()
-    this.cache.set(common.PARENT, parentPort)
+    // create the parent port
+    await Promise.all(ports)
+    const parentID = await this.hypervisor.generateID(this.kernel._opts.parentPort)
+    this._portMap.set(parentID, new Port(PARENT))
   }
 
-  _recieveMessage (message) {
-    const index = this._queue.push(message) - 1
-    this.emit('message', index)
+  async _mapPort (name, port) {
+    const id = await this.hypervisor.generateID(port)
+    port = new Port(name)
+    this._portMap.set(id, port)
   }
 
-  async get (name) {
-    let port = this.cache.get(name)
-    if (!port) {
-      port = new Port(name)
-      port.on('message', message => {
-        this._recieveMessage(message)
-      })
-      // create destination kernel
-      const state = await this.graph.get(this.state, name)
+  queue (message) {
+    this._portMap.get(message.fromPort).queue(message)
+  }
 
-      const destKernel = new this.Kernel({
-        state: state,
-        graph: this.graph,
-        parentPort: port,
-        imports: this.imports,
-        path: path.join(this.path, name)
-      })
+  set (name, port) {
+    this.ports[name] = port
+    return this._mapPort(name, port)
+  }
 
-      // shutdown the kernel when it is done doing it work
-      destKernel.on('idle', () => {
-        destKernel.shutdown()
-        this.cache.delete(name)
-      })
+  async get (port) {
+    const id = await this.hypervisor.generateID(port)
+    return this._portMap.get(id)
+  }
 
-      // find and connect the destination port
-      const destPort = await destKernel.ports.get(common.PARENT)
-      port.connect(destPort)
-      this.cache.set(name, port)
+  getRef (key) {
+    return this.ports[key]
+  }
+
+  // waits till all ports have reached a threshold tick count
+  async wait (threshold) {
+    // find the ports that have a smaller tick count then the threshold tick count
+    const unkownPorts = [...this._portMap].filter(([id, port]) => {
+      return (port.hasSent || port.name === PARENT) && port.ticks < threshold
+    })
+
+    const promises = unkownPorts.map(async ([id, port]) => {
+      const portObj = port.name === PARENT ? this.parentPort : this.ports[port.name]
+      // update the port's tick count
+      port.ticks = await this.hypervisor.wait(portObj, threshold)
+    })
+    return Promise.all(promises)
+  }
+
+  async getNextMessage (ticks) {
+    await this.wait(ticks)
+    const portMap = [...this._portMap].reduce(messageArbiter)
+    if (portMap) {
+      return portMap[1].shift()
     }
-    return port
-  }
-
-  async peek (index = 0) {
-    return this._queue[index]
-  }
-
-  remove (index) {
-    return this._queue.splice(index, index + 1)
-  }
-
-  async send (portName, message) {
-    const port = await this.get(portName)
-    port.send(message)
-    return AtomicMessage.isAtomic(message) ? message.result() : {}
-  }
-
-  close () {
-    for (let port in this.cache) {
-      port.emit('close')
-    }
-    this.cache.clear()
   }
 }

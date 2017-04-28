@@ -1,111 +1,87 @@
-const EventEmitter = require('events')
-const PortManager = require('./portManager.js')
-const codeHandler = require('./codeHandler.js')
-const AtomicMessage = require('primea-message/atomic')
+const Graph = require('ipld-graph-builder')
+const multibase = require('multibase')
+const Kernel = require('./kernel.js')
 
-module.exports = class Kernel extends EventEmitter {
-  constructor (opts = {}) {
-    super()
-    // set up the state
-    this.graph = opts.graph
-    this.path = opts.path || ''
-    this.imports = opts.imports
-    const state = this.state = opts.state || {}
-
-    // set up the vm
-    this._vm = (opts.codeHandler || codeHandler).init(opts.code || state)
-    this._vmstate = 'idle'
-
-    // set up ports
-    this.ports = new PortManager({
-      state: state,
-      graph: this.graph,
-      parentPort: opts.parentPort,
-      Kernel: Kernel,
-      imports: this.imports,
-      path: this.path
-    })
-
-    this.ports.on('message', index => {
-      this.runNextMessage(index)
-    })
-  }
-
-  runNextMessage (index = 0) {
-    // load the next message from port space
-    return this.ports.peek(index).then(message => {
-      if (message &&
-          (this._vmstate === 'idle' ||
-           (AtomicMessage.isAtomic(message) && message.isCyclic(this)))) {
-        this._currentMessage = message
-        this.ports.remove(index)
-        return this.run(message)
-      } else {
-        this._vmstate = 'idle'
-        this.emit('idle')
-      }
-    })
-  }
-
-  /**
-   * run the kernels code with a given enviroment
-   * The Kernel Stores all of its state in the Environment. The Interface is used
-   * to by the VM to retrive infromation from the Environment.
-   */
-  async run (message, imports = this.imports) {
-    const self = this
-    function revert (oldState) {
-      // revert the state
-      clearObject(self.state)
-      Object.assign(self.state, oldState)
+module.exports = class Hypervisor {
+  constructor (opts) {
+    this._opts = {
+      VMs: {}
     }
 
-    // shallow copy
-    const oldState = Object.assign({}, this.state)
-    let result
-    this._vmstate = 'running'
-    try {
-      result = await this._vm.run(message, this, imports) || {}
-    } catch (e) {
-      result = {
-        exception: true,
-        exceptionError: e
+    this.graph = new Graph(opts.dag)
+    delete opts.dag
+    this._vmInstances = new Map()
+    Object.assign(this._opts, opts)
+  }
+
+  async getInstance (port) {
+    let id = await this.generateID(port)
+    let kernel = this._vmInstances.get(id)
+    if (!kernel) {
+      // load the container from the state
+      await this.graph.tree(port, 2)
+
+      // create a new kernel instance
+      const VM = this._opts.VMs[port.type]
+
+      kernel = new Kernel({
+        parentPort: port,
+        hypervisor: this,
+        VM: VM
+      })
+
+      await kernel.start()
+      kernel.on('idle', () => {
+        this._vmInstances.delete(id)
+      })
+      this._vmInstances.set(id, kernel)
+    }
+    return kernel
+  }
+
+  async send (port, message) {
+    const vm = await this.getInstance(port)
+    const id = await this.generateID(port)
+    message._fromPort = id
+    vm.queue(message)
+  }
+
+  // given a port, wait untill its source contract has reached the threshold
+  // tick count
+  async wait (port, threshold) {
+    let kernel = await this.getInstance(port)
+    return kernel.wait(threshold)
+  }
+
+  createPort (type, id = {nonce: [0], parent: null}) {
+    const VM = this._opts.VMs[type]
+    return {
+      'messages': [],
+      'id': {
+        '/': id
+      },
+      'type': type,
+      'link': {
+        '/': VM.createState()
       }
     }
+  }
 
-    // if we trapped revert all the sent messages
-    if (result.exception) {
-      // revert to the old state
-      revert(oldState)
-      message._reject(result)
-    } else if (AtomicMessage.isAtomic(message) && !message.hasResponded) {
-      message.respond(result)
+  async createStateRoot (port, ticks) {
+    await this.wait(port, ticks)
+    return this.graph.flush(port)
+  }
+
+  async generateID (port) {
+    let id = await this.graph.flush(port.id)
+    id = id['/']
+    if (Buffer.isBuffer(id)) {
+      id = multibase.encode('base58btc', id).toString()
     }
-
-    message._committed().then(() => {
-      this.runNextMessage(0)
-    }).catch((e) => {
-      revert(oldState)
-    })
-    return result
+    return id
   }
 
-  async send (portName, message) {
-    if (AtomicMessage.isAtomic(message)) {
-      // record that this message has traveled thourgh this kernel. This is used
-      // to detect re-entry
-      message._visited(this, this._currentMessage)
-    }
-    return this.ports.send(portName, message)
-  }
-
-  shutdown () {
-    this.ports.close()
-  }
-}
-
-function clearObject (myObject) {
-  for (var member in myObject) {
-    delete myObject[member]
+  addVM (type, vm) {
+    this._opts.VMs[type] = vm
   }
 }

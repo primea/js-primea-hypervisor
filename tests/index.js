@@ -26,7 +26,7 @@ node.on('start', () => {
   tape.only('basic', async t => {
     const message = new Message()
     const expectedState = {
-      '/': 'zdpuB2hzCvqE34W71CFtqqzHLP8kyuwGZm1bz8Cy2kAVCh1fP'
+      '/': 'zdpuAn1R5shTypKNBHT8Js2uBnbUcujHfnPNrKbKRNL1AyAt5'
     }
 
     class testVMContainer extends BaseContainer {

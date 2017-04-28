@@ -17,7 +17,9 @@ module.exports = class Kernel extends EventEmitter {
     })
     this.on('result', this._runNextMessage)
     this.on('idle', () => {
+      console.log('idle')
       while (!this._waitingQueue.isEmpty()) {
+        console.log('clering ')
         this._waitingQueue.poll().resolve()
       }
     })
@@ -27,9 +29,9 @@ module.exports = class Kernel extends EventEmitter {
     return this.ports.start()
   }
 
-  _updateVmState (state, message) {
-    this.vmState = state
-    this.emit(this.vmState, message)
+  _updateVmState (vmState, message) {
+    this.vmState = vmState
+    this.emit(vmState, message)
   }
 
   queue (message) {
@@ -79,7 +81,7 @@ module.exports = class Kernel extends EventEmitter {
   // count
   async wait (threshold) {
     return new Promise((resolve, reject) => {
-      if (threshold <= this.ticks) {
+      if (this.vmState === 'idle' || threshold <= this.ticks) {
         resolve(this.ticks)
       } else {
         this._waitingQueue.add({
@@ -106,7 +108,7 @@ module.exports = class Kernel extends EventEmitter {
     // incerment the nonce
     const nonce = new BN(this._opts.state.nonce)
     nonce.iaddn(1)
-    this._opts.state.nonce = nonce.toArrayLike(Buffer)
+    this.state.nonce = nonce.toArrayLike(Buffer)
 
     const parentID = await this._opts.hypervisor.generateID({
       id: this._opts.id

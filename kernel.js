@@ -107,23 +107,23 @@ module.exports = class Kernel extends EventEmitter {
     nonce.iaddn(1)
     this.state.nonce = nonce.toArray()
 
-    let port = this._opts.hypervisor.createPort(type, {
+    let portRef = this._opts.hypervisor.createPort(type, {
       nonce: this.state.nonce,
       parent: this._opts.parentPort.id
     })
-    await manager.set(name, port)
-    return port
+    await manager.set(name, portRef)
+    return portRef
   }
 
   getPort (manager, name) {
-    return manager.get(name)
+    return manager.getRef(name)
   }
 
-  async send (port, message) {
+  async send (portRef, message) {
     message._ticks = this.ticks
-    const portObject = await this.ports.get(port)
-    portObject.hasSent = true
-    return this._opts.hypervisor.send(port, message)
+    const portInstance = await this.ports.get(portRef)
+    portInstance.hasSent = true
+    return this._opts.hypervisor.send(portRef, message)
   }
 }
 

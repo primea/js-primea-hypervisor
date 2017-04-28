@@ -65,6 +65,10 @@ module.exports = class PortManager {
     return this._portMap.get(id)
   }
 
+  getRef (key) {
+    return this.ports[key]
+  }
+
   // waits till all ports have reached a threshold tick count
   async wait (threshold) {
     // find the ports that have a smaller tick count then the threshold tick count

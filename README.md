@@ -21,6 +21,6 @@ todo
 [MPL-2.0](https://tldrlegal.com/license/mozilla-public-license-2.0-(mpl-2))
 
 ## NOTES
-The Kernel enforces IPC and starts the VM
-The hypervisor start and stops kernels
+The Kernel enforces IPC and starts the VM  
+The hypervisor start and stops kernels  
 the VM acts as a sandbox for some given code and expose and interface to the kernel

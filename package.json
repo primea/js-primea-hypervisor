@@ -34,7 +34,7 @@
     "primea-message": "0.0.0"
   },
   "devDependencies": {
-    "coveralls": "^2.13.0",
+    "coveralls": "^2.13.1",
     "ipfs": "^0.23.1",
     "istanbul": "^1.1.0-alpha.1",
     "standard": "10.0.1",

@@ -17,9 +17,7 @@ module.exports = class Kernel extends EventEmitter {
     })
     this.on('result', this._runNextMessage)
     this.on('idle', () => {
-      console.log('idle')
       while (!this._waitingQueue.isEmpty()) {
-        console.log('clering ')
         this._waitingQueue.poll().resolve()
       }
     })
@@ -37,12 +35,12 @@ module.exports = class Kernel extends EventEmitter {
   queue (message) {
     this.ports.queue(message)
     if (this.vmState === 'idle') {
+      this._updateVmState('running')
       this._runNextMessage()
     }
   }
 
   _runNextMessage () {
-    this._updateVmState('running')
     this.ports.getNextMessage(this.ticks).then(message => {
       if (message) {
         this.run(message)
@@ -64,7 +62,6 @@ module.exports = class Kernel extends EventEmitter {
     try {
       result = await this.vm.run(message) || {}
     } catch (e) {
-      console.log(e)
       result = {
         exception: true,
         exceptionError: e
@@ -106,17 +103,13 @@ module.exports = class Kernel extends EventEmitter {
 
   async createPort (manager, type, name, payload) {
     // incerment the nonce
-    const nonce = new BN(this._opts.state.nonce)
+    const nonce = new BN(this.state.nonce)
     nonce.iaddn(1)
-    this.state.nonce = nonce.toArrayLike(Buffer)
-
-    const parentID = await this._opts.hypervisor.generateID({
-      id: this._opts.id
-    })
+    this.state.nonce = nonce.toArray()
 
     let port = this._opts.hypervisor.createPort(type, payload, {
-      nonce: this.nonce,
-      parent: parentID
+      nonce: this.state.nonce,
+      parent: this._opts.parentPort.id
     })
     await manager.set(name, port)
     return port

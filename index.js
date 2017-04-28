@@ -52,8 +52,7 @@ module.exports = class Hypervisor {
   // tick count
   async wait (port, threshold) {
     let kernel = await this.getInstance(port)
-    await kernel.wait(threshold)
-    return kernel
+    return kernel.wait(threshold)
   }
 
   createPort (type, payload = {}, id = {nonce: [0], parent: null}) {

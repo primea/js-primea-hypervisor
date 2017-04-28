@@ -23,10 +23,10 @@ node.on('error', err => {
 })
 
 node.on('start', () => {
-  tape.only('basic', async t => {
+  tape('basic', async t => {
     const message = new Message()
     const expectedState = {
-      '/': 'zdpuAn1R5shTypKNBHT8Js2uBnbUcujHfnPNrKbKRNL1AyAt5'
+      '/': 'zdpuB3eZQJuXMnQrdiF5seMvx3zC2xT1EqrQScoPcTs8ESxYx'
     }
 
     class testVMContainer extends BaseContainer {
@@ -35,34 +35,29 @@ node.on('start', () => {
       }
     }
 
-    try {
-      const hypervisor = new Hypervisor({dag: node.dag})
-      hypervisor.addVM('test', testVMContainer)
-      const port = hypervisor.createPort('test')
+    const hypervisor = new Hypervisor({dag: node.dag})
+    hypervisor.addVM('test', testVMContainer)
+    const port = hypervisor.createPort('test')
 
-      await hypervisor.send(port, message)
-      await hypervisor.createStateRoot(port, Infinity)
+    await hypervisor.send(port, message)
+    await hypervisor.createStateRoot(port, Infinity)
 
-      t.deepEquals(port, expectedState, 'expected')
-    } catch (e) {
-      console.log(e)
-    }
+    t.deepEquals(port, expectedState, 'expected')
     t.end()
   })
 
   tape('one child contract', async t => {
     const message = new Message()
-    const expectedState = {
-      '/': 'zdpuAwUPELiXpnd66Wum84VRPEsUGB7cUuxUESDMXmpVj6prc'
-    }
+    const expectedState = { '/': 'zdpuAqtY43BMaTCB5nTt7kooeKAWibqGs44Uwy9jJQHjTnHRK' }
+    let hasResolved= false
 
     class testVMContainer2 extends BaseContainer {
       run (m) {
         t.true(m === message, 'should recive a message 2')
         return new Promise((resolve, reject) => {
           setTimeout(() => {
-            console.log('resolve!!')
             this.kernel.incrementTicks(1)
+            hasResolved = true
             resolve()
           }, 200)
         })
@@ -77,26 +72,19 @@ node.on('start', () => {
       }
     }
 
-    try {
-      const hypervisor = new Hypervisor({dag: node.dag})
-      hypervisor.addVM('test', testVMContainer)
-      hypervisor.addVM('test2', testVMContainer2)
-      const port = hypervisor.createPort('test')
+    const hypervisor = new Hypervisor({dag: node.dag})
+    hypervisor.addVM('test', testVMContainer)
+    hypervisor.addVM('test2', testVMContainer2)
+    const port = hypervisor.createPort('test')
 
-      await hypervisor.send(port, message)
-      await hypervisor.createStateRoot(port, Infinity)
-      console.log('create state root')
-
-      // await hypervisor.graph.tree(port, Infinity)
-      // console.log(JSON.stringify(port, null, 2))
-      // t.deepEquals(port, expectedState, 'expected')
-    } catch (e) {
-      console.log(e)
-    }
+    await hypervisor.send(port, message)
+    await hypervisor.createStateRoot(port, Infinity)
+    t.true(hasResolved, 'should resolve before generating the state root')
+    t.deepEquals(port, expectedState, 'expected state')
 
     t.end()
     node.stop(() => {
-      // process.exit()
+      process.exit()
     })
   })
 })

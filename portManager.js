@@ -88,18 +88,12 @@ module.exports = class PortManager {
       return (port.hasSent || port.name === PARENT) && port.ticks < threshold
     })
 
-    const promises = unkownPorts.map(([id, port]) => {
-      if (port.name === PARENT) {
-        port = this.parentPort
-      } else {
-        port = this.ports[port.name]
-      }
-      this.hypervisor.wait(port, threshold).then(ticks => {
-        // update the port's tick count
-        port.ticks = ticks
-      })
+    const promises = unkownPorts.map(async ([id, port]) => {
+      const portObj = port.name === PARENT ? this.parentPort : this.ports[port.name]
+      // update the port's tick count
+      port.ticks = await this.hypervisor.wait(portObj, threshold)
     })
-    return await Promise.all(promises)
+    return Promise.all(promises)
   }
 
   async getNextMessage (ticks) {

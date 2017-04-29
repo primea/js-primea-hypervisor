@@ -27,11 +27,6 @@ module.exports = class Kernel extends EventEmitter {
     return this.ports.start()
   }
 
-  _updateVmState (vmState, message) {
-    this.vmState = vmState
-    this.emit(vmState, message)
-  }
-
   queue (message) {
     this.ports.queue(message)
     if (this.vmState === 'idle') {
@@ -40,10 +35,15 @@ module.exports = class Kernel extends EventEmitter {
     }
   }
 
+  _updateVmState (vmState, message) {
+    this.vmState = vmState
+    this.emit(vmState, message)
+  }
+
   _runNextMessage () {
-    this.ports.getNextMessage(this.ticks).then(message => {
+    this.ports.getNextMessage().then(message => {
       if (message) {
-        this.run(message)
+        this._run(message)
       } else {
         this._updateVmState('idle', message)
       }
@@ -55,7 +55,7 @@ module.exports = class Kernel extends EventEmitter {
    * The Kernel Stores all of its state in the Environment. The Interface is used
    * to by the VM to retrive infromation from the Environment.
    */
-  async run (message) {
+  async _run (message) {
     // shallow copy
     const oldState = Object.assign({}, this._opts.state)
     let result

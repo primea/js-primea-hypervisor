@@ -29,6 +29,9 @@ module.exports = class PortManager {
     this.hypervisor = kernel._opts.hypervisor
     this.ports = kernel.state.ports
     this.parentPort = kernel._opts.parentPort
+    this.parentId = {
+      id: this.parentPort.id['/'].parent
+    }
     this._portMap = new Map()
   }
 
@@ -41,7 +44,7 @@ module.exports = class PortManager {
 
     // create the parent port
     await Promise.all(ports)
-    const parentID = await this.hypervisor.generateID(this.kernel._opts.parentPort)
+    const parentID = await this.hypervisor.generateID(this.parentPort)
     this._portMap.set(parentID, new Port(PARENT))
   }
 
@@ -84,8 +87,8 @@ module.exports = class PortManager {
     return Promise.all(promises)
   }
 
-  async getNextMessage (ticks) {
-    await this.wait(ticks)
+  async getNextMessage () {
+    await this.wait(this.kernel.ticks)
     const portMap = [...this._portMap].reduce(messageArbiter)
     if (portMap) {
       return portMap[1].shift()

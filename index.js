@@ -2,6 +2,12 @@ const Graph = require('ipld-graph-builder')
 const multibase = require('multibase')
 const Kernel = require('./kernel.js')
 
+class Root {
+  queue () {
+    console.log('root queued!')
+  }
+}
+
 module.exports = class Hypervisor {
   constructor (opts) {
     this._opts = {
@@ -10,7 +16,8 @@ module.exports = class Hypervisor {
 
     this.graph = new Graph(opts.dag)
     delete opts.dag
-    this._vmInstances = new Map()
+    this.root = new Root()
+    this._vmInstances = new Map([[null, new Root()]])
     Object.assign(this._opts, opts)
   }
 
@@ -73,6 +80,11 @@ module.exports = class Hypervisor {
   }
 
   async generateID (port) {
+    // root id
+    if (!port) {
+      return null
+    }
+
     let id = await this.graph.flush(port.id)
     id = id['/']
     if (Buffer.isBuffer(id)) {

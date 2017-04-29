@@ -6,11 +6,19 @@ const PortManager = require('./portManager.js')
 module.exports = class Kernel extends EventEmitter {
   constructor (opts) {
     super()
-    this._opts = opts
-    this.state = opts.parentPort.link['/']
+    this.state = opts.state
+    this.parentPort = opts.parentPort
+    this.hypervisor = opts.hypervisor
+
     this.vmState = 'idle'
     this.ticks = 0
-    this.ports = new PortManager(this)
+    // create the port manager
+    this.ports = new PortManager({
+      kernel: this,
+      hypervisor: opts.hypervisor,
+      ports: opts.state.ports,
+      parentPort: opts.parentPort
+    })
     this.vm = new opts.VM(this)
     this._waitingQueue = new PriorityQueue((a, b) => {
       return a.threshold > b.threshold
@@ -57,7 +65,7 @@ module.exports = class Kernel extends EventEmitter {
    */
   async _run (message) {
     // shallow copy
-    const oldState = Object.assign({}, this._opts.state)
+    const oldState = Object.assign({}, this.state)
     let result
     try {
       result = await this.vm.run(message) || {}
@@ -66,8 +74,8 @@ module.exports = class Kernel extends EventEmitter {
         exception: true,
         exceptionError: e
       }
-      clearObject(this._opts.state)
-      Object.assign(this._opts.state, oldState)
+      clearObject(this.state)
+      Object.assign(this.state, oldState)
     }
 
     this.emit('result', result)
@@ -107,9 +115,9 @@ module.exports = class Kernel extends EventEmitter {
     nonce.iaddn(1)
     this.state.nonce = nonce.toArray()
 
-    let portRef = this._opts.hypervisor.createPort(type, {
+    let portRef = this.hypervisor.createPort(type, {
       nonce: this.state.nonce,
-      parent: this._opts.parentPort.id
+      parent: this.parentPort.id
     })
     await manager.set(name, portRef)
     return portRef
@@ -123,7 +131,7 @@ module.exports = class Kernel extends EventEmitter {
     message._ticks = this.ticks
     const portInstance = await this.ports.get(portRef)
     portInstance.hasSent = true
-    return this._opts.hypervisor.send(portRef, message)
+    return this.hypervisor.send(portRef, message)
   }
 }
 

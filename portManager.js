@@ -24,11 +24,8 @@ function messageArbiter (pairA, pairB) {
 }
 
 module.exports = class PortManager {
-  constructor (kernel) {
-    this.kernel = kernel
-    this.hypervisor = kernel._opts.hypervisor
-    this.ports = kernel.state.ports
-    this.parentPort = kernel._opts.parentPort
+  constructor (opts) {
+    Object.assign(this, opts)
     this.parentId = {
       id: this.parentPort.id['/'].parent
     }

@@ -10,15 +10,10 @@ class Root {
 
 module.exports = class Hypervisor {
   constructor (opts) {
-    this._opts = {
-      VMs: {}
-    }
-
     this.graph = new Graph(opts.dag)
-    delete opts.dag
     this.root = new Root()
     this._vmInstances = new Map([[null, new Root()]])
-    Object.assign(this._opts, opts)
+    this._VMs = {}
   }
 
   async getInstance (port) {
@@ -29,10 +24,11 @@ module.exports = class Hypervisor {
       await this.graph.tree(port, 2)
 
       // create a new kernel instance
-      const VM = this._opts.VMs[port.type]
+      const VM = this._VMs[port.type]
 
       kernel = new Kernel({
         parentPort: port,
+        state: port.link['/'],
         hypervisor: this,
         VM: VM
       })
@@ -61,7 +57,7 @@ module.exports = class Hypervisor {
   }
 
   createPort (type, id = {nonce: [0], parent: null}) {
-    const VM = this._opts.VMs[type]
+    const VM = this._VMs[type]
     return {
       'messages': [],
       'id': {
@@ -94,6 +90,6 @@ module.exports = class Hypervisor {
   }
 
   addVM (type, vm) {
-    this._opts.VMs[type] = vm
+    this._VMs[type] = vm
   }
 }

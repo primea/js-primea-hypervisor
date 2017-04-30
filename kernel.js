@@ -129,8 +129,12 @@ module.exports = class Kernel extends EventEmitter {
 
   async send (portRef, message) {
     message._ticks = this.ticks
-    const portInstance = await this.ports.get(portRef)
-    portInstance.hasSent = true
+    try {
+      const portInstance = await this.ports.get(portRef)
+      portInstance.hasSent = true
+    } catch (e) {
+      throw new Error('invalid port referance, which means the port that the port was either moved or destoried')
+    }
     return this.hypervisor.send(portRef, message)
   }
 }

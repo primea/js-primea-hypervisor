@@ -2,17 +2,10 @@ const Graph = require('ipld-graph-builder')
 const multibase = require('multibase')
 const Kernel = require('./kernel.js')
 
-class Root {
-  queue () {
-    console.log('root queued!')
-  }
-}
-
 module.exports = class Hypervisor {
   constructor (opts) {
     this.graph = new Graph(opts.dag)
-    this.root = new Root()
-    this._vmInstances = new Map([[null, new Root()]])
+    this._vmInstances = new Map()
     this._VMs = {}
   }
 
@@ -22,31 +15,19 @@ module.exports = class Hypervisor {
     if (!kernel) {
       // load the container from the state
       await this.graph.tree(port, 2)
+      const parentID = await this.generateID(port.id['/'].parent)
+      const parentKernel = await this._vmInstances.get(parentID)
+      const parentPort = parentKernel.entryPort
 
-      // create a new kernel instance
-      const VM = this._VMs[port.type]
-
-      kernel = new Kernel({
-        parentPort: port,
-        state: port.link['/'],
-        hypervisor: this,
-        VM: VM
-      })
-
-      await kernel.start()
-      kernel.on('idle', () => {
-        this._vmInstances.delete(id)
-      })
-      this._vmInstances.set(id, kernel)
+      kernel = await this.createInstanceFromPort(port, parentPort)
+      // don't delete the root contracts
+      if (id) {
+        kernel.on('idle', () => {
+          this._vmInstances.delete(id)
+        })
+      }
     }
     return kernel
-  }
-
-  async send (port, message) {
-    const vm = await this.getInstance(port)
-    const id = await this.generateID(port)
-    message._fromPort = id
-    vm.queue(message)
   }
 
   // given a port, wait untill its source contract has reached the threshold
@@ -56,31 +37,44 @@ module.exports = class Hypervisor {
     return kernel.wait(threshold)
   }
 
-  createPort (type, id = {nonce: [0], parent: null}) {
+  async createInstance (type, state, entryPort, parentPort) {
     const VM = this._VMs[type]
-    return {
-      'messages': [],
-      'id': {
-        '/': id
-      },
-      'type': type,
-      'link': {
-        '/': VM.createState()
-      }
+    if (!state) {
+      state = VM.createState()
     }
+    // create a new kernel instance
+    const kernel = new Kernel({
+      entryPort: entryPort,
+      parentPort: parentPort,
+      hypervisor: this,
+      state: state,
+      VM: VM
+    })
+
+    const id = await this.generateID(entryPort)
+    this._vmInstances.set(id, kernel)
+    await kernel.start()
+    return kernel
   }
 
-  async createStateRoot (port, ticks) {
-    await this.wait(port, ticks)
-    return this.graph.flush(port)
+  /**
+   * opts.entryPort
+   * opts.parentPort
+   */
+  createInstanceFromPort (entryPort, parentPort) {
+    const state = entryPort.link['/']
+    return this.createInstance(entryPort.type, state, entryPort, parentPort)
+  }
+
+  async createStateRoot (container, ticks) {
+    await container.wait(ticks)
+    return this.graph.flush(container.state)
   }
 
   async generateID (port) {
-    // root id
-    if (!port) {
+    if (!port || !port.id) {
       return null
     }
-
     let id = await this.graph.flush(port.id)
     id = id['/']
     if (Buffer.isBuffer(id)) {
@@ -89,7 +83,7 @@ module.exports = class Hypervisor {
     return id
   }
 
-  addVM (type, vm) {
+  registerContainer (type, vm) {
     this._VMs[type] = vm
   }
 }

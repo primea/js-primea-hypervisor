@@ -26,9 +26,6 @@ function messageArbiter (pairA, pairB) {
 module.exports = class PortManager {
   constructor (opts) {
     Object.assign(this, opts)
-    // this.parentId = {
-    //   id: this.parentPort.id['/'].parent
-    // }
     this._portMap = new Map()
   }
 

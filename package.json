@@ -27,7 +27,6 @@
   "license": "MPL-2.0",
   "dependencies": {
     "bn.js": "^4.11.6",
-    "deepcopy": "^0.6.3",
     "fastpriorityqueue": "^0.2.4",
     "ipld-graph-builder": "1.1.5",
     "multibase": "^0.3.4",

@@ -35,4 +35,8 @@ module.exports = class Port {
   shift () {
     return this._queue.shift()
   }
+
+  unshift (message) {
+    return this._queue.unshift(message)
+  }
 }

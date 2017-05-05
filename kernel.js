@@ -7,7 +7,7 @@ module.exports = class Kernel extends EventEmitter {
   constructor (opts) {
     super()
     this.state = opts.state
-    this.parentPort = opts.parentPort
+    this.entryPort = opts.entryPort
     this.hypervisor = opts.hypervisor
 
     this.vmState = 'idle'
@@ -17,8 +17,10 @@ module.exports = class Kernel extends EventEmitter {
       kernel: this,
       hypervisor: opts.hypervisor,
       ports: opts.state.ports,
+      entryPort: opts.entryPort,
       parentPort: opts.parentPort
     })
+
     this.vm = new opts.VM(this)
     this._waitingQueue = new PriorityQueue((a, b) => {
       return a.threshold > b.threshold
@@ -37,25 +39,47 @@ module.exports = class Kernel extends EventEmitter {
 
   queue (message) {
     this.ports.queue(message)
-    if (this.vmState === 'idle') {
+    if (this.vmState !== 'running') {
       this._updateVmState('running')
       this._runNextMessage()
     }
   }
 
   _updateVmState (vmState, message) {
+    // console.log('update state', vmState, this.entryPort.id)
     this.vmState = vmState
     this.emit(vmState, message)
   }
 
-  _runNextMessage () {
-    this.ports.getNextMessage().then(message => {
-      if (message) {
-        this._run(message)
-      } else {
-        this._updateVmState('idle', message)
-      }
-    })
+  async _runNextMessage () {
+    const message = await this.ports.getNextMessage()
+    // if the vm is paused and it gets a message; save that message for use when the VM is resumed
+    if (message && this.vmState === 'paused') {
+      this.ports._portMap(message._fromPort).unshfit(message)
+    } else if (!message && this.vmState !== 'paused') {
+      // if no more messages then shut down
+      this._updateVmState('idle')
+    } else {
+      // run the next message
+      this._run(message)
+    }
+  }
+
+  _updateEntryPort (entryPort) {
+    // reset waits, update parent port
+  }
+
+  destroy () {
+    // destory waits
+  }
+
+  pause () {
+    this._setState('paused')
+  }
+
+  resume () {
+    this._setState('running')
+    this._runNextMessage()
   }
 
   /**
@@ -109,33 +133,53 @@ module.exports = class Kernel extends EventEmitter {
     }
   }
 
-  async createPort (manager, type, name) {
+  async createPort (type, name) {
+    const VM = this.hypervisor._VMs[type]
+    const parentId = this.entryPort ? this.entryPort.id : null
+
+    const portRef = {
+      'messages': [],
+      'id': {
+        '/': {
+          nonce: this.state.nonce,
+          parent: parentId
+        }
+      },
+      'type': type,
+      'link': {
+        '/': VM.createState()
+      }
+    }
+
+    // create the port instance
+    await this.ports.set(name, portRef)
+
     // incerment the nonce
     const nonce = new BN(this.state.nonce)
     nonce.iaddn(1)
     this.state.nonce = nonce.toArray()
 
-    let portRef = this.hypervisor.createPort(type, {
-      nonce: this.state.nonce,
-      parent: this.parentPort.id
-    })
-    await manager.set(name, portRef)
     return portRef
   }
 
-  getPort (manager, name) {
-    return manager.getRef(name)
-  }
-
   async send (portRef, message) {
-    message._ticks = this.ticks
     try {
       const portInstance = await this.ports.get(portRef)
       portInstance.hasSent = true
     } catch (e) {
       throw new Error('invalid port referance, which means the port that the port was either moved or destoried')
     }
-    return this.hypervisor.send(portRef, message)
+    const id = await this.hypervisor.generateID(this.entryPort)
+    message._fromPort = id
+    message._ticks = this.ticks
+
+    const receiverEntryPort = portRef === this.entryPort ? this.parentPort : portRef
+    const vm = await this.hypervisor.getInstance(receiverEntryPort)
+    vm.queue(message)
+    if (this.vmState !== 'running') {
+      this._updateVmState('running')
+      this._runNextMessage()
+    }
   }
 }
 

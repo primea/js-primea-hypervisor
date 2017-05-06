@@ -46,7 +46,6 @@ module.exports = class Kernel extends EventEmitter {
   }
 
   _updateVmState (vmState, message) {
-    // console.log('update state', vmState, this.entryPort.id)
     this.vmState = vmState
     this.emit(vmState, message)
   }

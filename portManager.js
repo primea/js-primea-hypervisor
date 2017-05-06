@@ -1,5 +1,5 @@
 const Port = require('./port.js')
-const PARENT = Symbol('parent')
+const ENTRY = Symbol('entry')
 
 // decides which message to go firts
 function messageArbiter (pairA, pairB) {
@@ -38,8 +38,8 @@ module.exports = class PortManager {
 
     // create the parent port
     await Promise.all(ports)
-    const parentID = await this.hypervisor.generateID(this.parentPort)
-    this._portMap.set(parentID, new Port(PARENT))
+    const id = await this.hypervisor.generateID(this.parentPort)
+    this._portMap.set(id, new Port(ENTRY))
   }
 
   async _mapPort (name, port) {
@@ -70,11 +70,11 @@ module.exports = class PortManager {
   async wait (threshold) {
     // find the ports that have a smaller tick count then the threshold tick count
     const unkownPorts = [...this._portMap].filter(([id, port]) => {
-      return (port.hasSent || port.name === PARENT) && port.ticks < threshold
+      return (port.hasSent || port.name === ENTRY) && port.ticks < threshold
     })
 
     const promises = unkownPorts.map(async ([id, port]) => {
-      const portObj = port.name === PARENT ? this.parentPort : this.ports[port.name]
+      const portObj = port.name === ENTRY ? this.parentPort : this.ports[port.name]
       // update the port's tick count
       port.ticks = await this.hypervisor.wait(portObj, threshold)
     })

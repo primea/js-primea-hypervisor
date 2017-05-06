@@ -35,25 +35,20 @@ node.on('start', () => {
       }
     }
 
-    try {
-      const hypervisor = new Hypervisor({dag: node.dag})
-      hypervisor.registerContainer('test', testVMContainer)
+    const hypervisor = new Hypervisor({dag: node.dag})
+    hypervisor.registerContainer('test', testVMContainer)
 
-      const rootContainer = await hypervisor.createInstance('test')
-      const port = await rootContainer.createPort('test', 'first')
+    const rootContainer = await hypervisor.createInstance('test')
+    const port = await rootContainer.createPort('test', 'first')
 
-      await rootContainer.send(port, message)
+    await rootContainer.send(port, message)
 
-      const stateRoot = await hypervisor.createStateRoot(rootContainer, Infinity)
-      t.deepEquals(stateRoot, expectedState, 'expected root!')
-    } catch (e) {
-      console.log(e)
-    }
-
+    const stateRoot = await hypervisor.createStateRoot(rootContainer, Infinity)
+    t.deepEquals(stateRoot, expectedState, 'expected root!')
     t.end()
   })
 
-  tape('one child contract', async t => {
+  tape.only('one child contract', async t => {
     let message = new Message()
     const expectedState = { '/': 'zdpuAqtY43BMaTCB5nTt7kooeKAWibqGs44Uwy9jJQHjTnHRK' }
     let hasResolved = false
@@ -79,18 +74,21 @@ node.on('start', () => {
       }
     }
 
-    const hypervisor = new Hypervisor({dag: node.dag})
-    hypervisor.registerContainer('test', testVMContainer)
-    hypervisor.registerContainer('test2', testVMContainer2)
+    try {
+      const hypervisor = new Hypervisor({dag: node.dag})
+      hypervisor.registerContainer('test', testVMContainer)
+      hypervisor.registerContainer('test2', testVMContainer2)
 
-    const root = await hypervisor.createInstance({type: 'test'})
-    const port = await root.createPort('test', 'first')
+      const root = await hypervisor.createInstance('test')
+      const port = await root.createPort('test', 'first')
 
-    await root.send(port, message)
-    console.log('sent!')
-    await hypervisor.createStateRoot(root, Infinity)
-    console.log('state root generated')
-    t.true(hasResolved, 'should resolve before generating the state root')
+      await root.send(port, message)
+      await hypervisor.createStateRoot(root, Infinity)
+      console.log('state root generated')
+      t.true(hasResolved, 'should resolve before generating the state root')
+    } catch (e) {
+      console.log(e)
+    }
     // t.deepEquals(port, expectedState, 'expected state')
 
     // test reviving the state

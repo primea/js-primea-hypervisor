@@ -52,7 +52,7 @@ node.on('start', () => {
     t.end()
   })
 
-  tape.only('one child contract', async t => {
+  tape('one child contract', async t => {
     let message = new Message()
     const expectedState = { '/': 'zdpuAqtY43BMaTCB5nTt7kooeKAWibqGs44Uwy9jJQHjTnHRK' }
     let hasResolved = false
@@ -120,7 +120,7 @@ node.on('start', () => {
     t.end()
   })
 
-  tape('should wait on parent', async t => {
+  tape.skip('should wait on parent', async t => {
     let r
     const lock = new Promise((resolve, reject) => {
       r = resolve

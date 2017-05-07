@@ -14,10 +14,10 @@ module.exports = class Hypervisor {
     let kernel = this._vmInstances.get(id)
     if (!kernel) {
       // load the container from the state
-      await this.graph.tree(port, 2)
-      const parentID = await this.generateID(port.id['/'].parent)
+      await this.graph.tree(port, 3)
+      const parentID = await this.generateID({id: port.id['/'].parent})
       const parentKernel = await this._vmInstances.get(parentID)
-      const parentPort = parentKernel.entryPort || null
+      const parentPort = parentKernel.entryPort
 
       kernel = await this.createInstanceFromPort(port, parentPort)
       // don't delete the root contracts
@@ -37,7 +37,7 @@ module.exports = class Hypervisor {
     return kernel.wait(threshold, fromPort)
   }
 
-  async createInstance (type, state, entryPort, parentPort) {
+  async createInstance (type, state, entryPort = null, parentPort) {
     const VM = this._VMs[type]
     if (!state) {
       state = VM.createState()

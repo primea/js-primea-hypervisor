@@ -54,7 +54,6 @@ module.exports = class Kernel extends EventEmitter {
   }
 
   async _runNextMessage () {
-    // console.log('next message', this.ticks, this.entryPort)
     const message = await this.ports.getNextMessage()
     // if the vm is paused and it gets a message; save that message for use when the VM is resumed
     if (message && this.vmState === 'paused') {
@@ -113,7 +112,6 @@ module.exports = class Kernel extends EventEmitter {
   // returns a promise that resolves once the kernel hits the threshould tick
   // count
   async wait (threshold, fromPort) {
-    console.log('wait', threshold, fromPort, this.ticks, this.vmState, this.entryPort)
     if (threshold <= this.ticks) {
       return this.ticks
     } else if (this.vmState === 'idle') {
@@ -130,7 +128,6 @@ module.exports = class Kernel extends EventEmitter {
   }
 
   incrementTicks (count) {
-    console.log('update ticks')
     this.ticks += count
     while (!this._waitingQueue.isEmpty()) {
       const waiter = this._waitingQueue.peek()
@@ -183,10 +180,6 @@ module.exports = class Kernel extends EventEmitter {
     const receiverEntryPort = portRef === this.entryPort ? this.parentPort : portRef
     const vm = await this.hypervisor.getInstance(receiverEntryPort)
     vm.queue(message)
-    if (this.vmState !== 'running') {
-      this._updateVmState('running')
-      this._runNextMessage()
-    }
   }
 }
 

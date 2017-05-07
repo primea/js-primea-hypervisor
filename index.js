@@ -17,7 +17,7 @@ module.exports = class Hypervisor {
       await this.graph.tree(port, 2)
       const parentID = await this.generateID(port.id['/'].parent)
       const parentKernel = await this._vmInstances.get(parentID)
-      const parentPort = parentKernel.entryPort
+      const parentPort = parentKernel.entryPort || null
 
       kernel = await this.createInstanceFromPort(port, parentPort)
       // don't delete the root contracts

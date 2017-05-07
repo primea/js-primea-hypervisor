@@ -113,6 +113,7 @@ module.exports = class Kernel extends EventEmitter {
   // returns a promise that resolves once the kernel hits the threshould tick
   // count
   async wait (threshold, fromPort) {
+    console.log('wait', threshold, fromPort, this.ticks, this.vmState, this.entryPort)
     if (threshold <= this.ticks) {
       return this.ticks
     } else if (this.vmState === 'idle') {

@@ -23,7 +23,7 @@ node.on('error', err => {
 })
 
 node.on('start', () => {
-  tape.only('basic', async t => {
+  tape('basic', async t => {
     const message = new Message()
     const expectedState = {
       '/': 'zdpuAntkdU7yBJojcBT5Q9wBhrK56NmLnwpHPKaEGMFnAXpv7'
@@ -35,20 +35,24 @@ node.on('start', () => {
       }
     }
 
-    const hypervisor = new Hypervisor({dag: node.dag})
-    hypervisor.registerContainer('test', testVMContainer)
+    try {
+      const hypervisor = new Hypervisor({dag: node.dag})
+      hypervisor.registerContainer('test', testVMContainer)
 
-    const rootContainer = await hypervisor.createInstance('test')
-    const port = await rootContainer.createPort('test', 'first')
+      const rootContainer = await hypervisor.createInstance('test')
+      const port = await rootContainer.createPort('test', 'first')
 
-    await rootContainer.send(port, message)
+      await rootContainer.send(port, message)
 
-    const stateRoot = await hypervisor.createStateRoot(rootContainer, Infinity)
-    t.deepEquals(stateRoot, expectedState, 'expected root!')
+      const stateRoot = await hypervisor.createStateRoot(rootContainer, Infinity)
+      t.deepEquals(stateRoot, expectedState, 'expected root!')
+    } catch (e) {
+      console.log(e)
+    }
     t.end()
   })
 
-  tape('one child contract', async t => {
+  tape.only('one child contract', async t => {
     let message = new Message()
     const expectedState = { '/': 'zdpuAqtY43BMaTCB5nTt7kooeKAWibqGs44Uwy9jJQHjTnHRK' }
     let hasResolved = false
@@ -68,11 +72,12 @@ node.on('start', () => {
 
     class testVMContainer extends BaseContainer {
       async run (m) {
+        // console.log('here', this.kernel.entryPort)
         const port = await this.kernel.createPort('test2', 'child')
         try {
           await this.kernel.send(port, m)
         } catch (e) {
-          console.log(e)
+          console.log('error!', e)
         }
         this.kernel.incrementTicks(1)
       }

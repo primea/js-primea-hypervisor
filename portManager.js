@@ -67,22 +67,25 @@ module.exports = class PortManager {
   }
 
   // waits till all ports have reached a threshold tick count
-  async wait (threshold) {
+  async wait (threshold, fromPort) {
+    // console.log('wait', threshold, 'id', this.entryPort)
     // find the ports that have a smaller tick count then the threshold tick count
     const unkownPorts = [...this._portMap].filter(([id, port]) => {
-      return (port.hasSent || port.name === ENTRY) && port.ticks < threshold
+      return (port.hasSent || port.name === ENTRY) &&
+        port.ticks < threshold &&
+        fromPort !== port
     })
 
     const promises = unkownPorts.map(async ([id, port]) => {
       const portObj = port.name === ENTRY ? this.parentPort : this.ports[port.name]
       // update the port's tick count
-      port.ticks = await this.hypervisor.wait(portObj, threshold)
+      port.ticks = await this.hypervisor.wait(portObj, threshold, this.entryPort)
     })
     return Promise.all(promises)
   }
 
   async getNextMessage () {
-    await this.wait(this.kernel.ticks)
+    await this.wait(this.kernel.ticks, this.entryPort)
     const portMap = [...this._portMap].reduce(messageArbiter)
     if (portMap) {
       return portMap[1].shift()

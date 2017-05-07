@@ -23,7 +23,7 @@ node.on('error', err => {
 })
 
 node.on('start', () => {
-  tape('basic', async t => {
+  tape.only('basic', async t => {
     const message = new Message()
     const expectedState = {
       '/': 'zdpuAntkdU7yBJojcBT5Q9wBhrK56NmLnwpHPKaEGMFnAXpv7'
@@ -48,7 +48,7 @@ node.on('start', () => {
     t.end()
   })
 
-  tape.only('one child contract', async t => {
+  tape('one child contract', async t => {
     let message = new Message()
     const expectedState = { '/': 'zdpuAqtY43BMaTCB5nTt7kooeKAWibqGs44Uwy9jJQHjTnHRK' }
     let hasResolved = false
@@ -69,7 +69,11 @@ node.on('start', () => {
     class testVMContainer extends BaseContainer {
       async run (m) {
         const port = await this.kernel.createPort('test2', 'child')
-        await this.kernel.send(port, m)
+        try {
+          await this.kernel.send(port, m)
+        } catch (e) {
+          console.log(e)
+        }
         this.kernel.incrementTicks(1)
       }
     }

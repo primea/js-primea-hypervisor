@@ -32,9 +32,9 @@ module.exports = class Hypervisor {
 
   // given a port, wait untill its source contract has reached the threshold
   // tick count
-  async wait (port, threshold) {
+  async wait (port, threshold, fromPort) {
     let kernel = await this.getInstance(port)
-    return kernel.wait(threshold)
+    return kernel.wait(threshold, fromPort)
   }
 
   async createInstance (type, state, entryPort, parentPort) {
@@ -61,7 +61,7 @@ module.exports = class Hypervisor {
    * opts.entryPort
    * opts.parentPort
    */
-  createInstanceFromPort (entryPort, parentPort) {
+  async createInstanceFromPort (entryPort, parentPort) {
     const state = entryPort.link['/']
     return this.createInstance(entryPort.type, state, entryPort, parentPort)
   }
@@ -75,7 +75,8 @@ module.exports = class Hypervisor {
     if (!port || !port.id) {
       return null
     }
-    let id = await this.graph.flush(port.id)
+    let id = Object.assign({}, port.id)
+    id = await this.graph.flush(id)
     id = id['/']
     if (Buffer.isBuffer(id)) {
       id = multibase.encode('base58btc', id).toString()

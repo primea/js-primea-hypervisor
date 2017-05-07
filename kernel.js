@@ -28,7 +28,10 @@ module.exports = class Kernel extends EventEmitter {
     this.on('result', this._runNextMessage)
     this.on('idle', () => {
       while (!this._waitingQueue.isEmpty()) {
-        this._waitingQueue.poll().resolve()
+        const waiter = this._waitingQueue.poll()
+        this.wait(waiter.ticks, waiter.from).then(ticks => {
+          waiter.resolve(ticks)
+        })
       }
     })
   }
@@ -51,6 +54,7 @@ module.exports = class Kernel extends EventEmitter {
   }
 
   async _runNextMessage () {
+    // console.log('next message', this.ticks, this.entryPort)
     const message = await this.ports.getNextMessage()
     // if the vm is paused and it gets a message; save that message for use when the VM is resumed
     if (message && this.vmState === 'paused') {
@@ -99,6 +103,7 @@ module.exports = class Kernel extends EventEmitter {
       }
       clearObject(this.state)
       Object.assign(this.state, oldState)
+      console.log(e)
     }
 
     this.emit('result', result)
@@ -107,20 +112,24 @@ module.exports = class Kernel extends EventEmitter {
 
   // returns a promise that resolves once the kernel hits the threshould tick
   // count
-  async wait (threshold) {
-    return new Promise((resolve, reject) => {
-      if (this.vmState === 'idle' || threshold <= this.ticks) {
-        resolve(this.ticks)
-      } else {
+  async wait (threshold, fromPort) {
+    if (threshold <= this.ticks) {
+      return this.ticks
+    } else if (this.vmState === 'idle') {
+      return this.ports.wait(threshold, fromPort)
+    } else {
+      return new Promise((resolve, reject) => {
         this._waitingQueue.add({
           threshold: threshold,
-          resolve: resolve
+          resolve: resolve,
+          from: fromPort
         })
-      }
-    })
+      })
+    }
   }
 
   incrementTicks (count) {
+    console.log('update ticks')
     this.ticks += count
     while (!this._waitingQueue.isEmpty()) {
       const waiter = this._waitingQueue.peek()
@@ -135,7 +144,6 @@ module.exports = class Kernel extends EventEmitter {
   async createPort (type, name) {
     const VM = this.hypervisor._VMs[type]
     const parentId = this.entryPort ? this.entryPort.id : null
-
     const portRef = {
       'messages': [],
       'id': {
@@ -152,12 +160,10 @@ module.exports = class Kernel extends EventEmitter {
 
     // create the port instance
     await this.ports.set(name, portRef)
-
     // incerment the nonce
     const nonce = new BN(this.state.nonce)
     nonce.iaddn(1)
     this.state.nonce = nonce.toArray()
-
     return portRef
   }
 
@@ -168,6 +174,7 @@ module.exports = class Kernel extends EventEmitter {
     } catch (e) {
       throw new Error('invalid port referance, which means the port that the port was either moved or destoried')
     }
+
     const id = await this.hypervisor.generateID(this.entryPort)
     message._fromPort = id
     message._ticks = this.ticks

@@ -54,7 +54,9 @@ node.on('start', () => {
 
   tape('one child contract', async t => {
     let message = new Message()
-    const expectedState = { '/': 'zdpuAqtY43BMaTCB5nTt7kooeKAWibqGs44Uwy9jJQHjTnHRK' }
+    const expectedState = {
+      '/': 'zdpuAtYQujwQMR9SpmFwmkr7d2cD4vzeQk2GCzcEku2nomWj6'
+    }
     let hasResolved = false
 
     class testVMContainer2 extends BaseContainer {
@@ -72,50 +74,46 @@ node.on('start', () => {
 
     class testVMContainer extends BaseContainer {
       async run (m) {
-        // console.log('here', this.kernel.entryPort)
         const port = await this.kernel.createPort('test2', 'child')
-        try {
-          await this.kernel.send(port, m)
-        } catch (e) {
-          console.log('error!', e)
-        }
+        await this.kernel.send(port, m)
+        this.kernel.incrementTicks(1)
+      }
+    }
+
+    const hypervisor = new Hypervisor({dag: node.dag})
+    hypervisor.registerContainer('test', testVMContainer)
+    hypervisor.registerContainer('test2', testVMContainer2)
+
+    let root = await hypervisor.createInstance('test')
+    let port = await root.createPort('test', 'first')
+
+    await root.send(port, message)
+    const stateRoot = await hypervisor.createStateRoot(root, Infinity)
+    t.true(hasResolved, 'should resolve before generating the state root')
+    t.deepEquals(stateRoot, expectedState, 'expected state')
+
+    // test reviving the state
+    class testVMContainer3 extends BaseContainer {
+      async run (m) {
+        const port = this.kernel.getPort('child')
+        this.kernel.send(port, m)
         this.kernel.incrementTicks(1)
       }
     }
 
     try {
-      const hypervisor = new Hypervisor({dag: node.dag})
-      hypervisor.registerContainer('test', testVMContainer)
-      hypervisor.registerContainer('test2', testVMContainer2)
-
-      const root = await hypervisor.createInstance('test')
-      const port = await root.createPort('test', 'first')
+      hypervisor.registerContainer('test', testVMContainer3)
+      root = await hypervisor.createInstance('test', stateRoot)
+      port = await root.ports.getRef('first')
 
       await root.send(port, message)
+      console.log('creating SR')
       await hypervisor.createStateRoot(root, Infinity)
-      console.log('state root generated')
-      t.true(hasResolved, 'should resolve before generating the state root')
+      console.log('end!')
+      // console.log(hypervisor._vmInstances)
     } catch (e) {
       console.log(e)
     }
-    // t.deepEquals(port, expectedState, 'expected state')
-
-    // test reviving the state
-    // class testVMContainer3 extends BaseContainer {
-    //   async run (m) {
-    //     const port = this.kernel.getPort(this.kernel.ports, 'child')
-    //     this.kernel.send(port, m)
-    //     this.kernel.incrementTicks(1)
-    //   }
-    // }
-
-    // hypervisor.addVM('test', testVMContainer3)
-
-    // // revive ports
-    // message = new Message()
-    // await hypervisor.graph.tree(expectedState, 1)
-    // await hypervisor.send(expectedState['/'], message)
-    // await hypervisor.createStateRoot(expectedState['/'], Infinity)
 
     t.end()
   })

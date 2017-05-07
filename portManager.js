@@ -31,13 +31,14 @@ module.exports = class PortManager {
 
   async start () {
     // map ports to thier id's
-    let ports = Object.keys(this.ports).map(name => {
+    this.ports = await this.hypervisor.graph.get(this.state, 'ports')
+    const promises = Object.keys(this.ports).map(name => {
       const port = this.ports[name]
       this._mapPort(name, port)
     })
 
     // create the parent port
-    await Promise.all(ports)
+    await Promise.all(promises)
     // skip the root, since it doesn't have a parent
     if (this.parentPort !== undefined) {
       const id = await this.hypervisor.generateID(this.parentPort)

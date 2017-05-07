@@ -16,7 +16,7 @@ module.exports = class Kernel extends EventEmitter {
     this.ports = new PortManager({
       kernel: this,
       hypervisor: opts.hypervisor,
-      ports: opts.state.ports,
+      state: opts.state,
       entryPort: opts.entryPort,
       parentPort: opts.parentPort
     })
@@ -54,16 +54,21 @@ module.exports = class Kernel extends EventEmitter {
   }
 
   async _runNextMessage () {
-    const message = await this.ports.getNextMessage()
-    // if the vm is paused and it gets a message; save that message for use when the VM is resumed
-    if (message && this.vmState === 'paused') {
-      this.ports._portMap(message._fromPort).unshfit(message)
-    } else if (!message && this.vmState !== 'paused') {
-      // if no more messages then shut down
-      this._updateVmState('idle')
-    } else {
-      // run the next message
-      this._run(message)
+    console.log('run next message')
+    try {
+      const message = await this.ports.getNextMessage()
+      // if the vm is paused and it gets a message; save that message for use when the VM is resumed
+      if (message && this.vmState === 'paused') {
+        this.ports._portMap(message._fromPort).unshfit(message)
+      } else if (!message && this.vmState !== 'paused') {
+        // if no more messages then shut down
+        this._updateVmState('idle')
+      } else {
+        // run the next message
+        this._run(message)
+      }
+    } catch (e) {
+      console.log(e)
     }
   }
 
@@ -142,11 +147,12 @@ module.exports = class Kernel extends EventEmitter {
   async createPort (type, name) {
     const VM = this.hypervisor._VMs[type]
     const parentId = this.entryPort ? this.entryPort.id : null
+    let nonce = await this.hypervisor.graph.get(this.state, 'nonce')
     const portRef = {
       'messages': [],
       'id': {
         '/': {
-          nonce: this.state.nonce,
+          nonce: nonce,
           parent: parentId
         }
       },
@@ -159,9 +165,9 @@ module.exports = class Kernel extends EventEmitter {
     // create the port instance
     await this.ports.set(name, portRef)
     // incerment the nonce
-    const nonce = new BN(this.state.nonce)
+    nonce = new BN(nonce)
     nonce.iaddn(1)
-    this.state.nonce = nonce.toArray()
+    this.state['/'].nonce = nonce.toArray()
     return portRef
   }
 

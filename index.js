@@ -13,19 +13,16 @@ module.exports = class Hypervisor {
     let id = await this.generateID(port)
     let kernel = this._vmInstances.get(id)
     if (!kernel) {
-      // load the container from the state
-      await this.graph.tree(port, 3)
+      // load the the ID from the merkle store
+      await this.graph.tree(port.id, 1)
       const parentID = await this.generateID({id: port.id['/'].parent})
       const parentKernel = await this._vmInstances.get(parentID)
       const parentPort = parentKernel.entryPort
 
       kernel = await this.createInstanceFromPort(port, parentPort)
-      // don't delete the root contracts
-      if (id) {
-        kernel.on('idle', () => {
-          this._vmInstances.delete(id)
-        })
-      }
+      kernel.on('idle', () => {
+        this._vmInstances.delete(id)
+      })
     }
     return kernel
   }
@@ -40,8 +37,11 @@ module.exports = class Hypervisor {
   async createInstance (type, state, entryPort = null, parentPort) {
     const VM = this._VMs[type]
     if (!state) {
-      state = VM.createState()
+      state = {
+        '/': VM.createState()
+      }
     }
+
     // create a new kernel instance
     const kernel = new Kernel({
       entryPort: entryPort,
@@ -52,6 +52,7 @@ module.exports = class Hypervisor {
     })
 
     const id = await this.generateID(entryPort)
+    // save the newly created instance
     this._vmInstances.set(id, kernel)
     await kernel.start()
     return kernel
@@ -62,7 +63,7 @@ module.exports = class Hypervisor {
    * opts.parentPort
    */
   async createInstanceFromPort (entryPort, parentPort) {
-    const state = entryPort.link['/']
+    const state = entryPort.link
     return this.createInstance(entryPort.type, state, entryPort, parentPort)
   }
 

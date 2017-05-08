@@ -101,6 +101,7 @@ module.exports = class Kernel extends EventEmitter {
       }
       clearObject(this.state)
       Object.assign(this.state, oldState)
+      console.log(e)
     }
 
     this.emit('result', result)

@@ -111,61 +111,44 @@ node.on('start', () => {
     })
   })
 
-  tape.skip('should wait on parent', async t => {
-    let r
-    const lock = new Promise((resolve, reject) => {
-      r = resolve
+  tape.only('ping pong', async t => {
+    class Ping extends BaseContainer {
+      async run (m) {
+        console.log('ping')
+        let port = this.kernel.ports.getRef('child')
+        if (!port) {
+          port = await this.kernel.createPort('pong', 'child')
+        }
+
+        if (this.kernel.ticks < 100) {
+          this.kernel.incrementTicks(1)
+          console.log('here')
+          return this.kernel.send(port, new Message())
+        }
+      }
+    }
+
+    class Pong extends BaseContainer {
+      run (m) {
+        console.log('pong')
+        const port = m.fromPort
+        return this.kernel.send(port, new Message())
+      }
+    }
+
+    const hypervisor = new Hypervisor({
+      dag: node.dag
     })
 
-    let parentHasFinished = false
-    let childHasFinished = false
-    class testVMContainer extends BaseContainer {
-      async run (m) {
-        console.log('in parent')
-        const port = await this.kernel.createPort(this.kernel.ports, 'test2', 'child')
-        await this.kernel.send(port, m)
-        await lock
-        return new Promise((resolve, reject) => {
-          setTimeout(() => {
-            console.log('parent done')
-            this.kernel.incrementTicks(1)
-            parentHasFinished = true
-            t.equals(childHasFinished, false, 'child should not have finished at this point')
-            resolve()
-          }, 200)
-        })
-      }
-    }
-
-    // test reviving the state
-    class testVMContainer2 extends BaseContainer {
-      async run (m) {
-        console.log('in child')
-        childHasFinished = true
-        r()
-        this.kernel.incrementTicks(1)
-        try {
-          await this.kernel.ports.getNextMessage()
-        } catch (e) {
-          console.log(e)
-        }
-        t.equals(parentHasFinished, true, 'parent should have finished at this point')
-      }
-    }
-
-    const hypervisor = new Hypervisor({dag: node.dag})
-    hypervisor.addVM('test', testVMContainer)
-    hypervisor.addVM('test2', testVMContainer2)
-    const port = hypervisor.createPort('test')
-
-    let message = new Message()
     try {
-      await hypervisor.send(port, message)
-      await hypervisor.createStateRoot(port, Infinity)
+      hypervisor.registerContainer('ping', Ping)
+      hypervisor.registerContainer('pong', Pong)
+      const root = await hypervisor.createInstance('pong')
+      const port = await root.createPort('ping', 'child')
+
+      await root.send(port, new Message())
     } catch (e) {
       console.log(e)
     }
-
-    t.end()
   })
 })

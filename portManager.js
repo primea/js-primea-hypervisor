@@ -32,29 +32,24 @@ module.exports = class PortManager {
   async start () {
     // map ports to thier id's
     this.ports = await this.hypervisor.graph.get(this.state, 'ports')
-    const promises = Object.keys(this.ports).map(name => {
+    Object.keys(this.ports).map(name => {
       const port = this.ports[name]
       this._mapPort(name, port)
     })
 
-    // create the parent port
-    await Promise.all(promises)
     // skip the root, since it doesn't have a parent
     if (this.parentPort !== undefined) {
-      const id = await this.hypervisor.generateID(this.parentPort)
-      this._portMap.set(id, new Port(ENTRY))
+      this._portMap.set(this.parentPort, new Port(ENTRY))
     }
   }
 
-  async _mapPort (name, port) {
-    const id = await this.hypervisor.generateID(port)
-    port = new Port(name)
-    this._portMap.set(id, port)
+  _mapPort (name, portRef) {
+    const port = new Port(name)
+    this._portMap.set(portRef, port)
   }
 
-  async queue (message) {
-    const id = await this.hypervisor.generateID(message.fromPort)
-    this._portMap.get(id).queue(message)
+  queue (message) {
+    this._portMap.get(message.fromPort).queue(message)
   }
 
   set (name, port) {
@@ -62,9 +57,8 @@ module.exports = class PortManager {
     return this._mapPort(name, port)
   }
 
-  async get (port) {
-    const id = await this.hypervisor.generateID(port)
-    return this._portMap.get(id)
+  get (port) {
+    return this._portMap.get(port)
   }
 
   getRef (key) {
@@ -76,17 +70,15 @@ module.exports = class PortManager {
   }
 
   // waits till all ports have reached a threshold tick count
-  async wait (threshold, fromPort) {
+  wait (threshold, fromPort) {
     // find the ports that have a smaller tick count then the threshold tick count
-    const unkownPorts = [...this._portMap].filter(([id, port]) => {
-      const portRef = this.getRef(port.name)
+    const unkownPorts = [...this._portMap].filter(([portRef, port]) => {
       return port.ticks < threshold && fromPort !== portRef
     })
 
-    const promises = unkownPorts.map(async ([id, port]) => {
-      const portObj = port.name === ENTRY ? this.parentPort : this.ports[port.name]
+    const promises = unkownPorts.map(async ([portRef, port]) => {
       // update the port's tick count
-      port.ticks = await this.hypervisor.wait(portObj, threshold, this.entryPort)
+      port.ticks = await this.hypervisor.wait(portRef, threshold, this.entryPort)
     })
     return Promise.all(promises)
   }

@@ -12,6 +12,7 @@ module.exports = class Kernel extends EventEmitter {
 
     this.vmState = 'idle'
     this.ticks = 0
+
     // create the port manager
     this.ports = new PortManager({
       kernel: this,
@@ -25,6 +26,7 @@ module.exports = class Kernel extends EventEmitter {
     this._waitingQueue = new PriorityQueue((a, b) => {
       return a.threshold > b.threshold
     })
+
     this.on('result', this._runNextMessage)
     this.on('idle', () => {
       while (!this._waitingQueue.isEmpty()) {
@@ -38,8 +40,8 @@ module.exports = class Kernel extends EventEmitter {
     return this.ports.start()
   }
 
-  async queue (message) {
-    await this.ports.queue(message)
+  queue (message) {
+    this.ports.queue(message)
     if (this.vmState !== 'running') {
       this._updateVmState('running')
       this._runNextMessage()
@@ -110,7 +112,7 @@ module.exports = class Kernel extends EventEmitter {
 
   // returns a promise that resolves once the kernel hits the threshould tick
   // count
-  async wait (threshold, fromPort) {
+  wait (threshold, fromPort) {
     if (threshold <= this.ticks) {
       return this.ticks
     } else if (this.vmState === 'idle') {
@@ -157,7 +159,7 @@ module.exports = class Kernel extends EventEmitter {
     }
 
     // create the port instance
-    await this.ports.set(name, portRef)
+    this.ports.set(name, portRef)
     // incerment the nonce
     nonce = new BN(nonce)
     nonce.iaddn(1)

@@ -52,8 +52,9 @@ module.exports = class PortManager {
     this._portMap.set(id, port)
   }
 
-  queue (message) {
-    this._portMap.get(message.fromPort).queue(message)
+  async queue (message) {
+    const id = await this.hypervisor.generateID(message.fromPort)
+    this._portMap.get(id).queue(message)
   }
 
   set (name, port) {

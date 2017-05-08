@@ -111,7 +111,7 @@ node.on('start', () => {
     })
   })
 
-  tape.only('ping pong', async t => {
+  tape.skip('ping pong', async t => {
     class Ping extends BaseContainer {
       async run (m) {
         console.log('ping')

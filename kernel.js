@@ -38,8 +38,8 @@ module.exports = class Kernel extends EventEmitter {
     return this.ports.start()
   }
 
-  queue (message) {
-    this.ports.queue(message)
+  async queue (message) {
+    await this.ports.queue(message)
     if (this.vmState !== 'running') {
       this._updateVmState('running')
       this._runNextMessage()
@@ -166,13 +166,12 @@ module.exports = class Kernel extends EventEmitter {
   }
 
   async send (portRef, message) {
-    const id = await this.hypervisor.generateID(this.entryPort)
-    message._fromPort = id
+    message._fromPort = this.entryPort
     message._ticks = this.ticks
 
     const receiverEntryPort = portRef === this.entryPort ? this.parentPort : portRef
     const vm = await this.hypervisor.getInstance(receiverEntryPort)
-    vm.queue(message)
+    return vm.queue(message)
   }
 }
 

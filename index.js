@@ -20,7 +20,6 @@ module.exports = class Hypervisor {
       const parentPort = parentKernel.entryPort
 
       kernel = await this.createInstanceFromPort(port, parentPort)
-      kernel.id = id
       kernel.on('idle', () => {
         this._vmInstances.delete(id)
       })
@@ -81,6 +80,7 @@ module.exports = class Hypervisor {
     if (!port || !port.id) {
       return null
     }
+
     let id = Object.assign({}, port.id)
     id = await this.graph.flush(id)
     id = id['/']

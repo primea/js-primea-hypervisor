@@ -9,10 +9,10 @@ module.exports = class Hypervisor {
     this._VMs = {}
   }
 
-  async getInstance (port) {
-    let id = await this.generateID(port)
+  async getInstance (port, createIfNotFound = true) {
+    const id = await this.generateID(port)
     let kernel = this._vmInstances.get(id)
-    if (!kernel) {
+    if (!kernel && createIfNotFound) {
       // load the the ID from the merkle store
       await this.graph.tree(port.id, 1)
       const parentID = await this.generateID({id: port.id['/'].parent})
@@ -20,6 +20,7 @@ module.exports = class Hypervisor {
       const parentPort = parentKernel.entryPort
 
       kernel = await this.createInstanceFromPort(port, parentPort)
+      kernel.id = id
       kernel.on('idle', () => {
         this._vmInstances.delete(id)
       })
@@ -30,8 +31,12 @@ module.exports = class Hypervisor {
   // given a port, wait untill its source contract has reached the threshold
   // tick count
   async wait (port, threshold, fromPort) {
-    let kernel = await this.getInstance(port)
-    return kernel.wait(threshold, fromPort)
+    let kernel = await this.getInstance(port, false)
+    if (kernel) {
+      return kernel.wait(threshold, fromPort)
+    } else {
+      return threshold
+    }
   }
 
   async createInstance (type, state, entryPort = null, parentPort) {

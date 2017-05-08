@@ -35,27 +35,23 @@ node.on('start', () => {
       }
     }
 
-    try {
-      const hypervisor = new Hypervisor({dag: node.dag})
-      hypervisor.registerContainer('test', testVMContainer)
+    const hypervisor = new Hypervisor({dag: node.dag})
+    hypervisor.registerContainer('test', testVMContainer)
 
-      const rootContainer = await hypervisor.createInstance('test')
-      const port = await rootContainer.createPort('test', 'first')
+    const rootContainer = await hypervisor.createInstance('test')
+    const port = await rootContainer.createPort('test', 'first')
 
-      await rootContainer.send(port, message)
+    await rootContainer.send(port, message)
 
-      const stateRoot = await hypervisor.createStateRoot(rootContainer, Infinity)
-      t.deepEquals(stateRoot, expectedState, 'expected root!')
-    } catch (e) {
-      console.log(e)
-    }
+    const stateRoot = await hypervisor.createStateRoot(rootContainer, Infinity)
+    t.deepEquals(stateRoot, expectedState, 'expected root!')
     t.end()
   })
 
   tape('one child contract', async t => {
     let message = new Message()
     const expectedState = {
-      '/': 'zdpuAtYQujwQMR9SpmFwmkr7d2cD4vzeQk2GCzcEku2nomWj6'
+      '/': 'zdpuAofSzrBqwYs6z1r28fMeb8z5oSKF6CcWA6m22RqazgoTB'
     }
     let hasResolved = false
 
@@ -95,27 +91,24 @@ node.on('start', () => {
     // test reviving the state
     class testVMContainer3 extends BaseContainer {
       async run (m) {
-        const port = this.kernel.getPort('child')
-        this.kernel.send(port, m)
+        const port = this.kernel.ports.getRef('child')
+        await this.kernel.send(port, m)
         this.kernel.incrementTicks(1)
       }
     }
 
-    try {
-      hypervisor.registerContainer('test', testVMContainer3)
-      root = await hypervisor.createInstance('test', stateRoot)
-      port = await root.ports.getRef('first')
+    hypervisor.registerContainer('test', testVMContainer3)
+    root = await hypervisor.createInstance('test', stateRoot)
+    port = await root.ports.getRef('first')
 
-      await root.send(port, message)
-      console.log('creating SR')
-      await hypervisor.createStateRoot(root, Infinity)
-      console.log('end!')
-      // console.log(hypervisor._vmInstances)
-    } catch (e) {
-      console.log(e)
-    }
+    await root.send(port, message)
+    await hypervisor.createStateRoot(root, Infinity)
 
     t.end()
+
+    node.stop(() => {
+      process.exit()
+    })
   })
 
   tape.skip('should wait on parent', async t => {
@@ -174,8 +167,5 @@ node.on('start', () => {
     }
 
     t.end()
-    node.stop(() => {
-      process.exit()
-    })
   })
 })

@@ -67,7 +67,11 @@ module.exports = class PortManager {
   }
 
   getRef (key) {
-    return this.ports[key]
+    if (key === ENTRY) {
+      return this.entryPort
+    } else {
+      return this.ports[key]
+    }
   }
 
   // waits till all ports have reached a threshold tick count
@@ -75,9 +79,7 @@ module.exports = class PortManager {
     // find the ports that have a smaller tick count then the threshold tick count
     const unkownPorts = [...this._portMap].filter(([id, port]) => {
       const portRef = this.getRef(port.name)
-      return (port.hasSent || port.name === ENTRY) &&
-        port.ticks < threshold &&
-        fromPort !== portRef
+      return port.ticks < threshold && fromPort !== portRef
     })
 
     const promises = unkownPorts.map(async ([id, port]) => {

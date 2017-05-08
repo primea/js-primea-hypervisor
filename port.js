@@ -1,7 +1,6 @@
 module.exports = class Port {
   constructor (name) {
     this.name = name
-    this.hasSent = false
     this._queue = []
     this.ticks = 0
   }

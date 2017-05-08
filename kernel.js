@@ -29,9 +29,7 @@ module.exports = class Kernel extends EventEmitter {
     this.on('idle', () => {
       while (!this._waitingQueue.isEmpty()) {
         const waiter = this._waitingQueue.poll()
-        this.wait(waiter.ticks, waiter.from).then(ticks => {
-          waiter.resolve(ticks)
-        })
+        waiter.resolve(this.ticks)
       }
     })
   }
@@ -54,21 +52,17 @@ module.exports = class Kernel extends EventEmitter {
   }
 
   async _runNextMessage () {
-    console.log('run next message')
-    try {
-      const message = await this.ports.getNextMessage()
-      // if the vm is paused and it gets a message; save that message for use when the VM is resumed
-      if (message && this.vmState === 'paused') {
-        this.ports._portMap(message._fromPort).unshfit(message)
-      } else if (!message && this.vmState !== 'paused') {
-        // if no more messages then shut down
-        this._updateVmState('idle')
-      } else {
-        // run the next message
-        this._run(message)
-      }
-    } catch (e) {
-      console.log(e)
+    await this.hypervisor.graph.get(this.entryPort, 'id')
+    const message = await this.ports.getNextMessage()
+    // if the vm is paused and it gets a message; save that message for use when the VM is resumed
+    if (message && this.vmState === 'paused') {
+      this.ports._portMap(message._fromPort).unshfit(message)
+    } else if (!message && this.vmState !== 'paused') {
+      // if no more messages then shut down
+      this._updateVmState('idle')
+    } else {
+      // run the next message
+      this._run(message)
     }
   }
 
@@ -107,7 +101,6 @@ module.exports = class Kernel extends EventEmitter {
       }
       clearObject(this.state)
       Object.assign(this.state, oldState)
-      console.log(e)
     }
 
     this.emit('result', result)
@@ -172,13 +165,6 @@ module.exports = class Kernel extends EventEmitter {
   }
 
   async send (portRef, message) {
-    try {
-      const portInstance = await this.ports.get(portRef)
-      portInstance.hasSent = true
-    } catch (e) {
-      throw new Error('invalid port referance, which means the port that the port was either moved or destoried')
-    }
-
     const id = await this.hypervisor.generateID(this.entryPort)
     message._fromPort = id
     message._ticks = this.ticks

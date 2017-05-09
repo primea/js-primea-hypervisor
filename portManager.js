@@ -57,16 +57,8 @@ module.exports = class PortManager {
     return this._mapPort(name, port)
   }
 
-  get (port) {
-    return this._portMap.get(port)
-  }
-
-  getRef (key) {
-    if (key === ENTRY) {
-      return this.entryPort
-    } else {
-      return this.ports[key]
-    }
+  get (key) {
+    return this.ports[key]
   }
 
   // waits till all ports have reached a threshold tick count
@@ -86,8 +78,7 @@ module.exports = class PortManager {
   async getNextMessage () {
     await this.wait(this.kernel.ticks, this.entryPort)
     const portMap = [...this._portMap].reduce(messageArbiter)
-    if (portMap) {
-      return portMap[1].shift()
-    }
+    // console.log('here!!!!', portMap)
+    return portMap[1].shift()
   }
 }

@@ -1,6 +1,8 @@
 const PriorityQueue = require('fastpriorityqueue')
-const EventEmitter = require('events')
+const clearObject = require('object-clear')
+const clone = require('clone')
 const BN = require('bn.js')
+const EventEmitter = require('events')
 const PortManager = require('./portManager.js')
 
 module.exports = class Kernel extends EventEmitter {
@@ -54,35 +56,14 @@ module.exports = class Kernel extends EventEmitter {
   }
 
   async _runNextMessage () {
-    await this.hypervisor.graph.get(this.entryPort, 'id')
     const message = await this.ports.getNextMessage()
-    // if the vm is paused and it gets a message; save that message for use when the VM is resumed
-    if (message && this.vmState === 'paused') {
-      this.ports._portMap(message._fromPort).unshfit(message)
-    } else if (!message && this.vmState !== 'paused') {
+    if (message) {
+      // run the next message
+      this.run(message)
+    } else {
       // if no more messages then shut down
       this._updateVmState('idle')
-    } else {
-      // run the next message
-      this._run(message)
     }
-  }
-
-  _updateEntryPort (entryPort) {
-    // reset waits, update parent port
-  }
-
-  destroy () {
-    // destory waits
-  }
-
-  pause () {
-    this._setState('paused')
-  }
-
-  resume () {
-    this._setState('running')
-    this._runNextMessage()
   }
 
   /**
@@ -90,20 +71,20 @@ module.exports = class Kernel extends EventEmitter {
    * The Kernel Stores all of its state in the Environment. The Interface is used
    * to by the VM to retrive infromation from the Environment.
    */
-  async _run (message) {
-    // shallow copy
-    const oldState = Object.assign({}, this.state)
+  async run (message) {
+    const oldState = clone(this.state, false, 3)
     let result
     try {
       result = await this.vm.run(message) || {}
     } catch (e) {
+      // revert the state
+      clearObject(this.state)
+      Object.assign(this.state, oldState)
+
       result = {
         exception: true,
         exceptionError: e
       }
-      clearObject(this.state)
-      Object.assign(this.state, oldState)
-      console.log(e)
     }
 
     this.emit('result', result)
@@ -140,10 +121,11 @@ module.exports = class Kernel extends EventEmitter {
     }
   }
 
-  async createPort (type, name) {
+  createPort (type, name) {
     const VM = this.hypervisor._VMs[type]
     const parentId = this.entryPort ? this.entryPort.id : null
-    let nonce = await this.hypervisor.graph.get(this.state, 'nonce')
+    let nonce = this.state['/'].nonce
+
     const portRef = {
       'messages': [],
       'id': {
@@ -173,12 +155,6 @@ module.exports = class Kernel extends EventEmitter {
 
     const receiverEntryPort = portRef === this.entryPort ? this.parentPort : portRef
     const vm = await this.hypervisor.getInstance(receiverEntryPort)
-    return vm.queue(message)
-  }
-}
-
-function clearObject (myObject) {
-  for (var member in myObject) {
-    delete myObject[member]
+    vm.queue(message)
   }
 }

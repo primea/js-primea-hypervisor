@@ -91,7 +91,7 @@ node.on('start', () => {
     // test reviving the state
     class testVMContainer3 extends BaseContainer {
       async run (m) {
-        const port = this.kernel.ports.getRef('child')
+        const port = this.kernel.ports.get('child')
         await this.kernel.send(port, m)
         this.kernel.incrementTicks(1)
       }
@@ -99,30 +99,24 @@ node.on('start', () => {
 
     hypervisor.registerContainer('test', testVMContainer3)
     root = await hypervisor.createInstance('test', stateRoot)
-    port = await root.ports.getRef('first')
+    port = await root.ports.get('first')
 
     await root.send(port, message)
     await hypervisor.createStateRoot(root, Infinity)
 
     t.end()
-
-    node.stop(() => {
-      process.exit()
-    })
   })
 
-  tape.skip('ping pong', async t => {
+  tape('ping pong', async t => {
     class Ping extends BaseContainer {
       async run (m) {
-        console.log('ping')
-        let port = this.kernel.ports.getRef('child')
+        let port = this.kernel.ports.get('child')
         if (!port) {
           port = await this.kernel.createPort('pong', 'child')
         }
 
         if (this.kernel.ticks < 100) {
           this.kernel.incrementTicks(1)
-          console.log('here')
           return this.kernel.send(port, new Message())
         }
       }
@@ -130,7 +124,6 @@ node.on('start', () => {
 
     class Pong extends BaseContainer {
       run (m) {
-        console.log('pong')
         const port = m.fromPort
         return this.kernel.send(port, new Message())
       }
@@ -140,15 +133,99 @@ node.on('start', () => {
       dag: node.dag
     })
 
-    try {
-      hypervisor.registerContainer('ping', Ping)
-      hypervisor.registerContainer('pong', Pong)
-      const root = await hypervisor.createInstance('pong')
-      const port = await root.createPort('ping', 'child')
+    hypervisor.registerContainer('ping', Ping)
+    hypervisor.registerContainer('pong', Pong)
+    const root = await hypervisor.createInstance('pong')
+    const port = await root.createPort('ping', 'child')
 
-      await root.send(port, new Message())
-    } catch (e) {
-      console.log(e)
+    await root.send(port, new Message())
+    await hypervisor.createStateRoot(root, Infinity)
+
+    t.end()
+  })
+
+  tape('queing multiple messages', async t => {
+    let runs = 0
+
+    class Root extends BaseContainer {
+      async run (m) {
+        const one = this.kernel.createPort('child', 'one')
+        const two = this.kernel.createPort('child', 'two')
+        const three = this.kernel.createPort('child', 'three')
+
+        await Promise.all([
+          this.kernel.send(one, new Message()),
+          this.kernel.send(two, new Message()),
+          this.kernel.send(three, new Message())
+        ])
+
+        this.kernel.incrementTicks(1)
+      }
     }
+
+    class Child extends BaseContainer {
+      run (m) {
+        return new Promise((resolve, reject) => {
+          setTimeout(() => {
+            runs++
+            this.kernel.incrementTicks(2)
+            resolve()
+          }, 200)
+        })
+      }
+    }
+
+    const hypervisor = new Hypervisor({
+      dag: node.dag
+    })
+
+    hypervisor.registerContainer('root', Root)
+    hypervisor.registerContainer('child', Child)
+
+    const root = await hypervisor.createInstance('root')
+    const port = await root.createPort('root', 'first')
+    await root.send(port, new Message())
+    await root.wait(Infinity)
+
+    t.equals(runs, 3, 'the number of run should be 3')
+    const nonce = await hypervisor.graph.get(root.state, 'ports/first/link/nonce/0')
+    t.equals(nonce, 3, 'should have the correct nonce')
+
+    t.end()
+  })
+
+  tape('traps', async t => {
+    class Root extends BaseContainer {
+      async run (m) {
+        await Promise.all([
+          this.kernel.createPort('root', 'one'),
+          this.kernel.createPort('root', 'two'),
+          this.kernel.createPort('root', 'three')
+        ])
+
+        throw new Error('it is a trap!!!')
+      }
+    }
+
+    const hypervisor = new Hypervisor({
+      dag: node.dag
+    })
+
+    hypervisor.registerContainer('root', Root)
+    const root = await hypervisor.createInstance('root')
+    await root.run()
+
+    t.deepEquals(root.state, {
+      '/': {
+        nonce: [0],
+        ports: {}
+      }
+    }, 'should revert the state')
+
+    t.end()
+
+    node.stop(() => {
+      process.exit()
+    })
   })
 })

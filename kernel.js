@@ -26,14 +26,10 @@ module.exports = class Kernel extends EventEmitter {
 
     this.vm = new opts.VM(this)
     this._waitingMap = new Map()
-    this._waitingQueue = new PriorityQueue((a, b) => {
-      return a.threshold < b.threshold
-    })
 
     this.on('result', this._runNextMessage)
     this.on('idle', () => {
-      while (!this._waitingQueue.isEmpty()) {
-        const waiter = this._waitingQueue.poll()
+      for (const [, waiter] of this._waitingMap) {
         waiter.resolve(this.ticks)
       }
     })
@@ -100,26 +96,22 @@ module.exports = class Kernel extends EventEmitter {
     } else if (this.vmState === 'idle') {
       return this.ports.wait(threshold, fromPort)
     } else {
-      const promise = new Promise((resolve, reject) => {
-        this._waitingQueue.add({
+      return new Promise((resolve, reject) => {
+        this._waitingMap.set(fromPort, {
           threshold: threshold,
           resolve: resolve,
           from: fromPort
         })
       })
-      this._waitingMap.set(fromPort, promise)
-      return promise
     }
   }
 
   incrementTicks (count) {
     this.ticks += count
-    while (!this._waitingQueue.isEmpty()) {
-      const waiter = this._waitingQueue.peek()
-      if (waiter.threshold > this.ticks) {
-        break
-      } else {
-        this._waitingQueue.poll().resolve(this.ticks)
+    for (const [fromPort, waiter] in this._waitingMap) {
+      if (waiter.threshold < this.ticks) {
+        this._waitingMap.delete(fromPort)
+        waiter.resolve(this.ticks)
       }
     }
   }
@@ -159,5 +151,11 @@ module.exports = class Kernel extends EventEmitter {
     const receiverEntryPort = portRef === this.entryPort ? this.parentPort : portRef
     const vm = await this.hypervisor.getInstance(receiverEntryPort)
     vm.queue(message)
+
+    const waiter = this._waitingMap.get(portRef)
+    if (waiter) {
+      waiter.resolve(this.ticks)
+      this._waitingMap.delete(portRef)
+    }
   }
 }

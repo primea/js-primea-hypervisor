@@ -159,19 +159,19 @@ node.on('start', () => {
           this.kernel.send(three, new Message())
         ])
 
-        this.kernel.incrementTicks(1)
+        return new Promise((resolve, reject) => {
+          setTimeout(() => {
+            this.kernel.incrementTicks(2)
+            resolve()
+          }, 200)
+        })
       }
     }
 
     class Child extends BaseContainer {
       run (m) {
-        return new Promise((resolve, reject) => {
-          setTimeout(() => {
-            runs++
-            this.kernel.incrementTicks(2)
-            resolve()
-          }, 200)
-        })
+        runs++
+        this.kernel.incrementTicks(2)
       }
     }
 

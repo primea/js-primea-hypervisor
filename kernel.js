@@ -25,8 +25,9 @@ module.exports = class Kernel extends EventEmitter {
     })
 
     this.vm = new opts.VM(this)
+    this._waitingMap = new Map()
     this._waitingQueue = new PriorityQueue((a, b) => {
-      return a.threshold > b.threshold
+      return a.threshold < b.threshold
     })
 
     this.on('result', this._runNextMessage)
@@ -99,13 +100,15 @@ module.exports = class Kernel extends EventEmitter {
     } else if (this.vmState === 'idle') {
       return this.ports.wait(threshold, fromPort)
     } else {
-      return new Promise((resolve, reject) => {
+      const promise = new Promise((resolve, reject) => {
         this._waitingQueue.add({
           threshold: threshold,
           resolve: resolve,
           from: fromPort
         })
       })
+      this._waitingMap.set(fromPort, promise)
+      return promise
     }
   }
 

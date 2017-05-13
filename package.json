@@ -11,12 +11,12 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/ewasm/ewasm-kernel.git"
+    "url": "git+https://github.com/primea/js-primea-hypervisor.git"
   },
   "bugs": {
-    "url": "https://github.com/ewasm/ewasm-kernel/issues"
+    "url": "https://github.com/primea/js-primea-hypervisor/issues"
   },
-  "homepage": "https://github.com/ewasm/ewasm-kernel",
+  "homepage": "https://github.com/primea/js-primea-hypervisor",
   "keywords": [
     "primea",
     "hypervisor",

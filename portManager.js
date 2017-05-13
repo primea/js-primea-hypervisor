@@ -1,10 +1,12 @@
 const Port = require('./port.js')
 const ENTRY = Symbol('entry')
 
-// decides which message to go firts
+// decides which message to go first
 function messageArbiter (pairA, pairB) {
-  const a = pairA[1].peek()
-  const b = pairB[1].peek()
+  const portA = pairA[1]
+  const portB = pairB[1]
+  const a = portA.peek()
+  const b = portB.peek()
 
   if (!a) {
     return pairB
@@ -12,14 +14,15 @@ function messageArbiter (pairA, pairB) {
     return pairA
   }
 
-  const aGasPrice = a.resources.gasPrice
-  const bGasPrice = b.resources.gasPrice
-  if (a.ticks !== b.ticks) {
-    return a.ticks < b.ticks ? pairA : pairB
-  } else if (aGasPrice === bGasPrice) {
-    return a.hash() > b.hash() ? pairA : pairB
+  if (a._fromPortTicks !== b._fromPortTicks) {
+    return a._fromPortTicks < b._fromPortTicks ? pairA : pairB
+  } else if (a.priority !== b.priority) {
+    // decide by priority
+    return a.priority > b.priority ? pairA : pairB
+  } else if (portA.name === ENTRY) {
+    return pairA
   } else {
-    return aGasPrice > bGasPrice ? pairA : pairB
+    return portA.name < portB.name ? pairA : pairB
   }
 }
 
@@ -30,17 +33,16 @@ module.exports = class PortManager {
   }
 
   async start () {
+    // skip the root, since it doesn't have a parent
+    if (this.parentPort !== undefined) {
+      this._portMap.set(this.parentPort, new Port(ENTRY))
+    }
     // map ports to thier id's
     this.ports = await this.hypervisor.graph.get(this.state, 'ports')
     Object.keys(this.ports).map(name => {
       const port = this.ports[name]
       this._mapPort(name, port)
     })
-
-    // skip the root, since it doesn't have a parent
-    if (this.parentPort !== undefined) {
-      this._portMap.set(this.parentPort, new Port(ENTRY))
-    }
   }
 
   _mapPort (name, portRef) {
@@ -78,7 +80,6 @@ module.exports = class PortManager {
   async getNextMessage () {
     await this.wait(this.kernel.ticks, this.entryPort)
     const portMap = [...this._portMap].reduce(messageArbiter)
-    // console.log('here!!!!', portMap)
     return portMap[1].shift()
   }
 }

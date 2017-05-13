@@ -6,7 +6,7 @@
     "coverage": "node ./node_modules/istanbul/lib/cli.js cover ./tests/index.js",
     "coveralls": "npm run coverage && coveralls <coverage/lcov.info",
     "lint": "standard",
-    "test": "node ./tests/index.js",
+    "test": "tape ./tests/index.js",
     "build": "node ./tests/buildTests.js && ./tools/wabt/out/wast2wasm ./wasm/interface.wast -o ./wasm/interface.wasm"
   },
   "repository": {

@@ -1,7 +1,6 @@
-const PriorityQueue = require('fastpriorityqueue')
+const BN = require('bn.js')
 const clearObject = require('object-clear')
 const clone = require('clone')
-const BN = require('bn.js')
 const EventEmitter = require('events')
 const PortManager = require('./portManager.js')
 
@@ -40,6 +39,7 @@ module.exports = class Kernel extends EventEmitter {
   }
 
   queue (message) {
+    message._hops++
     this.ports.queue(message)
     if (this.vmState !== 'running') {
       this._updateVmState('running')
@@ -108,7 +108,7 @@ module.exports = class Kernel extends EventEmitter {
 
   incrementTicks (count) {
     this.ticks += count
-    for (const [fromPort, waiter] in this._waitingMap) {
+    for (const [fromPort, waiter] of this._waitingMap) {
       if (waiter.threshold < this.ticks) {
         this._waitingMap.delete(fromPort)
         waiter.resolve(this.ticks)
@@ -146,10 +146,9 @@ module.exports = class Kernel extends EventEmitter {
 
   async send (portRef, message) {
     message._fromPort = this.entryPort
-    message._ticks = this.ticks
+    message._fromPortTicks = this.ticks
 
-    const receiverEntryPort = portRef === this.entryPort ? this.parentPort : portRef
-    const vm = await this.hypervisor.getInstance(receiverEntryPort)
+    const vm = await this.hypervisor.getInstance(portRef)
     vm.queue(message)
 
     const waiter = this._waitingMap.get(portRef)

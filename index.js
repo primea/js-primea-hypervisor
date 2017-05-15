@@ -40,6 +40,7 @@ module.exports = class Hypervisor {
 
   async createInstance (type, state, entryPort = null, parentPort) {
     const VM = this._VMs[type]
+
     if (!state) {
       state = {
         '/': VM.createState()

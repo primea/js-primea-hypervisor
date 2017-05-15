@@ -1,4 +1,3 @@
-const BN = require('bn.js')
 const clearObject = require('object-clear')
 const clone = require('clone')
 const EventEmitter = require('events')
@@ -114,34 +113,6 @@ module.exports = class Kernel extends EventEmitter {
         waiter.resolve(this.ticks)
       }
     }
-  }
-
-  createPort (type, name) {
-    const VM = this.hypervisor._VMs[type]
-    const parentId = this.entryPort ? this.entryPort.id : null
-    let nonce = this.state['/'].nonce
-
-    const portRef = {
-      'messages': [],
-      'id': {
-        '/': {
-          nonce: nonce,
-          parent: parentId
-        }
-      },
-      'type': type,
-      'link': {
-        '/': VM.createState()
-      }
-    }
-
-    // create the port instance
-    this.ports.set(name, portRef)
-    // incerment the nonce
-    nonce = new BN(nonce)
-    nonce.iaddn(1)
-    this.state['/'].nonce = nonce.toArray()
-    return portRef
   }
 
   async send (portRef, message) {

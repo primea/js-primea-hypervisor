@@ -39,7 +39,7 @@ node.on('start', () => {
     hypervisor.registerContainer('test', testVMContainer)
 
     const rootContainer = await hypervisor.createInstance('test')
-    const port = await rootContainer.createPort('test', 'first')
+    const port = await rootContainer.ports.create('test', 'first')
 
     await rootContainer.send(port, message)
 
@@ -70,7 +70,7 @@ node.on('start', () => {
 
     class testVMContainer extends BaseContainer {
       async run (m) {
-        const port = await this.kernel.createPort('test2', 'child')
+        const port = await this.kernel.ports.create('test2', 'child')
         await this.kernel.send(port, m)
         this.kernel.incrementTicks(1)
       }
@@ -81,7 +81,7 @@ node.on('start', () => {
     hypervisor.registerContainer('test2', testVMContainer2)
 
     let root = await hypervisor.createInstance('test')
-    let port = await root.createPort('test', 'first')
+    let port = await root.ports.create('test', 'first')
 
     await root.send(port, message)
     const stateRoot = await hypervisor.createStateRoot(root, Infinity)
@@ -112,7 +112,7 @@ node.on('start', () => {
       async run (m) {
         let port = this.kernel.ports.get('child')
         if (!port) {
-          port = await this.kernel.createPort('pong', 'child')
+          port = await this.kernel.ports.create('pong', 'child')
         }
 
         if (this.kernel.ticks < 100) {
@@ -137,7 +137,7 @@ node.on('start', () => {
     hypervisor.registerContainer('ping', Ping)
     hypervisor.registerContainer('pong', Pong)
     const root = await hypervisor.createInstance('pong')
-    const port = await root.createPort('ping', 'child')
+    const port = await root.ports.create('ping', 'child')
 
     await root.send(port, new Message())
     await hypervisor.createStateRoot(root, Infinity)
@@ -150,9 +150,9 @@ node.on('start', () => {
 
     class Root extends BaseContainer {
       async run (m) {
-        const one = this.kernel.createPort('child', 'one')
-        const two = this.kernel.createPort('child', 'two')
-        const three = this.kernel.createPort('child', 'three')
+        const one = this.kernel.ports.create('child', 'one')
+        const two = this.kernel.ports.create('child', 'two')
+        const three = this.kernel.ports.create('child', 'three')
 
         await Promise.all([
           this.kernel.send(one, new Message()),
@@ -184,7 +184,7 @@ node.on('start', () => {
     hypervisor.registerContainer('child', Child)
 
     const root = await hypervisor.createInstance('root')
-    const port = await root.createPort('root', 'first')
+    const port = await root.ports.create('root', 'first')
     await root.send(port, new Message())
     await root.wait(Infinity)
 
@@ -199,9 +199,9 @@ node.on('start', () => {
     class Root extends BaseContainer {
       async run (m) {
         await Promise.all([
-          this.kernel.createPort('root', 'one'),
-          this.kernel.createPort('root', 'two'),
-          this.kernel.createPort('root', 'three')
+          this.kernel.ports.create('root', 'one'),
+          this.kernel.ports.create('root', 'two'),
+          this.kernel.ports.create('root', 'three')
         ])
 
         throw new Error('it is a trap!!!')
@@ -233,8 +233,8 @@ node.on('start', () => {
       async run (m) {
         if (!this.runs) {
           this.runs = 1
-          const one = this.kernel.createPort('first', 'one')
-          const two = this.kernel.createPort('second', 'two')
+          const one = this.kernel.ports.create('first', 'one')
+          const two = this.kernel.ports.create('second', 'two')
 
           await Promise.all([
             this.kernel.send(one, new Message()),
@@ -274,7 +274,7 @@ node.on('start', () => {
     hypervisor.registerContainer('second', Second)
 
     const root = await hypervisor.createInstance('root')
-    const port = await root.createPort('root', 'first')
+    const port = await root.ports.create('root', 'first')
     await root.send(port, new Message())
   })
 
@@ -285,8 +285,8 @@ node.on('start', () => {
       async run (m) {
         if (!this.runs) {
           this.runs = 1
-          const one = this.kernel.createPort('first', 'one')
-          const two = this.kernel.createPort('second', 'two')
+          const one = this.kernel.ports.create('first', 'one')
+          const two = this.kernel.ports.create('second', 'two')
 
           await Promise.all([
             this.kernel.send(one, new Message()),
@@ -326,7 +326,7 @@ node.on('start', () => {
     hypervisor.registerContainer('second', Second)
 
     const root = await hypervisor.createInstance('root')
-    const port = await root.createPort('root', 'first')
+    const port = await root.ports.create('root', 'first')
     await root.send(port, new Message())
   })
 
@@ -337,8 +337,8 @@ node.on('start', () => {
       async run (m) {
         if (!this.runs) {
           this.runs = 1
-          const one = this.kernel.createPort('first', 'one')
-          const two = this.kernel.createPort('second', 'two')
+          const one = this.kernel.ports.create('first', 'one')
+          const two = this.kernel.ports.create('second', 'two')
 
           await Promise.all([
             this.kernel.send(one, new Message()),
@@ -378,7 +378,7 @@ node.on('start', () => {
     hypervisor.registerContainer('second', Second)
 
     const root = await hypervisor.createInstance('root')
-    const port = await root.createPort('root', 'first')
+    const port = await root.ports.create('root', 'first')
     await root.send(port, new Message())
   })
 
@@ -389,8 +389,8 @@ node.on('start', () => {
       async run (m) {
         if (!this.runs) {
           this.runs = 1
-          const two = this.kernel.createPort('second', 'two')
-          const one = this.kernel.createPort('first', 'one')
+          const two = this.kernel.ports.create('second', 'two')
+          const one = this.kernel.ports.create('first', 'one')
 
           await Promise.all([
             this.kernel.send(two, new Message()),
@@ -430,7 +430,7 @@ node.on('start', () => {
     hypervisor.registerContainer('second', Second)
 
     const root = await hypervisor.createInstance('root')
-    const port = await root.createPort('root', 'first')
+    const port = await root.ports.create('root', 'first')
     await root.send(port, new Message())
   })
 
@@ -441,8 +441,8 @@ node.on('start', () => {
       async run (m) {
         if (!this.runs) {
           this.runs = 1
-          const one = this.kernel.createPort('first', 'one')
-          const two = this.kernel.createPort('second', 'two')
+          const one = this.kernel.ports.create('first', 'one')
+          const two = this.kernel.ports.create('second', 'two')
 
           await Promise.all([
             this.kernel.send(two, new Message()),
@@ -487,7 +487,7 @@ node.on('start', () => {
     hypervisor.registerContainer('second', Second)
 
     const root = await hypervisor.createInstance('root')
-    const port = await root.createPort('root', 'first')
+    const port = await root.ports.create('root', 'first')
     await root.send(port, new Message())
   })
 
@@ -498,8 +498,8 @@ node.on('start', () => {
       async run (m) {
         if (!this.runs) {
           this.runs = 1
-          const one = this.kernel.createPort('first', 'one')
-          const two = this.kernel.createPort('second', 'two')
+          const one = this.kernel.ports.create('first', 'one')
+          const two = this.kernel.ports.create('second', 'two')
 
           await Promise.all([
             this.kernel.send(two, new Message()),
@@ -546,7 +546,7 @@ node.on('start', () => {
     hypervisor.registerContainer('second', Second)
 
     const root = await hypervisor.createInstance('root')
-    const port = await root.createPort('root', 'first')
+    const port = await root.ports.create('root', 'first')
     await root.send(port, new Message())
   })
 
@@ -556,7 +556,7 @@ node.on('start', () => {
         if (!this.runs) {
           this.runs = 1
           this.kernel.incrementTicks(1)
-          const leaf = this.kernel.createPort('leaf', 'leaf')
+          const leaf = this.kernel.ports.create('leaf', 'leaf')
           await this.kernel.send(leaf, new Message())
         } else {
           ++this.runs
@@ -586,11 +586,11 @@ node.on('start', () => {
 
     const root = await hypervisor.createInstance('root')
     root.incrementTicks(2)
-    const port = await root.createPort('middle', 'first')
+
+    const port = await root.ports.create('middle', 'first')
 
     await root.send(port, new Message())
     await root.send(port, new Message())
-
     await root.wait(Infinity)
 
     t.end()

@@ -1,4 +1,5 @@
 const Port = require('./port.js')
+const BN = require('bn.js')
 const ENTRY = Symbol('entry')
 
 // decides which message to go first
@@ -61,6 +62,34 @@ module.exports = class PortManager {
 
   get (key) {
     return this.ports[key]
+  }
+
+  create (type, name) {
+    const VM = this.hypervisor._VMs[type]
+    const parentId = this.entryPort ? this.entryPort.id : null
+    let nonce = this.state['/'].nonce
+
+    const portRef = {
+      'messages': [],
+      'id': {
+        '/': {
+          nonce: nonce,
+          parent: parentId
+        }
+      },
+      'type': type,
+      'link': {
+        '/': VM.createState()
+      }
+    }
+
+    // create the port instance
+    this.set(name, portRef)
+    // incerment the nonce
+    nonce = new BN(nonce)
+    nonce.iaddn(1)
+    this.state['/'].nonce = nonce.toArray()
+    return portRef
   }
 
   // waits till all ports have reached a threshold tick count

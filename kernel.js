@@ -116,6 +116,10 @@ module.exports = class Kernel extends EventEmitter {
   }
 
   async send (portRef, message) {
+    if (!this.ports.isValidPort(portRef)) {
+      throw new Error('invalid port referance')
+    }
+
     message._fromPort = this.entryPort
     message._fromPortTicks = this.ticks
 

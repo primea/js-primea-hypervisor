@@ -202,11 +202,9 @@ node.on('start', () => {
     t.plan(1)
     class Root extends BaseContainer {
       async run (m) {
-        await Promise.all([
-          this.kernel.ports.create('root', 'one'),
-          this.kernel.ports.create('root', 'two'),
-          this.kernel.ports.create('root', 'three')
-        ])
+        this.kernel.ports.create('root', 'one')
+        this.kernel.ports.create('root', 'two')
+        this.kernel.ports.create('root', 'three')
 
         throw new Error('it is a trap!!!')
       }
@@ -226,6 +224,36 @@ node.on('start', () => {
         ports: {}
       }
     }, 'should revert the state')
+  })
+
+  tape('invalid port referances', async t => {
+    t.plan(2)
+    class Root extends BaseContainer {
+      async run (m) {
+        const ports = this.kernel.ports.create('root', 'three')
+        this.kernel.ports.delete('three')
+        try {
+          await this.kernel.send(ports, new Message())
+        } catch (e) {
+          t.pass()
+        }
+      }
+    }
+
+    const hypervisor = new Hypervisor({
+      dag: node.dag
+    })
+
+    hypervisor.registerContainer('root', Root)
+    const root = await hypervisor.createInstance('root')
+    await root.run()
+
+    t.deepEquals(root.state, {
+      '/': {
+        nonce: [1],
+        ports: {}
+      }
+    })
   })
 
   tape('message should arrive in the correct oder if sent in order', async t => {

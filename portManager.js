@@ -15,6 +15,7 @@ function messageArbiter (pairA, pairB) {
     return pairA
   }
 
+  // order by number of ticks if messages have different number of ticks
   if (a._fromPortTicks !== b._fromPortTicks) {
     return a._fromPortTicks < b._fromPortTicks ? pairA : pairB
   } else if (a.priority !== b.priority) {
@@ -38,7 +39,7 @@ module.exports = class PortManager {
   async start () {
     // skip the root, since it doesn't have a parent
     if (this.parentPort !== undefined) {
-      this._portMap.set(this.parentPort, new Port(ENTRY))
+      this._mapPort(ENTRY, this.parentPort)
     }
     // map ports to thier id's
     this.ports = await this.hypervisor.graph.get(this.state, 'ports')
@@ -61,6 +62,16 @@ module.exports = class PortManager {
     return this.ports[key]
   }
 
+  delete (key) {
+    const port = this.ports[key]
+    delete this.ports[key]
+    this._portMap.delete(port)
+  }
+
+  isValidPort (port) {
+    return this._portMap.has(port)
+  }
+
   create (type, name) {
     const VM = this.hypervisor._VMs[type]
     const parentId = this.entryPort ? this.entryPort.id : null
@@ -80,7 +91,7 @@ module.exports = class PortManager {
       }
     }
 
-    // create the port instance
+    // save the port instance
     this.ports[name] = portRef
     this._mapPort(name, portRef)
 
@@ -102,12 +113,15 @@ module.exports = class PortManager {
       // update the port's tick count
       port.ticks = await this.hypervisor.wait(portRef, threshold, this.entryPort)
     })
+
     return Promise.all(promises)
   }
 
   async getNextMessage () {
-    await this.wait(this.kernel.ticks, this.entryPort)
-    const portMap = [...this._portMap].reduce(messageArbiter)
-    return portMap[1].shift()
+    if (this._portMap.size) {
+      await this.wait(this.kernel.ticks, this.entryPort)
+      const portMap = [...this._portMap].reduce(messageArbiter)
+      return portMap[1].shift()
+    }
   }
 }

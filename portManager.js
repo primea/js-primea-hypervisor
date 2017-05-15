@@ -21,6 +21,8 @@ function messageArbiter (pairA, pairB) {
     // decide by priority
     return a.priority > b.priority ? pairA : pairB
   } else if (portA.name === ENTRY) {
+    // pairB can never be the entry port since the port map is odered by
+    // insertion order
     return pairA
   } else {
     return portA.name < portB.name ? pairA : pairB
@@ -57,7 +59,7 @@ module.exports = class PortManager {
 
   set (name, port) {
     this.ports[name] = port
-    return this._mapPort(name, port)
+    this._mapPort(name, port)
   }
 
   get (key) {

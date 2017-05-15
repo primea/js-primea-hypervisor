@@ -119,7 +119,7 @@ module.exports = class Kernel extends EventEmitter {
     message._fromPort = this.entryPort
     message._fromPortTicks = this.ticks
 
-    const vm = await this.hypervisor.getInstance(portRef)
+    const vm = await this.hypervisor.getInstance(portRef, true, this.entryPort)
     vm.queue(message)
 
     const waiter = this._waitingMap.get(portRef)

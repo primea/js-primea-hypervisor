@@ -57,11 +57,6 @@ module.exports = class PortManager {
     this._portMap.get(message.fromPort).queue(message)
   }
 
-  set (name, port) {
-    this.ports[name] = port
-    this._mapPort(name, port)
-  }
-
   get (key) {
     return this.ports[key]
   }
@@ -86,7 +81,9 @@ module.exports = class PortManager {
     }
 
     // create the port instance
-    this.set(name, portRef)
+    this.ports[name] = portRef
+    this._mapPort(name, portRef)
+
     // incerment the nonce
     nonce = new BN(nonce)
     nonce.iaddn(1)

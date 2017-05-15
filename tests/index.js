@@ -23,7 +23,14 @@ node.on('error', err => {
 })
 
 node.on('start', () => {
+  tape.onFinish(() => {
+    node.stop(() => {
+      process.exit()
+    })
+  })
+
   tape('basic', async t => {
+    t.plan(2)
     const message = new Message()
     const expectedState = {
       '/': 'zdpuAntkdU7yBJojcBT5Q9wBhrK56NmLnwpHPKaEGMFnAXpv7'
@@ -45,10 +52,10 @@ node.on('start', () => {
 
     const stateRoot = await hypervisor.createStateRoot(rootContainer, Infinity)
     t.deepEquals(stateRoot, expectedState, 'expected root!')
-    t.end()
   })
 
   tape('one child contract', async t => {
+    t.plan(4)
     let message = new Message()
     const expectedState = {
       '/': 'zdpuAofSzrBqwYs6z1r28fMeb8z5oSKF6CcWA6m22RqazgoTB'
@@ -102,9 +109,6 @@ node.on('start', () => {
     port = await root.ports.get('first')
 
     await root.send(port, message)
-    await hypervisor.createStateRoot(root, Infinity)
-
-    t.end()
   })
 
   tape('ping pong', async t => {
@@ -146,6 +150,7 @@ node.on('start', () => {
   })
 
   tape('queing multiple messages', async t => {
+    t.plan(2)
     let runs = 0
 
     class Root extends BaseContainer {
@@ -191,11 +196,10 @@ node.on('start', () => {
     t.equals(runs, 3, 'the number of run should be 3')
     const nonce = await hypervisor.graph.get(root.state, 'ports/first/link/nonce/0')
     t.equals(nonce, 3, 'should have the correct nonce')
-
-    t.end()
   })
 
   tape('traps', async t => {
+    t.plan(1)
     class Root extends BaseContainer {
       async run (m) {
         await Promise.all([
@@ -222,8 +226,6 @@ node.on('start', () => {
         ports: {}
       }
     }, 'should revert the state')
-
-    t.end()
   })
 
   tape('message should arrive in the correct oder if sent in order', async t => {
@@ -551,6 +553,7 @@ node.on('start', () => {
   })
 
   tape('should order parent messages correctly', async t => {
+    t.plan(1)
     class Middle extends BaseContainer {
       async run (m) {
         if (!this.runs) {
@@ -591,11 +594,6 @@ node.on('start', () => {
 
     await root.send(port, new Message())
     await root.send(port, new Message())
-    await root.wait(Infinity)
-
-    t.end()
-    node.stop(() => {
-      process.exit()
-    })
   })
 })
+

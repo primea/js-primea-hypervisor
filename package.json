@@ -30,13 +30,13 @@
     "ipld-graph-builder": "1.1.5",
     "multibase": "^0.3.4",
     "object-clear": "^0.1.0",
-    "primea-message": "0.0.0"
   },
   "devDependencies": {
     "coveralls": "^2.13.1",
     "ipfs": "^0.23.1",
     "istanbul": "^1.1.0-alpha.1",
     "standard": "10.0.2",
-    "tape": "^4.5.1"
+    "tape": "^4.5.1",
+    "primea-message": "0.0.1"
   }
 }

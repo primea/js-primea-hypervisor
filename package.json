@@ -28,7 +28,6 @@
     "bn.js": "^4.11.6",
     "clone": "^2.1.1",
     "object-clear": "^0.1.0",
-    "multibase": "^0.3.4",
     "ipld-graph-builder": "1.1.5"
   },
   "devDependencies": {

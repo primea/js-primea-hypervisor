@@ -72,7 +72,13 @@ module.exports = class PortManager {
     return this._portMap.has(port)
   }
 
-  create (type, name) {
+  bind (port, name) {
+    // save the port instance
+    this.ports[name] = port
+    this._mapPort(name, port)
+  }
+
+  create (type) {
     const VM = this.hypervisor._VMs[type]
     const parentId = this.entryPort ? this.entryPort.id : null
     let nonce = this.state['/'].nonce
@@ -90,10 +96,6 @@ module.exports = class PortManager {
         '/': VM.createState()
       }
     }
-
-    // save the port instance
-    this.ports[name] = portRef
-    this._mapPort(name, portRef)
 
     // incerment the nonce
     nonce = new BN(nonce)

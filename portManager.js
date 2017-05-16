@@ -39,19 +39,25 @@ module.exports = class PortManager {
   async start () {
     // skip the root, since it doesn't have a parent
     if (this.parentPort !== undefined) {
-      this._mapPort(ENTRY, this.parentPort)
+      this._bindRef(this.parentPort, ENTRY)
     }
     // map ports to thier id's
     this.ports = await this.hypervisor.graph.get(this.state, 'ports')
     Object.keys(this.ports).map(name => {
       const port = this.ports[name]
-      this._mapPort(name, port)
+      this._bindRef(port, name)
     })
   }
 
-  _mapPort (name, portRef) {
+  _bindRef (portRef, name) {
     const port = new Port(name)
     this._portMap.set(portRef, port)
+  }
+
+  bind (port, name) {
+    // save the port instance
+    this.ports[name] = port
+    this._bindRef(port, name)
   }
 
   queue (message) {
@@ -70,12 +76,6 @@ module.exports = class PortManager {
 
   isValidPort (port) {
     return this._portMap.has(port)
-  }
-
-  bind (port, name) {
-    // save the port instance
-    this.ports[name] = port
-    this._mapPort(name, port)
   }
 
   create (type) {

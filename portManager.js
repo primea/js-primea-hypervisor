@@ -79,7 +79,7 @@ module.exports = class PortManager {
   }
 
   create (type) {
-    const VM = this.hypervisor._VMs[type]
+    const VM = this.hypervisor._containerTypes[type]
     const parentId = this.entryPort ? this.entryPort.id : null
     let nonce = this.state['/'].nonce
 

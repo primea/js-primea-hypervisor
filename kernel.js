@@ -22,7 +22,7 @@ module.exports = class Kernel extends EventEmitter {
       parentPort: opts.parentPort
     })
 
-    this.vm = new opts.VM(this)
+    this.vm = new opts.Container(this)
     this._waitingMap = new Map()
 
     this.on('result', this._runNextMessage)

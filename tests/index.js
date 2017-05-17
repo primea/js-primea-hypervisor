@@ -42,7 +42,7 @@ node.on('start', () => {
       }
     }
 
-    const hypervisor = new Hypervisor({dag: node.dag})
+    const hypervisor = new Hypervisor(node.dag)
     hypervisor.registerContainer('test', testVMContainer)
 
     const rootContainer = await hypervisor.createInstance('test')
@@ -85,7 +85,7 @@ node.on('start', () => {
       }
     }
 
-    const hypervisor = new Hypervisor({dag: node.dag})
+    const hypervisor = new Hypervisor(node.dag)
     hypervisor.registerContainer('test', testVMContainer)
     hypervisor.registerContainer('test2', testVMContainer2)
 
@@ -139,9 +139,7 @@ node.on('start', () => {
       }
     }
 
-    const hypervisor = new Hypervisor({
-      dag: node.dag
-    })
+    const hypervisor = new Hypervisor(node.dag)
 
     hypervisor.registerContainer('ping', Ping)
     hypervisor.registerContainer('pong', Pong)
@@ -191,9 +189,7 @@ node.on('start', () => {
       }
     }
 
-    const hypervisor = new Hypervisor({
-      dag: node.dag
-    })
+    const hypervisor = new Hypervisor(node.dag)
 
     hypervisor.registerContainer('root', Root)
     hypervisor.registerContainer('child', Child)
@@ -226,9 +222,7 @@ node.on('start', () => {
       }
     }
 
-    const hypervisor = new Hypervisor({
-      dag: node.dag
-    })
+    const hypervisor = new Hypervisor(node.dag)
 
     hypervisor.registerContainer('root', Root)
     const root = await hypervisor.createInstance('root')
@@ -257,9 +251,7 @@ node.on('start', () => {
       }
     }
 
-    const hypervisor = new Hypervisor({
-      dag: node.dag
-    })
+    const hypervisor = new Hypervisor(node.dag)
 
     hypervisor.registerContainer('root', Root)
     const root = await hypervisor.createInstance('root')
@@ -315,9 +307,7 @@ node.on('start', () => {
       }
     }
 
-    const hypervisor = new Hypervisor({
-      dag: node.dag
-    })
+    const hypervisor = new Hypervisor(node.dag)
 
     hypervisor.registerContainer('root', Root)
     hypervisor.registerContainer('first', First)
@@ -370,9 +360,7 @@ node.on('start', () => {
       }
     }
 
-    const hypervisor = new Hypervisor({
-      dag: node.dag
-    })
+    const hypervisor = new Hypervisor(node.dag)
 
     hypervisor.registerContainer('root', Root)
     hypervisor.registerContainer('first', First)
@@ -431,9 +419,7 @@ node.on('start', () => {
       }
     }
 
-    const hypervisor = new Hypervisor({
-      dag: node.dag
-    })
+    const hypervisor = new Hypervisor(node.dag)
 
     hypervisor.registerContainer('root', Root)
     hypervisor.registerContainer('first', First)
@@ -489,9 +475,7 @@ node.on('start', () => {
       }
     }
 
-    const hypervisor = new Hypervisor({
-      dag: node.dag
-    })
+    const hypervisor = new Hypervisor(node.dag)
 
     hypervisor.registerContainer('root', Root)
     hypervisor.registerContainer('first', First)
@@ -552,9 +536,7 @@ node.on('start', () => {
       }
     }
 
-    const hypervisor = new Hypervisor({
-      dag: node.dag
-    })
+    const hypervisor = new Hypervisor(node.dag)
 
     hypervisor.registerContainer('root', Root)
     hypervisor.registerContainer('first', First)
@@ -614,9 +596,7 @@ node.on('start', () => {
       }
     }
 
-    const hypervisor = new Hypervisor({
-      dag: node.dag
-    })
+    const hypervisor = new Hypervisor(node.dag)
 
     hypervisor.registerContainer('root', Root)
     hypervisor.registerContainer('first', First)
@@ -658,9 +638,7 @@ node.on('start', () => {
       }
     }
 
-    const hypervisor = new Hypervisor({
-      dag: node.dag
-    })
+    const hypervisor = new Hypervisor(node.dag)
 
     hypervisor.registerContainer('root', BaseContainer)
     hypervisor.registerContainer('middle', Middle)

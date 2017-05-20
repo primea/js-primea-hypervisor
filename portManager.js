@@ -41,6 +41,7 @@ module.exports = class PortManager {
     if (this.parentPort !== undefined) {
       this._bindRef(this.parentPort, ENTRY)
     }
+
     // map ports to thier id's
     this.ports = await this.hypervisor.graph.get(this.state, 'ports')
     Object.keys(this.ports).map(name => {
@@ -79,7 +80,7 @@ module.exports = class PortManager {
   }
 
   create (type) {
-    const VM = this.hypervisor._containerTypes[type]
+    const Container = this.hypervisor._containerTypes[type]
     const parentId = this.entryPort ? this.entryPort.id : null
     let nonce = this.state['/'].nonce
 
@@ -93,7 +94,7 @@ module.exports = class PortManager {
       },
       'type': type,
       'link': {
-        '/': VM.createState()
+        '/': Container.createState()
       }
     }
 
@@ -121,7 +122,7 @@ module.exports = class PortManager {
 
   async getNextMessage () {
     if (this._portMap.size) {
-      await this.wait(this.kernel.ticks, this.entryPort)
+      await this.wait(this.exoInterface.ticks, this.entryPort)
       const portMap = [...this._portMap].reduce(messageArbiter)
       return portMap[1].shift()
     }

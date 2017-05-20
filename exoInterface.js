@@ -3,29 +3,38 @@ const clone = require('clone')
 const EventEmitter = require('events')
 const PortManager = require('./portManager.js')
 
-module.exports = class Kernel extends EventEmitter {
+module.exports = class ExoInterface extends EventEmitter {
+  /**
+   * the ExoInterface manages the varous message passing functions and provides
+   * an interface for the containers to use
+   * @param {Object} opts
+   * @param {Object} opts.state
+   * @param {Object} opts.entryPort
+   * @param {Object} opts.parentPort
+   * @param {Object} opts.hypervisor
+   * @param {Object} opts.Container
+   */
   constructor (opts) {
     super()
     this.state = opts.state
     this.entryPort = opts.entryPort
     this.hypervisor = opts.hypervisor
 
-    this.vmState = 'idle'
+    this.containerState = 'idle'
     this.ticks = 0
 
     // create the port manager
-    this.ports = new PortManager({
-      kernel: this,
-      hypervisor: opts.hypervisor,
-      state: opts.state,
-      entryPort: opts.entryPort,
-      parentPort: opts.parentPort
-    })
+    this.ports = new PortManager(Object.assign({
+      exoInterface: this
+    }, opts))
 
-    this.vm = new opts.Container(this)
     this._waitingMap = new Map()
+    this.container = new opts.Container(this)
 
+    // once we get an result we run the next message
     this.on('result', this._runNextMessage)
+
+    // on idle clear all the 'wiats'
     this.on('idle', () => {
       for (const [, waiter] of this._waitingMap) {
         waiter.resolve(this.ticks)
@@ -40,15 +49,15 @@ module.exports = class Kernel extends EventEmitter {
   queue (message) {
     message._hops++
     this.ports.queue(message)
-    if (this.vmState !== 'running') {
-      this._updateVmState('running')
+    if (this.containerState !== 'running') {
+      this._updateContainerState('running')
       this._runNextMessage()
     }
   }
 
-  _updateVmState (vmState, message) {
-    this.vmState = vmState
-    this.emit(vmState, message)
+  _updateContainerState (containerState, message) {
+    this.containerState = containerState
+    this.emit(containerState, message)
   }
 
   async _runNextMessage () {
@@ -58,7 +67,7 @@ module.exports = class Kernel extends EventEmitter {
       this.run(message)
     } else {
       // if no more messages then shut down
-      this._updateVmState('idle')
+      this._updateContainerState('idle')
     }
   }
 
@@ -71,7 +80,7 @@ module.exports = class Kernel extends EventEmitter {
     const oldState = clone(this.state, false, 3)
     let result
     try {
-      result = await this.vm.run(message) || {}
+      result = await this.container.run(message) || {}
     } catch (e) {
       // revert the state
       clearObject(this.state)
@@ -92,7 +101,7 @@ module.exports = class Kernel extends EventEmitter {
   wait (threshold, fromPort) {
     if (threshold <= this.ticks) {
       return this.ticks
-    } else if (this.vmState === 'idle') {
+    } else if (this.containerState === 'idle') {
       return this.ports.wait(threshold, fromPort)
     } else {
       return new Promise((resolve, reject) => {
@@ -120,11 +129,12 @@ module.exports = class Kernel extends EventEmitter {
       throw new Error('invalid port referance')
     }
 
+    // set the port that the message came from
     message._fromPort = this.entryPort
     message._fromPortTicks = this.ticks
 
-    const vm = await this.hypervisor.getInstance(portRef, this.entryPort)
-    vm.queue(message)
+    const instance = await this.hypervisor.getOrCreateInstance(portRef, this.entryPort)
+    instance.queue(message)
 
     const waiter = this._waitingMap.get(portRef)
     if (waiter) {

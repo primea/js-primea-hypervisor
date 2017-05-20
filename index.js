@@ -13,6 +13,15 @@ module.exports = class Hypervisor {
     this._containerTypes = {}
   }
 
+  async getByPath (root, path) {
+    path = path.split('/')
+    for (const name of path) {
+      const portRef = root.ports.get(name)
+      root = await this.getOrCreateInstance(portRef, root.entryPort)
+    }
+    return root
+  }
+
   /**
    * get a contrainer instance given its entry port and its mounting port
    * @param {Object} port the entry port for the container

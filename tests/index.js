@@ -42,11 +42,12 @@ node.on('start', () => {
       }
     }
 
-    const hypervisor = new Hypervisor({dag: node.dag})
+    const hypervisor = new Hypervisor(node.dag)
     hypervisor.registerContainer('test', testVMContainer)
 
     const rootContainer = await hypervisor.createInstance('test')
-    const port = await rootContainer.ports.create('test', 'first')
+    const port = rootContainer.ports.create('test')
+    rootContainer.ports.bind(port, 'first')
 
     await rootContainer.send(port, message)
 
@@ -77,18 +78,21 @@ node.on('start', () => {
 
     class testVMContainer extends BaseContainer {
       async run (m) {
-        const port = await this.kernel.ports.create('test2', 'child')
+        const port = this.kernel.ports.create('test2')
+        this.kernel.ports.bind(port, 'child')
         await this.kernel.send(port, m)
         this.kernel.incrementTicks(1)
       }
     }
 
-    const hypervisor = new Hypervisor({dag: node.dag})
+    const hypervisor = new Hypervisor(node.dag)
     hypervisor.registerContainer('test', testVMContainer)
     hypervisor.registerContainer('test2', testVMContainer2)
 
     let root = await hypervisor.createInstance('test')
-    let port = await root.ports.create('test', 'first')
+    let port = root.ports.create('test')
+
+    root.ports.bind(port, 'first')
 
     await root.send(port, message)
     const stateRoot = await hypervisor.createStateRoot(root, Infinity)
@@ -106,9 +110,9 @@ node.on('start', () => {
 
     hypervisor.registerContainer('test', testVMContainer3)
     root = await hypervisor.createInstance('test', stateRoot)
-    port = await root.ports.get('first')
+    port = root.ports.get('first')
 
-    await root.send(port, message)
+    root.send(port, message)
   })
 
   tape('ping pong', async t => {
@@ -116,7 +120,8 @@ node.on('start', () => {
       async run (m) {
         let port = this.kernel.ports.get('child')
         if (!port) {
-          port = await this.kernel.ports.create('pong', 'child')
+          port = this.kernel.ports.create('pong')
+          this.kernel.ports.bind(port, 'child')
         }
 
         if (this.kernel.ticks < 100) {
@@ -134,14 +139,13 @@ node.on('start', () => {
       }
     }
 
-    const hypervisor = new Hypervisor({
-      dag: node.dag
-    })
+    const hypervisor = new Hypervisor(node.dag)
 
     hypervisor.registerContainer('ping', Ping)
     hypervisor.registerContainer('pong', Pong)
     const root = await hypervisor.createInstance('pong')
-    const port = await root.ports.create('ping', 'child')
+    const port = root.ports.create('ping')
+    root.ports.bind(port, 'child')
 
     await root.send(port, new Message())
     await hypervisor.createStateRoot(root, Infinity)
@@ -155,9 +159,13 @@ node.on('start', () => {
 
     class Root extends BaseContainer {
       async run (m) {
-        const one = this.kernel.ports.create('child', 'one')
-        const two = this.kernel.ports.create('child', 'two')
-        const three = this.kernel.ports.create('child', 'three')
+        const one = this.kernel.ports.create('child')
+        const two = this.kernel.ports.create('child')
+        const three = this.kernel.ports.create('child')
+
+        this.kernel.ports.bind(one, 'one')
+        this.kernel.ports.bind(two, 'two')
+        this.kernel.ports.bind(three, 'three')
 
         await Promise.all([
           this.kernel.send(one, new Message()),
@@ -181,15 +189,15 @@ node.on('start', () => {
       }
     }
 
-    const hypervisor = new Hypervisor({
-      dag: node.dag
-    })
+    const hypervisor = new Hypervisor(node.dag)
 
     hypervisor.registerContainer('root', Root)
     hypervisor.registerContainer('child', Child)
 
     const root = await hypervisor.createInstance('root')
-    const port = await root.ports.create('root', 'first')
+    const port = root.ports.create('root')
+    root.ports.bind(port, 'first')
+
     await root.send(port, new Message())
     await root.wait(Infinity)
 
@@ -202,17 +210,19 @@ node.on('start', () => {
     t.plan(1)
     class Root extends BaseContainer {
       async run (m) {
-        this.kernel.ports.create('root', 'one')
-        this.kernel.ports.create('root', 'two')
-        this.kernel.ports.create('root', 'three')
+        const one = this.kernel.ports.create('child')
+        const two = this.kernel.ports.create('child')
+        const three = this.kernel.ports.create('child')
+
+        this.kernel.ports.bind(one, 'one')
+        this.kernel.ports.bind(two, 'two')
+        this.kernel.ports.bind(three, 'three')
 
         throw new Error('it is a trap!!!')
       }
     }
 
-    const hypervisor = new Hypervisor({
-      dag: node.dag
-    })
+    const hypervisor = new Hypervisor(node.dag)
 
     hypervisor.registerContainer('root', Root)
     const root = await hypervisor.createInstance('root')
@@ -230,19 +240,18 @@ node.on('start', () => {
     t.plan(2)
     class Root extends BaseContainer {
       async run (m) {
-        const ports = this.kernel.ports.create('root', 'three')
+        const port = this.kernel.ports.create('root')
+        this.kernel.ports.bind(port, 'three')
         this.kernel.ports.delete('three')
         try {
-          await this.kernel.send(ports, new Message())
+          await this.kernel.send(port, new Message())
         } catch (e) {
           t.pass()
         }
       }
     }
 
-    const hypervisor = new Hypervisor({
-      dag: node.dag
-    })
+    const hypervisor = new Hypervisor(node.dag)
 
     hypervisor.registerContainer('root', Root)
     const root = await hypervisor.createInstance('root')
@@ -263,8 +272,11 @@ node.on('start', () => {
       async run (m) {
         if (!this.runs) {
           this.runs = 1
-          const one = this.kernel.ports.create('first', 'one')
-          const two = this.kernel.ports.create('second', 'two')
+          const one = this.kernel.ports.create('first')
+          const two = this.kernel.ports.create('second')
+
+          this.kernel.ports.bind(one, 'one')
+          this.kernel.ports.bind(two, 'two')
 
           await Promise.all([
             this.kernel.send(one, new Message()),
@@ -295,35 +307,36 @@ node.on('start', () => {
       }
     }
 
-    const hypervisor = new Hypervisor({
-      dag: node.dag
-    })
+    const hypervisor = new Hypervisor(node.dag)
 
     hypervisor.registerContainer('root', Root)
     hypervisor.registerContainer('first', First)
     hypervisor.registerContainer('second', Second)
 
     const root = await hypervisor.createInstance('root')
-    const port = await root.ports.create('root', 'first')
-    await root.send(port, new Message())
+    const port = root.ports.create('root')
+    root.ports.bind(port, 'first')
+
+    root.send(port, new Message())
   })
 
   tape('message should arrive in the correct order, even if sent out of order', async t => {
     t.plan(2)
 
     class Root extends BaseContainer {
-      async run (m) {
+      run (m) {
         if (!this.runs) {
           this.runs = 1
-          const one = this.kernel.ports.create('first', 'one')
-          const two = this.kernel.ports.create('second', 'two')
+          const one = this.kernel.ports.create('first')
+          const two = this.kernel.ports.create('second')
 
-          await Promise.all([
+          this.kernel.ports.bind(one, 'one')
+          this.kernel.ports.bind(two, 'two')
+
+          return Promise.all([
             this.kernel.send(one, new Message()),
             this.kernel.send(two, new Message())
           ])
-
-          this.kernel.incrementTicks(6)
         } else if (this.runs === 1) {
           this.runs++
           t.equals(m.data, 'second', 'should recive the first message')
@@ -334,30 +347,30 @@ node.on('start', () => {
     }
 
     class First extends BaseContainer {
-      async run (m) {
+      run (m) {
         this.kernel.incrementTicks(2)
-        await this.kernel.send(m.fromPort, new Message({data: 'first'}))
+        return this.kernel.send(m.fromPort, new Message({data: 'first'}))
       }
     }
 
     class Second extends BaseContainer {
-      async run (m) {
+      run (m) {
         this.kernel.incrementTicks(1)
-        await this.kernel.send(m.fromPort, new Message({data: 'second'}))
+        this.kernel.send(m.fromPort, new Message({data: 'second'}))
       }
     }
 
-    const hypervisor = new Hypervisor({
-      dag: node.dag
-    })
+    const hypervisor = new Hypervisor(node.dag)
 
     hypervisor.registerContainer('root', Root)
     hypervisor.registerContainer('first', First)
     hypervisor.registerContainer('second', Second)
 
     const root = await hypervisor.createInstance('root')
-    const port = await root.ports.create('root', 'first')
-    await root.send(port, new Message())
+    const port = root.ports.create('root')
+    root.ports.bind(port, 'first')
+
+    root.send(port, new Message())
   })
 
   tape('message should arrive in the correct order, even in a tie of ticks', async t => {
@@ -367,8 +380,11 @@ node.on('start', () => {
       async run (m) {
         if (!this.runs) {
           this.runs = 1
-          const one = this.kernel.ports.create('first', 'one')
-          const two = this.kernel.ports.create('second', 'two')
+          const one = this.kernel.ports.create('first')
+          const two = this.kernel.ports.create('second')
+
+          this.kernel.ports.bind(one, 'one')
+          this.kernel.ports.bind(two, 'two')
 
           await Promise.all([
             this.kernel.send(one, new Message()),
@@ -386,48 +402,52 @@ node.on('start', () => {
     }
 
     class First extends BaseContainer {
-      async run (m) {
+      run (m) {
         this.kernel.incrementTicks(2)
-        await this.kernel.send(m.fromPort, new Message({data: 'first'}))
+        return this.kernel.send(m.fromPort, new Message({
+          data: 'first'
+        }))
       }
     }
 
     class Second extends BaseContainer {
-      async run (m) {
+      run (m) {
         this.kernel.incrementTicks(2)
-        await this.kernel.send(m.fromPort, new Message({data: 'second'}))
+        return this.kernel.send(m.fromPort, new Message({
+          data: 'second'
+        }))
       }
     }
 
-    const hypervisor = new Hypervisor({
-      dag: node.dag
-    })
+    const hypervisor = new Hypervisor(node.dag)
 
     hypervisor.registerContainer('root', Root)
     hypervisor.registerContainer('first', First)
     hypervisor.registerContainer('second', Second)
 
     const root = await hypervisor.createInstance('root')
-    const port = await root.ports.create('root', 'first')
-    await root.send(port, new Message())
+    const port = await root.ports.create('root')
+    root.ports.bind(port, 'first')
+    root.send(port, new Message())
   })
 
   tape('message should arrive in the correct order, even in a tie of ticks', async t => {
     t.plan(2)
 
     class Root extends BaseContainer {
-      async run (m) {
+      run (m) {
         if (!this.runs) {
           this.runs = 1
-          const two = this.kernel.ports.create('second', 'two')
-          const one = this.kernel.ports.create('first', 'one')
+          const two = this.kernel.ports.create('second')
+          const one = this.kernel.ports.create('first')
 
-          await Promise.all([
+          this.kernel.ports.bind(two, 'two')
+          this.kernel.ports.bind(one, 'one')
+
+          return Promise.all([
             this.kernel.send(two, new Message()),
             this.kernel.send(one, new Message())
           ])
-
-          this.kernel.incrementTicks(6)
         } else if (this.runs === 1) {
           this.runs++
           t.equals(m.data, 'first', 'should recived the second message')
@@ -438,48 +458,54 @@ node.on('start', () => {
     }
 
     class First extends BaseContainer {
-      async run (m) {
+      run (m) {
         this.kernel.incrementTicks(2)
-        await this.kernel.send(m.fromPort, new Message({data: 'first'}))
+        return this.kernel.send(m.fromPort, new Message({
+          data: 'first'
+        }))
       }
     }
 
     class Second extends BaseContainer {
-      async run (m) {
+      run (m) {
         this.kernel.incrementTicks(2)
-        await this.kernel.send(m.fromPort, new Message({data: 'second'}))
+        return this.kernel.send(m.fromPort, new Message({
+          data: 'second'
+        }))
       }
     }
 
-    const hypervisor = new Hypervisor({
-      dag: node.dag
-    })
+    const hypervisor = new Hypervisor(node.dag)
 
     hypervisor.registerContainer('root', Root)
     hypervisor.registerContainer('first', First)
     hypervisor.registerContainer('second', Second)
 
     const root = await hypervisor.createInstance('root')
-    const port = await root.ports.create('root', 'first')
-    await root.send(port, new Message())
+
+    const port = root.ports.create('root')
+    root.ports.bind(port, 'first')
+
+    root.send(port, new Message())
   })
 
   tape('message should arrive in the correct order, with a tie in ticks but with differnt proity', async t => {
     t.plan(2)
 
     class Root extends BaseContainer {
-      async run (m) {
+      run (m) {
         if (!this.runs) {
           this.runs = 1
-          const one = this.kernel.ports.create('first', 'one')
-          const two = this.kernel.ports.create('second', 'two')
+          const one = this.kernel.ports.create('first')
+          const two = this.kernel.ports.create('second')
 
-          await Promise.all([
+          this.kernel.ports.bind(one, 'one')
+          this.kernel.ports.bind(two, 'two')
+
+          return Promise.all([
             this.kernel.send(two, new Message()),
             this.kernel.send(one, new Message())
           ])
-
-          this.kernel.incrementTicks(6)
         } else if (this.runs === 1) {
           this.runs++
           t.equals(m.data, 'first', 'should recive the first message')
@@ -490,9 +516,9 @@ node.on('start', () => {
     }
 
     class First extends BaseContainer {
-      async run (m) {
+      run (m) {
         this.kernel.incrementTicks(2)
-        await this.kernel.send(m.fromPort, new Message({
+        return this.kernel.send(m.fromPort, new Message({
           resources: {
             priority: 100
           },
@@ -502,41 +528,44 @@ node.on('start', () => {
     }
 
     class Second extends BaseContainer {
-      async run (m) {
+      run (m) {
         this.kernel.incrementTicks(2)
-        await this.kernel.send(m.fromPort, new Message({data: 'second'}))
+        return this.kernel.send(m.fromPort, new Message({
+          data: 'second'
+        }))
       }
     }
 
-    const hypervisor = new Hypervisor({
-      dag: node.dag
-    })
+    const hypervisor = new Hypervisor(node.dag)
 
     hypervisor.registerContainer('root', Root)
     hypervisor.registerContainer('first', First)
     hypervisor.registerContainer('second', Second)
 
     const root = await hypervisor.createInstance('root')
-    const port = await root.ports.create('root', 'first')
-    await root.send(port, new Message())
+    const port = root.ports.create('root')
+    root.ports.bind(port, 'first')
+    root.send(port, new Message())
   })
 
   tape('message should arrive in the correct order, with a tie in ticks but with differnt proity', async t => {
     t.plan(2)
 
     class Root extends BaseContainer {
-      async run (m) {
+      run (m) {
         if (!this.runs) {
           this.runs = 1
-          const one = this.kernel.ports.create('first', 'one')
-          const two = this.kernel.ports.create('second', 'two')
 
-          await Promise.all([
+          const one = this.kernel.ports.create('first')
+          const two = this.kernel.ports.create('second')
+
+          this.kernel.ports.bind(one, 'one')
+          this.kernel.ports.bind(two, 'two')
+
+          return Promise.all([
             this.kernel.send(two, new Message()),
             this.kernel.send(one, new Message())
           ])
-
-          this.kernel.incrementTicks(6)
         } else if (this.runs === 1) {
           this.runs++
           t.equals(m.data, 'second', 'should recive the first message')
@@ -547,18 +576,18 @@ node.on('start', () => {
     }
 
     class First extends BaseContainer {
-      async run (m) {
+      run (m) {
         this.kernel.incrementTicks(2)
-        await this.kernel.send(m.fromPort, new Message({
+        return this.kernel.send(m.fromPort, new Message({
           data: 'first'
         }))
       }
     }
 
     class Second extends BaseContainer {
-      async run (m) {
+      run (m) {
         this.kernel.incrementTicks(2)
-        await this.kernel.send(m.fromPort, new Message({
+        return this.kernel.send(m.fromPort, new Message({
           resources: {
             priority: 100
           },
@@ -567,28 +596,30 @@ node.on('start', () => {
       }
     }
 
-    const hypervisor = new Hypervisor({
-      dag: node.dag
-    })
+    const hypervisor = new Hypervisor(node.dag)
 
     hypervisor.registerContainer('root', Root)
     hypervisor.registerContainer('first', First)
     hypervisor.registerContainer('second', Second)
 
     const root = await hypervisor.createInstance('root')
-    const port = await root.ports.create('root', 'first')
-    await root.send(port, new Message())
+    const port = root.ports.create('root')
+    root.ports.bind(port, 'first')
+    root.send(port, new Message())
   })
 
   tape('should order parent messages correctly', async t => {
     t.plan(1)
     class Middle extends BaseContainer {
-      async run (m) {
+      run (m) {
         if (!this.runs) {
           this.runs = 1
           this.kernel.incrementTicks(1)
-          const leaf = this.kernel.ports.create('leaf', 'leaf')
-          await this.kernel.send(leaf, new Message())
+
+          const leaf = this.kernel.ports.create('leaf')
+          this.kernel.ports.bind(leaf, 'leaf')
+
+          return this.kernel.send(leaf, new Message())
         } else {
           ++this.runs
           if (this.runs === 3) {
@@ -599,17 +630,15 @@ node.on('start', () => {
     }
 
     class Leaf extends BaseContainer {
-      async run (m) {
+      run (m) {
         this.kernel.incrementTicks(2)
-        await this.kernel.send(m.fromPort, new Message({
+        return this.kernel.send(m.fromPort, new Message({
           data: 'first'
         }))
       }
     }
 
-    const hypervisor = new Hypervisor({
-      dag: node.dag
-    })
+    const hypervisor = new Hypervisor(node.dag)
 
     hypervisor.registerContainer('root', BaseContainer)
     hypervisor.registerContainer('middle', Middle)
@@ -618,9 +647,10 @@ node.on('start', () => {
     const root = await hypervisor.createInstance('root')
     root.incrementTicks(2)
 
-    const port = await root.ports.create('middle', 'first')
+    const port = root.ports.create('middle')
+    root.ports.bind(port, 'first')
 
     await root.send(port, new Message())
-    await root.send(port, new Message())
+    root.send(port, new Message())
   })
 })

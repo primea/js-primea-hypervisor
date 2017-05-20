@@ -39,19 +39,26 @@ module.exports = class PortManager {
   async start () {
     // skip the root, since it doesn't have a parent
     if (this.parentPort !== undefined) {
-      this._mapPort(ENTRY, this.parentPort)
+      this._bindRef(this.parentPort, ENTRY)
     }
+
     // map ports to thier id's
     this.ports = await this.hypervisor.graph.get(this.state, 'ports')
     Object.keys(this.ports).map(name => {
       const port = this.ports[name]
-      this._mapPort(name, port)
+      this._bindRef(port, name)
     })
   }
 
-  _mapPort (name, portRef) {
+  _bindRef (portRef, name) {
     const port = new Port(name)
     this._portMap.set(portRef, port)
+  }
+
+  bind (port, name) {
+    // save the port instance
+    this.ports[name] = port
+    this._bindRef(port, name)
   }
 
   queue (message) {
@@ -72,8 +79,8 @@ module.exports = class PortManager {
     return this._portMap.has(port)
   }
 
-  create (type, name) {
-    const VM = this.hypervisor._VMs[type]
+  create (type) {
+    const Container = this.hypervisor._containerTypes[type]
     const parentId = this.entryPort ? this.entryPort.id : null
     let nonce = this.state['/'].nonce
 
@@ -87,13 +94,9 @@ module.exports = class PortManager {
       },
       'type': type,
       'link': {
-        '/': VM.createState()
+        '/': Container.createState()
       }
     }
-
-    // save the port instance
-    this.ports[name] = portRef
-    this._mapPort(name, portRef)
 
     // incerment the nonce
     nonce = new BN(nonce)
@@ -119,7 +122,7 @@ module.exports = class PortManager {
 
   async getNextMessage () {
     if (this._portMap.size) {
-      await this.wait(this.kernel.ticks, this.entryPort)
+      await this.wait(this.exoInterface.ticks, this.entryPort)
       const portMap = [...this._portMap].reduce(messageArbiter)
       return portMap[1].shift()
     }

@@ -450,9 +450,9 @@ node.on('start', () => {
           ])
         } else if (this.runs === 1) {
           this.runs++
-          t.equals(m.data, 'first', 'should recived the second message')
-        } else if (this.runs === 2) {
           t.equals(m.data, 'second', 'should recive the first message')
+        } else if (this.runs === 2) {
+          t.equals(m.data, 'first', 'should recived the second message')
         }
       }
     }

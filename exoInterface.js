@@ -42,10 +42,18 @@ module.exports = class ExoInterface extends EventEmitter {
     })
   }
 
+  /**
+   * starts the container
+   * @returns {Promise}
+   */
   start () {
     return this.ports.start()
   }
 
+  /**
+   * adds a message to this containers message queue
+   * @param {Message} message
+   */
   queue (message) {
     message._hops++
     this.ports.queue(message)

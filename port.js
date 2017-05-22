@@ -17,4 +17,8 @@ module.exports = class Port {
   shift () {
     return this._queue.shift()
   }
+
+  get size () {
+    return this._queue.length
+  }
 }

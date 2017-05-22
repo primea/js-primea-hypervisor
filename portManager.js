@@ -16,8 +16,8 @@ function messageArbiter (pairA, pairB) {
   }
 
   // order by number of ticks if messages have different number of ticks
-  if (a._fromPortTicks !== b._fromPortTicks) {
-    return a._fromPortTicks < b._fromPortTicks ? pairA : pairB
+  if (portA.ticks !== portB.ticks) {
+    return portA.ticks < portB.ticks ? pairA : pairB
   } else if (a.priority !== b.priority) {
     // decide by priority
     return a.priority > b.priority ? pairA : pairB
@@ -119,7 +119,14 @@ module.exports = class PortManager {
 
   async getNextMessage () {
     if (this._portMap.size) {
-      await this.wait(this.exoInterface.ticks)
+      // find the oldest message
+      const ticks = [...this._portMap].map(([name, port]) => {
+        return port.size ? port.ticks : this.exoInterface.ticks
+      }).reduce((ticksA, ticksB) => {
+        return ticksA < ticksB ? ticksA : ticksB
+      })
+
+      await this.wait(ticks)
       const portMap = [...this._portMap].reduce(messageArbiter)
       return portMap[1].shift()
     }

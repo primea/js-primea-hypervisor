@@ -104,8 +104,10 @@ module.exports = class ExoInterface extends EventEmitter {
     return result
   }
 
-  // returns a promise that resolves once the kernel hits the threshould tick
-  // count
+  /**
+   * returns a promise that resolves once the kernel hits the threshould tick count
+   *
+   */
   wait (threshold, fromPort) {
     if (threshold <= this.ticks) {
       return this.ticks
@@ -141,7 +143,7 @@ module.exports = class ExoInterface extends EventEmitter {
     message._fromPort = this.entryPort
     message._fromPortTicks = this.ticks
 
-    const container = await this.getContainer(portRef)
+    const container = await this.getInstance(portRef)
     container.queue(message)
 
     const waiter = this._waitingMap.get(portRef)
@@ -151,7 +153,7 @@ module.exports = class ExoInterface extends EventEmitter {
     }
   }
 
-  getContainer (portRef) {
-    return this.hypervisor.getOrCreateInstance(portRef, this.entryPort)
+  getInstance (portRef) {
+    return this.hypervisor.getInstanceByPort(portRef, this.entryPort)
   }
 }

@@ -9,15 +9,20 @@ module.exports = class Hypervisor {
    */
   constructor (dag) {
     this.graph = new Graph(dag)
-    this._runningContainers = new Map()
+    this._containerInstances = new Map()
     this._containerTypes = {}
   }
 
-  async getByPath (root, path) {
+  /**
+   * get a container by its path
+   * @param {Object} root - the root container to start searching from
+   * @param {String} path - the path to travers
+   */
+  async getInstanceByPath (root, path) {
     path = path.split('/')
     for (const name of path) {
       const portRef = root.ports.get(name)
-      root = await this.getOrCreateInstance(portRef, root.entryPort)
+      root = await this.getInstanceByPort(portRef, root.entryPort)
     }
     return root
   }
@@ -27,14 +32,14 @@ module.exports = class Hypervisor {
    * @param {Object} port the entry port for the container
    * @param {Object} parentPort the entry port of the parent container
    */
-  async getOrCreateInstance (port, parentPort) {
-    let instance = this._runningContainers.get(port)
+  async getInstanceByPort (port, parentPort) {
+    let instance = this._containerInstances.get(port)
     // if there is no container running crceate one
     if (!instance) {
       instance = await this.createInstance(port.type, port.link, port, parentPort)
       instance.on('idle', () => {
         // once the container is done shut it down
-        this._runningContainers.delete(port)
+        this._containerInstances.delete(port)
       })
     }
     return instance
@@ -49,7 +54,7 @@ module.exports = class Hypervisor {
    * wait. Used internally so that waits don't become cyclic
    */
   async wait (port, threshold, fromPort) {
-    let instance = this._runningContainers.get(port)
+    let instance = this._containerInstances.get(port)
     if (instance) {
       return instance.wait(threshold, fromPort)
     } else {
@@ -84,7 +89,7 @@ module.exports = class Hypervisor {
     })
 
     // save the newly created instance
-    this._runningContainers.set(entryPort, exoInterface)
+    this._containerInstances.set(entryPort, exoInterface)
     await exoInterface.start()
     return exoInterface
   }

@@ -663,16 +663,16 @@ node.on('start', () => {
     let port = root.ports.create('base')
     root.ports.bind(port, 'first')
 
-    const first = await root.getContainer(port)
+    const first = await root.getInstance(port)
     port = first.ports.create('base')
     first.ports.bind(port, 'second')
 
-    const second = await first.getContainer(port)
+    const second = await first.getInstance(port)
     port = second.ports.create('base')
     second.ports.bind(port, 'third')
 
-    const third = await second.getContainer(port)
-    const foundThird = await hypervisor.getByPath(root, 'first/second/third')
+    const third = await second.getInstance(port)
+    const foundThird = await hypervisor.getInstanceByPath(root, 'first/second/third')
     t.equals(third, foundThird, 'should find by path')
   })
 })

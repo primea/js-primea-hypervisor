@@ -653,4 +653,26 @@ node.on('start', () => {
     await root.send(port, new Message())
     root.send(port, new Message())
   })
+
+  tape('get container instance by path', async t => {
+    t.plan(1)
+    const hypervisor = new Hypervisor(node.dag)
+    hypervisor.registerContainer('base', BaseContainer)
+
+    const root = await hypervisor.createInstance('base')
+    let port = root.ports.create('base')
+    root.ports.bind(port, 'first')
+
+    const first = await root.getContainer(port)
+    port = first.ports.create('base')
+    first.ports.bind(port, 'second')
+
+    const second = await first.getContainer(port)
+    port = second.ports.create('base')
+    second.ports.bind(port, 'third')
+
+    const third = await second.getContainer(port)
+    const foundThird = await hypervisor.getByPath(root, 'first/second/third')
+    t.equals(third, foundThird, 'should find by path')
+  })
 })

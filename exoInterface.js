@@ -133,13 +133,17 @@ module.exports = class ExoInterface extends EventEmitter {
     message._fromPort = this.entryPort
     message._fromPortTicks = this.ticks
 
-    const instance = await this.hypervisor.getOrCreateInstance(portRef, this.entryPort)
-    instance.queue(message)
+    const container = await this.getContainer(portRef)
+    container.queue(message)
 
     const waiter = this._waitingMap.get(portRef)
     if (waiter) {
       waiter.resolve(this.ticks)
       this._waitingMap.delete(portRef)
     }
+  }
+
+  getContainer (portRef) {
+    return this.hypervisor.getOrCreateInstance(portRef, this.entryPort)
   }
 }

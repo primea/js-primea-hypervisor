@@ -1,7 +1,6 @@
 const tape = require('tape')
 const IPFS = require('ipfs')
 const Hypervisor = require('../')
-const Message = require('primea-message')
 
 const node = new IPFS()
 
@@ -31,7 +30,7 @@ node.on('start', () => {
 
   tape('basic', async t => {
     t.plan(2)
-    const message = new Message()
+    let message
     const expectedState = {
       '/': 'zdpuAntkdU7yBJojcBT5Q9wBhrK56NmLnwpHPKaEGMFnAXpv7'
     }
@@ -47,6 +46,7 @@ node.on('start', () => {
 
     const rootContainer = await hypervisor.createInstance('test')
     const port = rootContainer.ports.create('test')
+    message = rootContainer.createMessage()
     rootContainer.ports.bind(port, 'first')
 
     await rootContainer.send(port, message)
@@ -57,7 +57,7 @@ node.on('start', () => {
 
   tape('one child contract', async t => {
     t.plan(4)
-    let message = new Message()
+    let message
     const expectedState = {
       '/': 'zdpuAofSzrBqwYs6z1r28fMeb8z5oSKF6CcWA6m22RqazgoTB'
     }
@@ -93,6 +93,7 @@ node.on('start', () => {
     let port = root.ports.create('test')
 
     root.ports.bind(port, 'first')
+    message = root.createMessage()
 
     await root.send(port, message)
     const stateRoot = await hypervisor.createStateRoot(root, Infinity)
@@ -126,7 +127,7 @@ node.on('start', () => {
 
         if (this.kernel.ticks < 100) {
           this.kernel.incrementTicks(1)
-          return this.kernel.send(port, new Message())
+          return this.kernel.send(port, this.kernel.createMessage())
         }
       }
     }
@@ -135,7 +136,7 @@ node.on('start', () => {
       run (m) {
         const port = m.fromPort
         this.kernel.incrementTicks(2)
-        return this.kernel.send(port, new Message())
+        return this.kernel.send(port, this.kernel.createMessage())
       }
     }
 
@@ -147,7 +148,7 @@ node.on('start', () => {
     const port = root.ports.create('ping')
     root.ports.bind(port, 'child')
 
-    await root.send(port, new Message())
+    await root.send(port, root.createMessage())
     await hypervisor.createStateRoot(root, Infinity)
 
     t.end()
@@ -168,9 +169,9 @@ node.on('start', () => {
         this.kernel.ports.bind(three, 'three')
 
         await Promise.all([
-          this.kernel.send(one, new Message()),
-          this.kernel.send(two, new Message()),
-          this.kernel.send(three, new Message())
+          this.kernel.send(one, this.kernel.createMessage()),
+          this.kernel.send(two, this.kernel.createMessage()),
+          this.kernel.send(three, this.kernel.createMessage())
         ])
 
         return new Promise((resolve, reject) => {
@@ -198,7 +199,7 @@ node.on('start', () => {
     const port = root.ports.create('root')
     root.ports.bind(port, 'first')
 
-    await root.send(port, new Message())
+    await root.send(port, root.createMessage())
     await root.wait(Infinity)
 
     t.equals(runs, 3, 'the number of run should be 3')
@@ -244,7 +245,7 @@ node.on('start', () => {
         this.kernel.ports.bind(port, 'three')
         this.kernel.ports.delete('three')
         try {
-          await this.kernel.send(port, new Message())
+          await this.kernel.send(port, this.kernel.createMessage())
         } catch (e) {
           t.pass()
         }
@@ -279,8 +280,8 @@ node.on('start', () => {
           this.kernel.ports.bind(two, 'two')
 
           await Promise.all([
-            this.kernel.send(one, new Message()),
-            this.kernel.send(two, new Message())
+            this.kernel.send(one, this.kernel.createMessage()),
+            this.kernel.send(two, this.kernel.createMessage())
           ])
 
           this.kernel.incrementTicks(6)
@@ -296,14 +297,14 @@ node.on('start', () => {
     class First extends BaseContainer {
       async run (m) {
         this.kernel.incrementTicks(1)
-        await this.kernel.send(m.fromPort, new Message({data: 'first'}))
+        await this.kernel.send(m.fromPort, this.kernel.createMessage({data: 'first'}))
       }
     }
 
     class Second extends BaseContainer {
       async run (m) {
         this.kernel.incrementTicks(2)
-        await this.kernel.send(m.fromPort, new Message({data: 'second'}))
+        await this.kernel.send(m.fromPort, this.kernel.createMessage({data: 'second'}))
       }
     }
 
@@ -317,7 +318,7 @@ node.on('start', () => {
     const port = root.ports.create('root')
     root.ports.bind(port, 'first')
 
-    root.send(port, new Message())
+    root.send(port, root.createMessage())
   })
 
   tape('message should arrive in the correct order, even if sent out of order', async t => {
@@ -334,8 +335,8 @@ node.on('start', () => {
           this.kernel.ports.bind(two, 'two')
 
           return Promise.all([
-            this.kernel.send(one, new Message()),
-            this.kernel.send(two, new Message())
+            this.kernel.send(one, this.kernel.createMessage()),
+            this.kernel.send(two, this.kernel.createMessage())
           ])
         } else if (this.runs === 1) {
           this.runs++
@@ -349,14 +350,14 @@ node.on('start', () => {
     class First extends BaseContainer {
       run (m) {
         this.kernel.incrementTicks(2)
-        return this.kernel.send(m.fromPort, new Message({data: 'first'}))
+        return this.kernel.send(m.fromPort, this.kernel.createMessage({data: 'first'}))
       }
     }
 
     class Second extends BaseContainer {
       run (m) {
         this.kernel.incrementTicks(1)
-        this.kernel.send(m.fromPort, new Message({data: 'second'}))
+        this.kernel.send(m.fromPort, this.kernel.createMessage({data: 'second'}))
       }
     }
 
@@ -370,7 +371,7 @@ node.on('start', () => {
     const port = root.ports.create('root')
     root.ports.bind(port, 'first')
 
-    root.send(port, new Message())
+    root.send(port, root.createMessage())
   })
 
   tape('message should arrive in the correct order, even in a tie of ticks', async t => {
@@ -387,8 +388,8 @@ node.on('start', () => {
           this.kernel.ports.bind(two, 'two')
 
           await Promise.all([
-            this.kernel.send(one, new Message()),
-            this.kernel.send(two, new Message())
+            this.kernel.send(one, this.kernel.createMessage()),
+            this.kernel.send(two, this.kernel.createMessage())
           ])
 
           this.kernel.incrementTicks(6)
@@ -404,7 +405,7 @@ node.on('start', () => {
     class First extends BaseContainer {
       run (m) {
         this.kernel.incrementTicks(2)
-        return this.kernel.send(m.fromPort, new Message({
+        return this.kernel.send(m.fromPort, this.kernel.createMessage({
           data: 'first'
         }))
       }
@@ -413,7 +414,7 @@ node.on('start', () => {
     class Second extends BaseContainer {
       run (m) {
         this.kernel.incrementTicks(2)
-        return this.kernel.send(m.fromPort, new Message({
+        return this.kernel.send(m.fromPort, this.kernel.createMessage({
           data: 'second'
         }))
       }
@@ -428,7 +429,7 @@ node.on('start', () => {
     const root = await hypervisor.createInstance('root')
     const port = await root.ports.create('root')
     root.ports.bind(port, 'first')
-    root.send(port, new Message())
+    root.send(port, root.createMessage())
   })
 
   tape('message should arrive in the correct order, even in a tie of ticks', async t => {
@@ -445,8 +446,8 @@ node.on('start', () => {
           this.kernel.ports.bind(one, 'one')
 
           return Promise.all([
-            this.kernel.send(two, new Message()),
-            this.kernel.send(one, new Message())
+            this.kernel.send(two, this.kernel.createMessage()),
+            this.kernel.send(one, this.kernel.createMessage())
           ])
         } else if (this.runs === 1) {
           this.runs++
@@ -460,7 +461,7 @@ node.on('start', () => {
     class First extends BaseContainer {
       run (m) {
         this.kernel.incrementTicks(2)
-        return this.kernel.send(m.fromPort, new Message({
+        return this.kernel.send(m.fromPort, this.kernel.createMessage({
           data: 'first'
         }))
       }
@@ -469,7 +470,7 @@ node.on('start', () => {
     class Second extends BaseContainer {
       run (m) {
         this.kernel.incrementTicks(2)
-        return this.kernel.send(m.fromPort, new Message({
+        return this.kernel.send(m.fromPort, this.kernel.createMessage({
           data: 'second'
         }))
       }
@@ -486,7 +487,7 @@ node.on('start', () => {
     const port = root.ports.create('root')
     root.ports.bind(port, 'first')
 
-    root.send(port, new Message())
+    root.send(port, root.createMessage())
   })
 
   tape('message should arrive in the correct order, with a tie in ticks but with differnt proity', async t => {
@@ -503,8 +504,8 @@ node.on('start', () => {
           this.kernel.ports.bind(two, 'two')
 
           return Promise.all([
-            this.kernel.send(two, new Message()),
-            this.kernel.send(one, new Message())
+            this.kernel.send(two, this.kernel.createMessage()),
+            this.kernel.send(one, this.kernel.createMessage())
           ])
         } else if (this.runs === 1) {
           this.runs++
@@ -518,7 +519,7 @@ node.on('start', () => {
     class First extends BaseContainer {
       run (m) {
         this.kernel.incrementTicks(2)
-        return this.kernel.send(m.fromPort, new Message({
+        return this.kernel.send(m.fromPort, this.kernel.createMessage({
           resources: {
             priority: 100
           },
@@ -530,7 +531,7 @@ node.on('start', () => {
     class Second extends BaseContainer {
       run (m) {
         this.kernel.incrementTicks(2)
-        return this.kernel.send(m.fromPort, new Message({
+        return this.kernel.send(m.fromPort, this.kernel.createMessage({
           data: 'second'
         }))
       }
@@ -545,7 +546,7 @@ node.on('start', () => {
     const root = await hypervisor.createInstance('root')
     const port = root.ports.create('root')
     root.ports.bind(port, 'first')
-    root.send(port, new Message())
+    root.send(port, root.createMessage())
   })
 
   tape('message should arrive in the correct order, with a tie in ticks but with differnt proity', async t => {
@@ -563,8 +564,8 @@ node.on('start', () => {
           this.kernel.ports.bind(two, 'two')
 
           return Promise.all([
-            this.kernel.send(two, new Message()),
-            this.kernel.send(one, new Message())
+            this.kernel.send(two, this.kernel.createMessage()),
+            this.kernel.send(one, this.kernel.createMessage())
           ])
         } else if (this.runs === 1) {
           this.runs++
@@ -578,7 +579,7 @@ node.on('start', () => {
     class First extends BaseContainer {
       run (m) {
         this.kernel.incrementTicks(2)
-        return this.kernel.send(m.fromPort, new Message({
+        return this.kernel.send(m.fromPort, this.kernel.createMessage({
           data: 'first'
         }))
       }
@@ -587,7 +588,7 @@ node.on('start', () => {
     class Second extends BaseContainer {
       run (m) {
         this.kernel.incrementTicks(2)
-        return this.kernel.send(m.fromPort, new Message({
+        return this.kernel.send(m.fromPort, this.kernel.createMessage({
           resources: {
             priority: 100
           },
@@ -605,7 +606,7 @@ node.on('start', () => {
     const root = await hypervisor.createInstance('root')
     const port = root.ports.create('root')
     root.ports.bind(port, 'first')
-    root.send(port, new Message())
+    root.send(port, root.createMessage())
   })
 
   tape('should order parent messages correctly', async t => {
@@ -619,7 +620,7 @@ node.on('start', () => {
           const leaf = this.kernel.ports.create('leaf')
           this.kernel.ports.bind(leaf, 'leaf')
 
-          return this.kernel.send(leaf, new Message())
+          return this.kernel.send(leaf, this.kernel.createMessage())
         } else {
           ++this.runs
           if (this.runs === 3) {
@@ -632,7 +633,7 @@ node.on('start', () => {
     class Leaf extends BaseContainer {
       run (m) {
         this.kernel.incrementTicks(2)
-        return this.kernel.send(m.fromPort, new Message({
+        return this.kernel.send(m.fromPort, this.kernel.createMessage({
           data: 'first'
         }))
       }
@@ -650,8 +651,8 @@ node.on('start', () => {
     const port = root.ports.create('middle')
     root.ports.bind(port, 'first')
 
-    await root.send(port, new Message())
-    root.send(port, new Message())
+    await root.send(port, root.createMessage())
+    root.send(port, root.createMessage())
   })
 
   tape('get container instance by path', async t => {

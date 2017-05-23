@@ -2,6 +2,7 @@ const clearObject = require('object-clear')
 const clone = require('clone')
 const EventEmitter = require('events')
 const PortManager = require('./portManager.js')
+const Message = require('primea-message')
 
 module.exports = class ExoInterface extends EventEmitter {
   /**
@@ -138,6 +139,14 @@ module.exports = class ExoInterface extends EventEmitter {
         waiter.resolve(this.ticks)
       }
     }
+  }
+
+  /**
+   * creates a new message
+   * @param {*} data
+   */
+  createMessage (data) {
+    return new Message(data)
   }
 
   /**

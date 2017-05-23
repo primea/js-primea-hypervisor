@@ -6,6 +6,11 @@
     "coverage": "node --harmony ./node_modules/istanbul/lib/cli.js cover ./tests/index.js",
     "coveralls": "npm run coverage && coveralls <coverage/lcov.info",
     "lint": "standard",
+    "build:docs": "npm run build:docs:hypervisor && npm run build:docs:exo && npm run build:docs:ports && npm run build:docs:portManager",
+    "build:docs:hypervisor": "documentation build ./index.js --github --shallow --sort-order source -f md  > ./docs/hypervisor.md",
+    "build:docs:exo": "documentation build ./exoInterface.js --github --shallow --sort-order source -f md  > ./docs/exoInterface.md",
+    "build:docs:ports": "documentation build ./port.js --github --shallow --sort-order source -f md  > ./docs/port.md",
+    "build:docs:portManager": "documentation build ./portManager.js --github --shallow --sort-order source -f md  > ./docs/portManager.md",
     "test": "node --harmony ./tests/index.js"
   },
   "repository": {
@@ -32,10 +37,11 @@
   },
   "devDependencies": {
     "coveralls": "^2.13.1",
+    "documentation": "^4.0.0-rc.1",
     "ipfs": "^0.23.1",
     "istanbul": "^1.1.0-alpha.1",
+    "primea-message": "0.0.1",
     "standard": "10.0.2",
-    "tape": "^4.5.1",
-    "primea-message": "0.0.1"
+    "tape": "^4.5.1"
   }
 }

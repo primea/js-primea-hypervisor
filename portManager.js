@@ -28,11 +28,26 @@ function messageArbiter (pairA, pairB) {
 }
 
 module.exports = class PortManager {
+  /**
+   * The port manager manages the the ports. This inculdes creation, deletion
+   * fetching and waiting on ports
+   * @param {Object} opts
+   * @param {Object} opts.state
+   * @param {Object} opts.entryPort
+   * @param {Object} opts.parentPort
+   * @param {Object} opts.hypervisor
+   * @param {Object} opts.exoInterface
+   */
   constructor (opts) {
     Object.assign(this, opts)
     this._portMap = new Map()
   }
 
+  /**
+   * starts the port manager. This fetchs the ports from the state and maps
+   * them to thier names
+   * @returns {Promise}
+   */
   async start () {
     // skip the root, since it doesn't have a parent
     if (this.parentPort !== undefined) {
@@ -48,34 +63,62 @@ module.exports = class PortManager {
   }
 
   _bindRef (portRef, name) {
-    const port = new Port(name)
+    const port = new Port()
     this._portMap.set(portRef, port)
   }
 
+  /**
+   * binds a port to a name
+   * @param {Object} port - the port to bind
+   * @param {String} name - the name of the port
+   */
   bind (port, name) {
     // save the port instance
     this.ports[name] = port
     this._bindRef(port, name)
   }
 
+  /**
+   * queues a message on a port
+   * @param {Message} message
+   */
   queue (message) {
     this._portMap.get(message.fromPort).queue(message)
   }
 
-  get (key) {
-    return this.ports[key]
+  /**
+   * gets a port given it's name
+   * @param {String} name
+   * @return {Object}
+   */
+  get (name) {
+    return this.ports[name]
   }
 
-  delete (key) {
-    const port = this.ports[key]
-    delete this.ports[key]
+  /**
+   * deletes a port given its name
+   * @param {String} name
+   */
+  delete (name) {
+    const port = this.ports[name]
+    delete this.ports[name]
     this._portMap.delete(port)
   }
 
+  /**
+   * check if a port object is still valid
+   * @param {Object} port
+   * @return {Boolean}
+   */
   isValidPort (port) {
     return this._portMap.has(port)
   }
 
+  /**
+   * creates a new Port given the container type
+   * @param {String} type
+   * @returns {Object} the newly created port
+   */
   create (type) {
     const Container = this.hypervisor._containerTypes[type]
     const parentId = this.entryPort ? this.entryPort.id : null
@@ -102,10 +145,16 @@ module.exports = class PortManager {
     return portRef
   }
 
-  // waits till all ports have reached a threshold tick count
-  wait (threshold, fromPort = this.entryPort, ports = this._portMap) {
+  /**
+   * waits till all ports have reached a threshold tick count
+   * @param {Integer} threshold - the number of ticks to wait
+   * @param {Object} fromPort - the port requesting the wait
+   * @param {Array} ports - the ports to wait on
+   * @returns {Promise}
+   */
+  wait (threshold, fromPort = this.entryPort, ports = [...this._portMap]) {
     // find the ports that have a smaller tick count then the threshold tick count
-    const unkownPorts = [...ports].filter(([portRef, port]) => {
+    const unkownPorts = ports.filter(([portRef, port]) => {
       return port.ticks < threshold && fromPort !== portRef
     })
 
@@ -117,18 +166,23 @@ module.exports = class PortManager {
     return Promise.all(promises)
   }
 
-  async getNextMessage () {
+  /**
+   * gets the next canonical message given the an array of ports to choose from
+   * @param {Array} ports
+   * @returns {Promise}
+   */
+  async getNextMessage (ports = [...this._portMap]) {
     if (this._portMap.size) {
       // find the oldest message
-      const ticks = [...this._portMap].map(([name, port]) => {
+      const ticks = ports.map(([name, port]) => {
         return port.size ? port.ticks : this.exoInterface.ticks
       }).reduce((ticksA, ticksB) => {
         return ticksA < ticksB ? ticksA : ticksB
       })
 
       await this.wait(ticks)
-      const portMap = [...this._portMap].reduce(messageArbiter)
-      return portMap[1].shift()
+      const portMap = ports.reduce(messageArbiter)
+      return portMap[1].dequeue()
     }
   }
 }

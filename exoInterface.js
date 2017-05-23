@@ -83,6 +83,7 @@ module.exports = class ExoInterface extends EventEmitter {
    * run the kernels code with a given enviroment
    * The Kernel Stores all of its state in the Environment. The Interface is used
    * to by the VM to retrive infromation from the Environment.
+   * @returns {Promise}
    */
   async run (message) {
     const oldState = clone(this.state, false, 3)
@@ -106,7 +107,8 @@ module.exports = class ExoInterface extends EventEmitter {
 
   /**
    * returns a promise that resolves once the kernel hits the threshould tick count
-   *
+   * @param {Number} threshould - the number of ticks to wait
+   * @returns {Promise}
    */
   wait (threshold, fromPort) {
     if (threshold <= this.ticks) {
@@ -124,6 +126,10 @@ module.exports = class ExoInterface extends EventEmitter {
     }
   }
 
+  /**
+   * updates the number of ticks that the container has run
+   * @param {Number} count - the number of ticks to add
+   */
   incrementTicks (count) {
     this.ticks += count
     for (const [fromPort, waiter] of this._waitingMap) {
@@ -134,6 +140,11 @@ module.exports = class ExoInterface extends EventEmitter {
     }
   }
 
+  /**
+   * sends a message to a given port
+   * @param {Object} portRef - the port
+   * @param {Message} message - the message
+   */
   async send (portRef, message) {
     if (!this.ports.isValidPort(portRef)) {
       throw new Error('invalid port referance')
@@ -147,12 +158,18 @@ module.exports = class ExoInterface extends EventEmitter {
     container.queue(message)
 
     const waiter = this._waitingMap.get(portRef)
+    // if the was a wait on this port the resolve it
     if (waiter) {
       waiter.resolve(this.ticks)
       this._waitingMap.delete(portRef)
     }
   }
 
+  /**
+   * gets a container instance given a port
+   * @param {Object} portRef - the port
+   * @returns {Object}
+   */
   getInstance (portRef) {
     return this.hypervisor.getInstanceByPort(portRef, this.entryPort)
   }

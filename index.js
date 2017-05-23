@@ -99,6 +99,7 @@ module.exports = class Hypervisor {
    * ticks
    * @param {Container} container an container instance
    * @param {Number} ticks the number of ticks at which to create the state root
+   * @returns {Promise}
    */
   async createStateRoot (container, ticks) {
     await container.wait(ticks)

@@ -110,17 +110,11 @@ module.exports = class PortManager {
    * @param {Object} port
    * @return {Boolean}
    */
-  isValidPort (port) {
+  isValid (port) {
     return this._portMap.has(port)
   }
 
-  /**
-   * creates a new Port given the container type
-   * @param {String} type
-   * @returns {Object} the newly created port
-   */
-  create (type) {
-    const Container = this.hypervisor._containerTypes[type]
+  _createPortObject (type, link) {
     const parentId = this.entryPort ? this.entryPort.id : null
     let nonce = this.state['/'].nonce
 
@@ -133,9 +127,7 @@ module.exports = class PortManager {
         }
       },
       'type': type,
-      'link': {
-        '/': Container.createState()
-      }
+      'link': link
     }
 
     // incerment the nonce
@@ -143,6 +135,26 @@ module.exports = class PortManager {
     nonce.iaddn(1)
     this.state['/'].nonce = nonce.toArray()
     return portRef
+  }
+
+  /**
+   * creates a new Port given the container type
+   * @param {String} type
+   * @returns {Object} the newly created port
+   */
+  create (type) {
+    const Container = this.hypervisor._containerTypes[type]
+    return this._createPortObject(type, {
+      '/': Container.createState()
+    })
+  }
+
+  /**
+   * creates a copy of a port given a port referance
+   * @param {Object} port - the port to copy
+   */
+  copy (port) {
+    return this._createPortObject(port.type, port.link)
   }
 
   /**

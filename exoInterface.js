@@ -22,6 +22,8 @@ module.exports = class ExoInterface extends EventEmitter {
     this.hypervisor = opts.hypervisor
 
     this.containerState = 'idle'
+
+    // the total number of ticks that the container has ran
     this.ticks = 0
 
     // create the port manager
@@ -155,8 +157,8 @@ module.exports = class ExoInterface extends EventEmitter {
    * @param {Message} message - the message
    */
   async send (portRef, message) {
-    if (!this.ports.isValidPort(portRef)) {
-      throw new Error('invalid port referance')
+    if (!this.ports.isValid(portRef)) {
+      throw new Error('invalid port')
     }
 
     // set the port that the message came from

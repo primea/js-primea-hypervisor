@@ -676,4 +676,16 @@ node.on('start', () => {
     const foundThird = await hypervisor.getInstanceByPath(root, 'first/second/third')
     t.equals(third, foundThird, 'should find by path')
   })
+
+  tape('copy ports', async t => {
+    t.plan(1)
+    const hypervisor = new Hypervisor(node.dag)
+    hypervisor.registerContainer('base', BaseContainer)
+
+    const root = await hypervisor.createInstance('base')
+    let port = root.ports.create('base')
+    let port2 = root.ports.copy(port)
+
+    t.equals(port2.type, port.type, 'should copy port type')
+  })
 })

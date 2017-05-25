@@ -63,7 +63,7 @@ module.exports = class PortManager {
   }
 
   _bindRef (portRef, name) {
-    const port = new Port()
+    const port = new Port(name)
     this._portMap.set(portRef, port)
   }
 
@@ -98,11 +98,12 @@ module.exports = class PortManager {
   /**
    * deletes a port given its name
    * @param {String} name
+   * @returns {boolean} whether or not the port was deleted
    */
   delete (name) {
     const port = this.ports[name]
     delete this.ports[name]
-    this._portMap.delete(port)
+    return this._portMap.delete(port)
   }
 
   /**
@@ -110,7 +111,7 @@ module.exports = class PortManager {
    * @param {Object} port
    * @return {Boolean}
    */
-  isValid (port) {
+  isBound (port) {
     return this._portMap.has(port)
   }
 
@@ -140,12 +141,13 @@ module.exports = class PortManager {
   /**
    * creates a new Port given the container type
    * @param {String} type
+   * @param {*} data - the data to populate the initail state with
    * @returns {Object} the newly created port
    */
-  create (type) {
+  create (type, data) {
     const Container = this.hypervisor._containerTypes[type]
     return this._createPortObject(type, {
-      '/': Container.createState()
+      '/': Container.createState(data)
     })
   }
 
@@ -184,7 +186,7 @@ module.exports = class PortManager {
    * @returns {Promise}
    */
   async getNextMessage (ports = [...this._portMap]) {
-    if (this._portMap.size) {
+    if (ports.length) {
       // find the oldest message
       const ticks = ports.map(([name, port]) => {
         return port.size ? port.ticks : this.exoInterface.ticks

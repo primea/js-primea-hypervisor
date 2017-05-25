@@ -4,9 +4,10 @@ module.exports = class Port {
    * @property {Interger} ticks - the last know number of ticks the
    * corrisponding container is at
    */
-  constructor () {
+  constructor (name) {
     this._queue = []
     this.ticks = 0
+    this.name = name
   }
 
   /**

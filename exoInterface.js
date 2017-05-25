@@ -157,8 +157,8 @@ module.exports = class ExoInterface extends EventEmitter {
    * @param {Message} message - the message
    */
   async send (portRef, message) {
-    if (!this.ports.isValid(portRef)) {
-      throw new Error('invalid port')
+    if (!this.ports.isBound(portRef)) {
+      throw new Error('cannot send message with an unbound port')
     }
 
     // set the port that the message came from

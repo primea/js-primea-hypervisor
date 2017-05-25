@@ -2,7 +2,9 @@ const tape = require('tape')
 const IPFS = require('ipfs')
 const Hypervisor = require('../')
 
-const node = new IPFS()
+const node = new IPFS({
+  start: false
+})
 
 class BaseContainer {
   constructor (kernel) {
@@ -17,17 +19,7 @@ class BaseContainer {
   }
 }
 
-node.on('error', err => {
-  console.log(err)
-})
-
-node.on('start', () => {
-  tape.onFinish(() => {
-    node.stop(() => {
-      process.exit()
-    })
-  })
-
+node.on('ready', () => {
   tape('basic', async t => {
     t.plan(2)
     let message

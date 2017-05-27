@@ -41,6 +41,7 @@ module.exports = class PortManager {
   constructor (opts) {
     Object.assign(this, opts)
     this._portMap = new Map()
+    this._unboundPort = new WeakSet()
   }
 
   /**
@@ -73,9 +74,41 @@ module.exports = class PortManager {
    * @param {String} name - the name of the port
    */
   bind (port, name) {
+    if (this.isBound(port)) {
+      throw new Error('cannot bind a port that is already bound')
+    }
     // save the port instance
     this.ports[name] = port
     this._bindRef(port, name)
+  }
+
+  /**
+   * unbinds a port given its name
+   * @param {String} name
+   * @returns {boolean} whether or not the port was deleted
+   */
+  unbind (name) {
+    const port = this.ports[name]
+    delete this.ports[name]
+    this._portMap.delete(port)
+    return port
+  }
+
+  /**
+   * get the port name given its referance
+   * @return {string
+   */
+  getBoundName (portRef) {
+    return this._portMap.get(portRef).name
+  }
+
+  /**
+   * check if a port object is still valid
+   * @param {Object} port
+   * @return {Boolean}
+   */
+  isBound (port) {
+    return this._portMap.has(port)
   }
 
   /**
@@ -93,26 +126,6 @@ module.exports = class PortManager {
    */
   get (name) {
     return this.ports[name]
-  }
-
-  /**
-   * deletes a port given its name
-   * @param {String} name
-   * @returns {boolean} whether or not the port was deleted
-   */
-  delete (name) {
-    const port = this.ports[name]
-    delete this.ports[name]
-    return this._portMap.delete(port)
-  }
-
-  /**
-   * check if a port object is still valid
-   * @param {Object} port
-   * @return {Boolean}
-   */
-  isBound (port) {
-    return this._portMap.has(port)
   }
 
   _createPortObject (type, link) {
@@ -135,6 +148,7 @@ module.exports = class PortManager {
     nonce = new BN(nonce)
     nonce.iaddn(1)
     this.state['/'].nonce = nonce.toArray()
+    this._unboundPort.add(portRef)
     return portRef
   }
 

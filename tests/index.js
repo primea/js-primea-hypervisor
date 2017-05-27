@@ -235,7 +235,7 @@ node.on('ready', () => {
       async run (m) {
         const port = this.kernel.ports.create('root')
         this.kernel.ports.bind(port, 'three')
-        this.kernel.ports.delete('three')
+        this.kernel.ports.unbind('three')
         try {
           await this.kernel.send(port, this.kernel.createMessage())
         } catch (e) {
@@ -679,5 +679,35 @@ node.on('ready', () => {
     let port2 = root.ports.copy(port)
 
     t.equals(port2.type, port.type, 'should copy port type')
+  })
+
+  tape('checking ports', async t => {
+    t.plan(4)
+    const hypervisor = new Hypervisor(node.dag)
+    hypervisor.registerContainer('base', BaseContainer)
+
+    const root = await hypervisor.createInstance('base')
+    let port = root.ports.create('base')
+    root.ports.bind(port, 'test')
+
+    t.equals(root.ports.getBoundName(port), 'test', 'should get the ports name')
+
+    try {
+      root.createMessage({
+        ports: [port]
+      })
+    } catch (e) {
+      t.pass('should thow if sending a port that is bound')
+    }
+
+    try {
+      root.ports.bind(port, 'test')
+    } catch (e) {
+      t.pass('should thow if binding an already bound port')
+    }
+
+    root.ports.unbind('test')
+    const message = root.createMessage({ports: [port]})
+    t.equals(message.ports[0], port, 'should create a message if the port is unbound')
   })
 })

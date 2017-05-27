@@ -96,7 +96,7 @@ module.exports = class PortManager {
 
   /**
    * get the port name given its referance
-   * @return {string
+   * @return {string}
    */
   getBoundName (portRef) {
     return this._portMap.get(portRef).name

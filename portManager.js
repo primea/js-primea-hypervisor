@@ -155,7 +155,7 @@ module.exports = class PortManager {
    * creates a copy of a port given a port referance
    * @param {Object} port - the port to copy
    */
-  copy (port) {
+  copy (port, type = port.type) {
     return this._createPortObject(port.type, port.link)
   }
 

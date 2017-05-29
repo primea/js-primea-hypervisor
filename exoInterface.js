@@ -147,8 +147,14 @@ module.exports = class ExoInterface extends EventEmitter {
    * creates a new message
    * @param {*} data
    */
-  createMessage (data) {
-    return new Message(data)
+  createMessage (opts) {
+    const message = new Message(opts)
+    for (const port of message.ports) {
+      if (this.ports.isBound(port)) {
+        throw new Error('message must not contain bound ports')
+      }
+    }
+    return message
   }
 
   /**

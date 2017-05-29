@@ -32,8 +32,9 @@
   "dependencies": {
     "bn.js": "^4.11.6",
     "clone": "^2.1.1",
-    "object-clear": "^0.1.0",
-    "ipld-graph-builder": "1.1.5"
+    "events": "^1.1.1",
+    "ipld-graph-builder": "1.1.5",
+    "object-clear": "^0.1.0"
   },
   "devDependencies": {
     "coveralls": "^2.13.1",

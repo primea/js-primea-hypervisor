@@ -71,11 +71,11 @@ module.exports = class Hypervisor {
    *  @param {Object} the parent port
    */
   async createInstance (type, state, entryPort = null, parentPort) {
-    const Container = this._containerTypes[type]
+    const container = this._containerTypes[type]
 
     if (!state) {
       state = {
-        '/': Container.createState()
+        '/': container.Constructor.createState()
       }
     }
 
@@ -85,7 +85,7 @@ module.exports = class Hypervisor {
       parentPort: parentPort,
       hypervisor: this,
       state: state,
-      Container: Container
+      container: container
     })
 
     // save the newly created instance
@@ -108,10 +108,14 @@ module.exports = class Hypervisor {
 
   /**
    * regirsters a container with the hypervisor
-   * @param {String} the name of the type
-   * @param {Class} a Class for instantiating the container
+   * @param {String}i type - the name of the type
+   * @param {Class} Constructor - a Class for instantiating the container
+   * @param {*} args - any args that the contructor takes
    */
-  registerContainer (type, vm) {
-    this._containerTypes[type] = vm
+  registerContainer (type, Constructor, args) {
+    this._containerTypes[type] = {
+      Constructor: Constructor,
+      args: args
+    }
   }
 }

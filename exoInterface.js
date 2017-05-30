@@ -32,7 +32,7 @@ module.exports = class ExoInterface extends EventEmitter {
     }, opts))
 
     this._waitingMap = new Map()
-    this.container = new opts.Container(this)
+    this.container = new opts.container.Constructor(this, opts.container.args)
 
     // once we get an result we run the next message
     this.on('result', this._runNextMessage)

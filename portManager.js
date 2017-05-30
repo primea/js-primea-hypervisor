@@ -159,9 +159,9 @@ module.exports = class PortManager {
    * @returns {Object} the newly created port
    */
   create (type, data) {
-    const Container = this.hypervisor._containerTypes[type]
+    const container = this.hypervisor._containerTypes[type]
     return this._createPortObject(type, {
-      '/': Container.createState(data)
+      '/': container.Constructor.createState(data)
     })
   }
 

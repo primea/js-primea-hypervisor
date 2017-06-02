@@ -108,7 +108,7 @@ module.exports = class Hypervisor {
 
   /**
    * regirsters a container with the hypervisor
-   * @param {String}i type - the name of the type
+   * @param {String} type - the name of the type
    * @param {Class} Constructor - a Class for instantiating the container
    * @param {*} args - any args that the contructor takes
    */

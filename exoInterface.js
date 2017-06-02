@@ -1,5 +1,3 @@
-const clearObject = require('object-clear')
-const clone = require('clone')
 const EventEmitter = require('events')
 const PortManager = require('./portManager.js')
 const Message = require('primea-message')
@@ -89,15 +87,10 @@ module.exports = class ExoInterface extends EventEmitter {
    * @returns {Promise}
    */
   async run (message) {
-    const oldState = clone(this.state, false, 3)
     let result
     try {
       result = await this.container.run(message) || {}
     } catch (e) {
-      // revert the state
-      clearObject(this.state)
-      Object.assign(this.state, oldState)
-
       result = {
         exception: true,
         exceptionError: e

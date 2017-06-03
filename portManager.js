@@ -52,20 +52,20 @@ module.exports = class PortManager {
   async start () {
     // skip the root, since it doesn't have a parent
     if (this.parentPort !== undefined) {
-      this._bindRef(this.parentPort, ENTRY)
+      this._bindHandle(this.parentPort, ENTRY)
     }
 
     // map ports to thier id's
     this.ports = await this.hypervisor.graph.get(this.state, 'ports')
     Object.keys(this.ports).map(name => {
       const port = this.ports[name]
-      this._bindRef(port, name)
+      this._bindHandle(port, name)
     })
   }
 
-  _bindRef (portRef, name) {
+  _bindHandle (portHandle, name) {
     const port = new Port(name)
-    this._portMap.set(portRef, port)
+    this._portMap.set(portHandle, port)
   }
 
   /**
@@ -76,10 +76,12 @@ module.exports = class PortManager {
   bind (port, name) {
     if (this.isBound(port)) {
       throw new Error('cannot bind a port that is already bound')
+    } else if (this.ports[name]) {
+      throw new Error('cannot bind port to a name that is alread bound')
     }
     // save the port instance
     this.ports[name] = port
-    this._bindRef(port, name)
+    this._bindHandle(port, name)
   }
 
   /**
@@ -163,14 +165,6 @@ module.exports = class PortManager {
     return this._createPortObject(type, {
       '/': container.Constructor.createState(data)
     })
-  }
-
-  /**
-   * creates a copy of a port given a port referance
-   * @param {Object} port - the port to copy
-   */
-  copy (port, type = port.type) {
-    return this._createPortObject(port.type, port.link)
   }
 
   /**

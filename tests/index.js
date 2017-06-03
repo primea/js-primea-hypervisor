@@ -669,20 +669,8 @@ node.on('ready', () => {
     t.equals(third, foundThird, 'should find by path')
   })
 
-  tape('copy ports', async t => {
-    t.plan(1)
-    const hypervisor = new Hypervisor(node.dag)
-    hypervisor.registerContainer('base', BaseContainer)
-
-    const root = await hypervisor.createInstance('base')
-    let port = root.ports.create('base')
-    let port2 = root.ports.copy(port)
-
-    t.equals(port2.type, port.type, 'should copy port type')
-  })
-
   tape('checking ports', async t => {
-    t.plan(4)
+    t.plan(5)
     const hypervisor = new Hypervisor(node.dag)
     hypervisor.registerContainer('base', BaseContainer)
 
@@ -704,6 +692,13 @@ node.on('ready', () => {
       root.ports.bind(port, 'test')
     } catch (e) {
       t.pass('should thow if binding an already bound port')
+    }
+
+    try {
+      let port2 = root.ports.create('base')
+      root.ports.bind(port2, 'test')
+    } catch (e) {
+      t.pass('should thow if binding an already bound name')
     }
 
     root.ports.unbind('test')

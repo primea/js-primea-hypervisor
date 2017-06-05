@@ -1,4 +1,4 @@
-# SYNOPSIS - WIP
+# SYNOPSIS
 [![NPM Package](https://img.shields.io/npm/v/primea-hypervisor.svg?style=flat-square)](https://www.npmjs.org/package/primea-hypervisor)
 [![Build Status](https://img.shields.io/travis/primea/js-primea-hypervisor.svg?branch=master&style=flat-square)](https://travis-ci.org/primea/js-primea-hypervisor)
 [![Coverage Status](https://img.shields.io/coveralls/primea/js-primea-hypervisor.svg?style=flat-square)](https://coveralls.io/r/primea/js-primea-hypervisor)

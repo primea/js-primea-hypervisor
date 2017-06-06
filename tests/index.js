@@ -197,6 +197,8 @@ node.on('ready', () => {
     t.equals(runs, 3, 'the number of run should be 3')
     const nonce = await hypervisor.graph.get(root.state, 'ports/first/link/nonce/0')
     t.equals(nonce, 3, 'should have the correct nonce')
+
+    await hypervisor.graph.tree(root.state, Infinity)
   })
 
   tape('traps', async t => {
@@ -227,35 +229,6 @@ node.on('ready', () => {
         ports: {}
       }
     }, 'should revert the state')
-  })
-
-  tape('invalid port referances', async t => {
-    t.plan(2)
-    class Root extends BaseContainer {
-      async run (m) {
-        const port = this.kernel.ports.create('root')
-        this.kernel.ports.bind(port, 'three')
-        this.kernel.ports.unbind('three')
-        try {
-          await this.kernel.send(port, this.kernel.createMessage())
-        } catch (e) {
-          t.pass()
-        }
-      }
-    }
-
-    const hypervisor = new Hypervisor(node.dag)
-
-    hypervisor.registerContainer('root', Root)
-    const root = await hypervisor.createInstance('root')
-    await root.run()
-
-    t.deepEquals(root.state, {
-      '/': {
-        nonce: [1],
-        ports: {}
-      }
-    })
   })
 
   tape('message should arrive in the correct oder if sent in order', async t => {

@@ -1,29 +1,25 @@
-const Port = require('./port.js')
 const BN = require('bn.js')
-const ENTRY = Symbol('entry')
 
 // decides which message to go first
-function messageArbiter (pairA, pairB) {
-  const portA = pairA[1]
-  const portB = pairB[1]
-  const a = portA.peek()
-  const b = portB.peek()
+function messageArbiter (nameA, nameB) {
+  const a = this.ports[nameA].messages[0]
+  const b = this.ports[nameB].messages[0]
 
   if (!a) {
-    return pairB
+    return nameB
   } else if (!b) {
-    return pairA
+    return nameA
   }
 
   // order by number of ticks if messages have different number of ticks
-  if (portA.ticks !== portB.ticks) {
-    return portA.ticks < portB.ticks ? pairA : pairB
+  if (a._fromPortTicks !== b._fromPortTicks) {
+    return a._fromPortTicks < b._fromPortTicks ? nameA : nameB
   } else if (a.priority !== b.priority) {
     // decide by priority
-    return a.priority > b.priority ? pairA : pairB
+    return a.priority > b.priority ? nameA : nameB
   } else {
     // insertion order
-    return pairA
+    return nameA
   }
 }
 
@@ -40,32 +36,8 @@ module.exports = class PortManager {
    */
   constructor (opts) {
     Object.assign(this, opts)
-    this._portMap = new Map()
     this._unboundPort = new WeakSet()
-  }
-
-  /**
-   * starts the port manager. This fetchs the ports from the state and maps
-   * them to thier names
-   * @returns {Promise}
-   */
-  async start () {
-    // skip the root, since it doesn't have a parent
-    if (this.parentPort !== undefined) {
-      this._bindHandle(this.parentPort, ENTRY)
-    }
-
-    // map ports to thier id's
-    this.ports = await this.hypervisor.graph.get(this.state, 'ports')
-    Object.keys(this.ports).map(name => {
-      const port = this.ports[name]
-      this._bindHandle(port, name)
-    })
-  }
-
-  _bindHandle (portHandle, name) {
-    const port = new Port(name)
-    this._portMap.set(portHandle, port)
+    this._waitingPorts = {}
   }
 
   /**
@@ -73,15 +45,26 @@ module.exports = class PortManager {
    * @param {Object} port - the port to bind
    * @param {String} name - the name of the port
    */
-  bind (port, name) {
+  async bind (port, name) {
     if (this.isBound(port)) {
       throw new Error('cannot bind a port that is already bound')
     } else if (this.ports[name]) {
       throw new Error('cannot bind port to a name that is alread bound')
     }
+
+    let destPort = port.destPort
+    // if the dest is unbound
+    if (destPort) {
+      delete destPort.destPort
+    } else {
+      destPort = await this.hypervisor.getPort(port)
+    }
+
+    destPort.destName = name
+    destPort.destId = this.id
+
     // save the port instance
     this.ports[name] = port
-    this._bindHandle(port, name)
   }
 
   /**
@@ -89,19 +72,24 @@ module.exports = class PortManager {
    * @param {String} name
    * @returns {boolean} whether or not the port was deleted
    */
-  unbind (name) {
+  async unbind (name, del) {
     const port = this.ports[name]
     delete this.ports[name]
-    this._portMap.delete(port)
-    return port
-  }
 
-  /**
-   * get the port name given its referance
-   * @return {string}
-   */
-  getBoundName (portRef) {
-    return this._portMap.get(portRef).name
+    let destPort = port.destPort
+    // if the dest is unbound
+    if (destPort) {
+      delete destPort.destName
+      delete destPort.destId
+    } else {
+      destPort = await this.hypervisor.getPort(port)
+    }
+    if (del) {
+      delete destPort.destPort
+    } else {
+      destPort.destPort = port
+      return port
+    }
   }
 
   /**
@@ -110,15 +98,20 @@ module.exports = class PortManager {
    * @return {Boolean}
    */
   isBound (port) {
-    return this._portMap.has(port)
+    return !this._unboundPort.has(port)
   }
 
   /**
    * queues a message on a port
    * @param {Message} message
    */
-  queue (message) {
-    this._portMap.get(message.fromPort).queue(message)
+  queue (name, message) {
+    const resolve = this._waitingPorts[name]
+    if (resolve) {
+      resolve(message)
+    } else {
+      this.ports[name].push(message)
+    }
   }
 
   /**
@@ -130,41 +123,40 @@ module.exports = class PortManager {
     return this.ports[name]
   }
 
-  _createPortObject (type, link) {
-    const parentId = this.entryPort ? this.entryPort.id : null
+  /**
+   * creates a new Port given the container type
+   * @param {String} type
+   * @param {*} data - the data to populate the initail state with
+   * @returns {Promise}
+   */
+  async create (type, data) {
+    // const container = this.hypervisor._containerTypes[type]
     let nonce = this.state['/'].nonce
 
-    const portRef = {
-      'messages': [],
-      'id': {
-        '/': {
-          nonce: nonce,
-          parent: parentId
-        }
-      },
-      'type': type,
-      'link': link
+    const entryPort = {
+      messages: []
     }
+
+    const port = {
+      messages: [],
+      destPort: entryPort
+    }
+
+    entryPort.destPort = port
+
+    const id = await this.getIdHash({
+      nonce: nonce,
+      parent: this.id
+    })
+
+    await this.hypervisor.createInstance(id, type, data, entryPort)
 
     // incerment the nonce
     nonce = new BN(nonce)
     nonce.iaddn(1)
     this.state['/'].nonce = nonce.toArray()
-    this._unboundPort.add(portRef)
-    return portRef
-  }
-
-  /**
-   * creates a new Port given the container type
-   * @param {String} type
-   * @param {*} data - the data to populate the initail state with
-   * @returns {Object} the newly created port
-   */
-  create (type, data) {
-    const container = this.hypervisor._containerTypes[type]
-    return this._createPortObject(type, {
-      '/': container.Constructor.createState(data)
-    })
+    this._unboundPort.add(port)
+    return port
   }
 
   /**
@@ -174,18 +166,21 @@ module.exports = class PortManager {
    * @param {Array} ports - the ports to wait on
    * @returns {Promise}
    */
-  wait (threshold, fromPort = this.entryPort, ports = [...this._portMap]) {
-    // find the ports that have a smaller tick count then the threshold tick count
-    const unkownPorts = ports.filter(([portRef, port]) => {
-      return port.ticks < threshold && fromPort !== portRef
-    })
+  wait (ticks, port) {
+    if (this._waitingPorts[port]) {
+      throw new Error('cannot wait on port that already has a wait on it')
+    }
+    const message = this.ports[port].message.shift()
+    if (message) {
+      return message
+    } else {
+      const waitPromise = this.hypervisor.scheduler.wait(ticks)
+      const promise = new Promise((resolve, reject) => {
+        this._waitingPorts[port] = resolve
+      })
 
-    const promises = unkownPorts.map(async([portRef, port]) => {
-      // update the port's tick count
-      port.ticks = await this.hypervisor.wait(portRef, threshold, this.entryPort)
-    })
-
-    return Promise.all(promises)
+      return Promise.race([waitPromise, promise])
+    }
   }
 
   /**
@@ -193,18 +188,16 @@ module.exports = class PortManager {
    * @param {Array} ports
    * @returns {Promise}
    */
-  async getNextMessage (ports = [...this._portMap]) {
-    if (ports.length) {
-      // find the oldest message
-      const ticks = ports.map(([name, port]) => {
-        return port.size ? port.ticks : this.exoInterface.ticks
-      }).reduce((ticksA, ticksB) => {
-        return ticksA < ticksB ? ticksA : ticksB
-      })
+  nextMessage () {
+    const portName = Object.keys(this.ports).reduce(messageArbiter)
+    return this.ports[portName].message.shift()
+  }
 
-      await this.wait(ticks)
-      const portMap = ports.reduce(messageArbiter)
-      return portMap[1].dequeue()
-    }
+  hasMessage () {
+    return Object.keys(this.ports).some(name => this.ports[name].message.length)
+  }
+
+  async getIdHash (idObj) {
+    return (await this.graph.flush(idObj))['/']
   }
 }

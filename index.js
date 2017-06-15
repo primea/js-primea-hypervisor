@@ -1,5 +1,6 @@
 const Graph = require('ipld-graph-builder')
 const ExoInterface = require('./exoInterface.js')
+const Message = require('primea-message')
 
 module.exports = class Hypervisor {
   /**
@@ -7,103 +8,73 @@ module.exports = class Hypervisor {
    * destorying them when possible. It also facilitates localating Containers
    * @param {Graph} dag an instance of [ipfs.dag](https://github.com/ipfs/interface-ipfs-core/tree/master/API/dag#dag-api)
    */
-  constructor (dag) {
+  constructor (dag, state = {}) {
+    this._state = state
     this.graph = new Graph(dag)
-    this._containerInstances = new Map()
     this._containerTypes = {}
   }
 
   /**
-   * get a container by its path
-   * @param {Object} root - the root container to start searching from
-   * @param {String} path - the path to travers
    */
-  async getInstanceByPath (root, path) {
-    path = path.split('/')
-    for (const name of path) {
-      const portRef = root.ports.get(name)
-      root = await this.getInstanceByPort(portRef, root.entryPort)
-    }
-    return root
-  }
-
-  /**
-   * get a contrainer instance given its entry port and its mounting port
-   * @param {Object} port the entry port for the container
-   * @param {Object} parentPort the entry port of the parent container
-   */
-  async getInstanceByPort (port, parentPort) {
-    let instance = this._containerInstances.get(port)
+  async getInstance (id) {
+    let instance = await this.scheduler.instances.get(id)
     // if there is no container running crceate one
     if (!instance) {
-      instance = await this.createInstance(port.type, port.link, port, parentPort)
-      instance.on('idle', () => {
+      const promise = this._loadInstance(id)
+      this.scheduler.instances.set(id, promise)
+      instance = await promise
+      instance.once('idle', () => {
         // once the container is done shut it down
-        this._containerInstances.delete(port)
+        this.scheduler.done(instance)
       })
     }
     return instance
   }
 
-  /**
-   * given a port, wait untill its source contract has reached the threshold
-   * tick count
-   * @param {Object} port the port to wait on
-   * @param {Number} threshold the number of ticks to wait before resolving
-   * @param {Object} fromPort the entryPort of the container requesting the
-   * wait. Used internally so that waits don't become cyclic
-   */
-  async wait (port, threshold, fromPort) {
-    let instance = this._containerInstances.get(port)
-    if (instance) {
-      return instance.wait(threshold, fromPort)
-    } else {
-      return threshold
-    }
-  }
-
-  /**
-   *  creates an instance given the container type, starting state, entry port
-   *  and the parentPort
-   *  @param {String} the type of VM to load
-   *  @param {Object} the starting state of the VM
-   *  @param {Object} the entry port
-   *  @param {Object} the parent port
-   */
-  async createInstance (type, state, entryPort = null, parentPort) {
-    const container = this._containerTypes[type]
-
-    if (!state) {
-      state = {
-        '/': container.Constructor.createState()
-      }
-    }
+  async _loadInstance (id) {
+    const state = await this.graph.get(this._state, id)
+    const Container = this._containerTypes[state.type]
 
     // create a new kernel instance
     const exoInterface = new ExoInterface({
-      entryPort: entryPort,
-      parentPort: parentPort,
       hypervisor: this,
       state: state,
-      container: container
+      Container: Container
     })
 
     // save the newly created instance
-    this._containerInstances.set(entryPort, exoInterface)
-    await exoInterface.start()
+    this.scheduler.update(exoInterface)
+    return exoInterface
+  }
+
+  async createInstance (id, type, code, entryPort) {
+    const state = {
+      '/': {
+        nonce: 0,
+        ports: {},
+        type: type,
+        id: {
+          '/': id
+        },
+        code: code
+      }
+    }
+    await this.graph.set(this._state, id, state)
+    const exoInterface = await this._loadInstance(id)
+    exoInterface.queue(null, new Message(entryPort))
+
     return exoInterface
   }
 
   /**
    * creates a state root starting from a given container and a given number of
    * ticks
-   * @param {Container} container an container instance
    * @param {Number} ticks the number of ticks at which to create the state root
    * @returns {Promise}
    */
-  async createStateRoot (container, ticks) {
-    await container.wait(ticks)
-    return this.graph.flush(container.state)
+  async createStateRoot (ticks) {
+    await this.scheduler.wait(ticks)
+    return this.graph.flush(this._state)
   }
 
   /**

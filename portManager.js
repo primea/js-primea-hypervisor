@@ -42,9 +42,6 @@ module.exports = class PortManager {
   }
 
   addUnboundedPorts (ports) {
-    ports.forEach(port => {
-      this._unboundPorts.add(port)
-    })
   }
 
   /**
@@ -59,14 +56,14 @@ module.exports = class PortManager {
       throw new Error('cannot bind port to a name that is alread bound')
     }
 
-    const destPort = await this.hypervisor.getDestPort(port)
+    // save the port instance
+    this.ports[name] = port
 
+    // update the dest port
+    const destPort = await this.hypervisor.getDestPort(port)
     destPort.destName = name
     destPort.destId = this.id
     delete destPort.destPort
-
-    // save the port instance
-    this.ports[name] = port
   }
 
   /**
@@ -108,11 +105,14 @@ module.exports = class PortManager {
    * @param {Message} message
    */
   queue (name, message) {
+    message.ports.forEach(port => {
+      this._unboundPorts.add(port)
+    })
     const resolve = this._waitingPorts[name]
     if (resolve) {
       resolve(message)
-    } else {
-      this.ports[name].push(message)
+    } else if (name) {
+      this.ports[name].messages.push(message)
     }
   }
 

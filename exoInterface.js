@@ -33,7 +33,7 @@ module.exports = class ExoInterface {
    */
   queue (portName, message) {
     message._hops++
-    this.ports.addUnboundedPorts(message.ports)
+    this.ports.queue(portName, message)
     if (this.containerState !== 'running') {
       this.containerState = 'running'
       if (portName) {
@@ -49,24 +49,19 @@ module.exports = class ExoInterface {
   }
 
   async _runNextMessage () {
-    try {
-      if (this.ports.hasMessages()) {
-        await this.hypervisor.scheduler.wait(this.ticks)
-        const message = this.ports.nextMessage()
-        this.ticks = message._ticks
-        this.hypervisor.scheduler.update(this, this.ticks)
-        this.currentMessage = message
-          // run the next message
-        this.run(message)
-      } else {
-        // if no more messages then shut down
-        this.hypervisor.scheduler.done(this)
-      }
-    } catch (e) {
-      console.log(e)
+    if (this.ports.hasMessages()) {
+      await this.hypervisor.scheduler.wait(this.ticks)
+      const message = this.ports.nextMessage()
+      this.ticks = message._ticks
+      this.hypervisor.scheduler.update(this, this.ticks)
+      this.currentMessage = message
+        // run the next message
+      this.run(message)
+    } else {
+      // if no more messages then shut down
+      this.hypervisor.scheduler.done(this)
     }
   }
-
   /**
    * run the kernels code with a given enviroment
    * The Kernel Stores all of its state in the Environment. The Interface is used

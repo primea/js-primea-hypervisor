@@ -8,6 +8,17 @@ module.exports = class Scheduler {
   constructor () {
     this._waits = []
     this.instances = new Map()
+    this.locks = new Set()
+  }
+
+  getLock () {
+    const id = Symbol('lock')
+    this.locks.add(id)
+    return id
+  }
+
+  releaseLock (id) {
+    this.locks.delete(id)
   }
 
   update (instance, ticks = this.oldest()) {
@@ -21,21 +32,20 @@ module.exports = class Scheduler {
     this._checkWaits()
   }
 
-  done (instance) {
-    this.instances.delete(instance.id)
-    if (this.instances.size) {
-      this._checkWaits()
-    } else {
-      // clear any remanding waits
-      this._waits.forEach(wait => {
-        wait.resolve()
-      })
-      this._waits = []
+  getInstance (id) {
+    const item = this.instances.get(id)
+    if (item) {
+      return item.instance
     }
   }
 
+  done (instance) {
+    this.instances.delete(instance.id)
+    this._checkWaits()
+  }
+
   wait (ticks) {
-    if (ticks <= this.oldest()) {
+    if (ticks <= this.oldest() || !this.isRunning()) {
       return
     } else {
       return new Promise((resolve, reject) => {
@@ -53,14 +63,26 @@ module.exports = class Scheduler {
   }
 
   _checkWaits () {
-    const oldest = this.oldest()
-    for (const wait in this._waits) {
-      if (wait.ticks <= oldest) {
+    if (!this.isRunning()) {
+      // clear any remanding waits
+      this._waits.forEach(wait => {
         wait.resolve()
-        this._waits.shift()
-      } else {
-        break
+      })
+      this._waits = []
+    } else {
+      const oldest = this.oldest()
+      for (const wait in this._waits) {
+        if (wait.ticks <= oldest) {
+          wait.resolve()
+          this._waits.shift()
+        } else {
+          break
+        }
       }
     }
+  }
+
+  isRunning () {
+    return this.instances.size || this.locks.size
   }
 }

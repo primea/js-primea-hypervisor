@@ -27,17 +27,17 @@ module.exports = class Hypervisor {
   /**
    */
   async getInstance (id) {
-    let instance = await this.scheduler.instances.get(id)
-    // if there is no container running crceate one
-    if (!instance) {
-      const promise = this._loadInstance(id)
-      this.scheduler.instances.set(id, promise)
-      instance = await promise
+    let instance = this.scheduler.getInstance(id)
+    if (instance) {
+      return instance
+    } else {
+      const lock = this.scheduler.getLock()
+      instance = await this._loadInstance(id, lock)
+      return instance
     }
-    return instance
   }
 
-  async _loadInstance (id) {
+  async _loadInstance (id, lock) {
     const state = await this.graph.get(this._state, id)
     const container = this._containerTypes[state.type]
 
@@ -51,10 +51,12 @@ module.exports = class Hypervisor {
 
     // save the newly created instance
     this.scheduler.update(exoInterface)
+    this.scheduler.releaseLock(lock)
     return exoInterface
   }
 
   async createInstance (type, code, entryPorts = [], id = {nonce: 0, parent: null}) {
+    const lock = this.scheduler.getLock()
     id = await this.getHashFromObj(id)
     const state = {
       nonce: [0],
@@ -64,7 +66,7 @@ module.exports = class Hypervisor {
     }
 
     await this.graph.set(this._state, id, state)
-    const exoInterface = await this._loadInstance(id)
+    const exoInterface = await this._loadInstance(id, lock)
     exoInterface.queue(null, new Message({
       ports: entryPorts
     }))

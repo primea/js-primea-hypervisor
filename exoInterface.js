@@ -1,8 +1,7 @@
-const EventEmitter = require('events')
 const PortManager = require('./portManager.js')
 const Message = require('primea-message')
 
-module.exports = class ExoInterface extends EventEmitter {
+module.exports = class ExoInterface {
   /**
    * the ExoInterface manages the varous message passing functions and provides
    * an interface for the containers to use
@@ -13,7 +12,6 @@ module.exports = class ExoInterface extends EventEmitter {
    * @param {Object} opts.Container
    */
   constructor (opts) {
-    super()
     this.state = opts.state
     this.hypervisor = opts.hypervisor
     this.id = opts.id
@@ -27,9 +25,6 @@ module.exports = class ExoInterface extends EventEmitter {
     this.ports = new PortManager(Object.assign({
       exoInterface: this
     }, opts))
-
-    // once we get an result we run the next message
-    this.on('result', this._runNextMessage)
   }
 
   /**
@@ -38,35 +33,37 @@ module.exports = class ExoInterface extends EventEmitter {
    */
   queue (portName, message) {
     message._hops++
+    this.ports.addUnboundedPorts(message.ports)
     if (this.containerState !== 'running') {
-      this._updateContainerState('running')
+      this.containerState = 'running'
       if (portName) {
         this._runNextMessage()
       } else {
-        this.run(message, true).then(() => {
-          this._runNextMessage()
-        })
+        this.run(message, true)
       }
     }
   }
 
   _updateContainerState (containerState, message) {
     this.containerState = containerState
-    this.emit(containerState, message)
   }
 
   async _runNextMessage () {
-    if (this.ports.hasMessages()) {
-      const message = this.ports.nextMessage()
-      this.ticks = message._ticks
-      this.hypervisor.scheduler.update(this, this.ticks)
-      await this.hypbervisor.scheduler.wait(this.ticks)
-      this.currentMessage = message
-        // run the next message
-      this.run(message)
-    } else {
-      // if no more messages then shut down
-      this._updateContainerState('idle')
+    try {
+      if (this.ports.hasMessages()) {
+        await this.hypervisor.scheduler.wait(this.ticks)
+        const message = this.ports.nextMessage()
+        this.ticks = message._ticks
+        this.hypervisor.scheduler.update(this, this.ticks)
+        this.currentMessage = message
+          // run the next message
+        this.run(message)
+      } else {
+        // if no more messages then shut down
+        this.hypervisor.scheduler.done(this)
+      }
+    } catch (e) {
+      console.log(e)
     }
   }
 
@@ -76,20 +73,18 @@ module.exports = class ExoInterface extends EventEmitter {
    * to by the VM to retrive infromation from the Environment.
    * @returns {Promise}
    */
-  async run (message, init) {
+  async run (message, init = false) {
     let result
+    const method = init ? 'initailize' : 'run'
     try {
-      if (init) {
-        result = await this.container.run(message) || {}
-      } else {
-        result = await this.container.initailize(message) || {}
-      }
+      result = await this.container[method](message) || {}
     } catch (e) {
       result = {
         exception: true,
         exceptionError: e
       }
     }
+    this._runNextMessage()
     return result
   }
 

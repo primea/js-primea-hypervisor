@@ -1,6 +1,7 @@
 const Graph = require('ipld-graph-builder')
-const ExoInterface = require('./exoInterface.js')
 const Message = require('primea-message')
+const ExoInterface = require('./exoInterface.js')
+const Scheduler = require('./scheduler.js')
 
 module.exports = class Hypervisor {
   /**
@@ -9,9 +10,18 @@ module.exports = class Hypervisor {
    * @param {Graph} dag an instance of [ipfs.dag](https://github.com/ipfs/interface-ipfs-core/tree/master/API/dag#dag-api)
    */
   constructor (dag, state = {}) {
-    this._state = state
     this.graph = new Graph(dag)
+    this.scheduler = new Scheduler()
+    this._state = state
     this._containerTypes = {}
+  }
+
+  getDestPort (port) {
+    if (port.destPort) {
+      return port.destPort
+    } else {
+      return this.graph.get(this._state, `${port.destId}/ports/${port.destName}`)
+    }
   }
 
   /**
@@ -23,23 +33,20 @@ module.exports = class Hypervisor {
       const promise = this._loadInstance(id)
       this.scheduler.instances.set(id, promise)
       instance = await promise
-      instance.once('idle', () => {
-        // once the container is done shut it down
-        this.scheduler.done(instance)
-      })
     }
     return instance
   }
 
   async _loadInstance (id) {
     const state = await this.graph.get(this._state, id)
-    const Container = this._containerTypes[state.type]
+    const container = this._containerTypes[state.type]
 
     // create a new kernel instance
     const exoInterface = new ExoInterface({
       hypervisor: this,
       state: state,
-      Container: Container
+      container: container,
+      id: id
     })
 
     // save the newly created instance
@@ -47,21 +54,20 @@ module.exports = class Hypervisor {
     return exoInterface
   }
 
-  async createInstance (id, type, code, entryPort) {
+  async createInstance (type, code, entryPorts = [], id = {nonce: 0, parent: null}) {
+    id = await this.getHashFromObj(id)
     const state = {
-      '/': {
-        nonce: 0,
-        ports: {},
-        type: type,
-        id: {
-          '/': id
-        },
-        code: code
-      }
+      nonce: [0],
+      ports: {},
+      type: type,
+      code: code
     }
+
     await this.graph.set(this._state, id, state)
     const exoInterface = await this._loadInstance(id)
-    exoInterface.queue(null, new Message(entryPort))
+    exoInterface.queue(null, new Message({
+      ports: entryPorts
+    }))
 
     return exoInterface
   }
@@ -88,5 +94,9 @@ module.exports = class Hypervisor {
       Constructor: Constructor,
       args: args
     }
+  }
+
+  async getHashFromObj (obj) {
+    return (await this.graph.flush(obj))['/']
   }
 }

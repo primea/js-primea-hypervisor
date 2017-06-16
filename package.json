@@ -32,7 +32,6 @@
   "dependencies": {
     "binary-search-insert": "^1.0.3",
     "bn.js": "^4.11.6",
-    "events": "^1.1.1",
     "ipld-graph-builder": "1.1.5",
     "primea-message": "0.0.1"
   },

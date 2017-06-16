@@ -11,7 +11,7 @@ module.exports = class Scheduler {
   }
 
   update (instance, ticks = this.oldest()) {
-    this.instance.delete(instance.id)
+    this.instances.delete(instance.id)
     const instanceArray = [...this.instances]
     binarySearchInsert(instanceArray, comparator, [instance.id, {
       ticks: ticks,
@@ -21,9 +21,9 @@ module.exports = class Scheduler {
     this._checkWaits()
   }
 
-  done (id) {
-    this._instance.delete(id)
-    if (this._instance.size) {
+  done (instance) {
+    this.instances.delete(instance.id)
+    if (this.instances.size) {
       this._checkWaits()
     } else {
       // clear any remanding waits
@@ -35,16 +35,21 @@ module.exports = class Scheduler {
   }
 
   wait (ticks) {
-    return new Promise((resolve, reject) => {
-      binarySearchInsert(this._waits, comparator, {
-        ticks: ticks,
-        resolve: resolve
+    if (ticks <= this.oldest()) {
+      return
+    } else {
+      return new Promise((resolve, reject) => {
+        binarySearchInsert(this._waits, comparator, {
+          ticks: ticks,
+          resolve: resolve
+        })
       })
-    })
+    }
   }
 
   oldest () {
-    return [...this.instances][0].ticks
+    const oldest = [...this.instances][0]
+    return oldest ? oldest[1].ticks : 0
   }
 
   _checkWaits () {

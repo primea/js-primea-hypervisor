@@ -36,8 +36,15 @@ module.exports = class PortManager {
    */
   constructor (opts) {
     Object.assign(this, opts)
-    this._unboundPort = new WeakSet()
+    this.ports = this.state.ports
+    this._unboundPorts = new WeakSet()
     this._waitingPorts = {}
+  }
+
+  addUnboundedPorts (ports) {
+    ports.forEach(port => {
+      this._unboundPorts.add(port)
+    })
   }
 
   /**
@@ -45,23 +52,18 @@ module.exports = class PortManager {
    * @param {Object} port - the port to bind
    * @param {String} name - the name of the port
    */
-  async bind (port, name) {
+  async bind (name, port) {
     if (this.isBound(port)) {
       throw new Error('cannot bind a port that is already bound')
     } else if (this.ports[name]) {
       throw new Error('cannot bind port to a name that is alread bound')
     }
 
-    let destPort = port.destPort
-    // if the dest is unbound
-    if (destPort) {
-      delete destPort.destPort
-    } else {
-      destPort = await this.hypervisor.getPort(port)
-    }
+    const destPort = await this.hypervisor.getDestPort(port)
 
     destPort.destName = name
     destPort.destId = this.id
+    delete destPort.destPort
 
     // save the port instance
     this.ports[name] = port
@@ -82,7 +84,7 @@ module.exports = class PortManager {
       delete destPort.destName
       delete destPort.destId
     } else {
-      destPort = await this.hypervisor.getPort(port)
+      destPort = await this.hypervisor.getDestPort(port)
     }
     if (del) {
       delete destPort.destPort
@@ -98,7 +100,7 @@ module.exports = class PortManager {
    * @return {Boolean}
    */
   isBound (port) {
-    return !this._unboundPort.has(port)
+    return !this._unboundPorts.has(port)
   }
 
   /**
@@ -129,9 +131,14 @@ module.exports = class PortManager {
    * @param {*} data - the data to populate the initail state with
    * @returns {Promise}
    */
-  async create (type, data) {
+  create (type, data) {
     // const container = this.hypervisor._containerTypes[type]
-    let nonce = this.state['/'].nonce
+    let nonce = this.state.nonce
+
+    const id = {
+      nonce: nonce,
+      parent: this.id
+    }
 
     const entryPort = {
       messages: []
@@ -144,18 +151,13 @@ module.exports = class PortManager {
 
     entryPort.destPort = port
 
-    const id = await this.getIdHash({
-      nonce: nonce,
-      parent: this.id
-    })
-
-    await this.hypervisor.createInstance(id, type, data, entryPort)
+    this.hypervisor.createInstance(type, data, [entryPort], id)
 
     // incerment the nonce
     nonce = new BN(nonce)
     nonce.iaddn(1)
-    this.state['/'].nonce = nonce.toArray()
-    this._unboundPort.add(port)
+    this.state.nonce = nonce.toArray()
+    this._unboundPorts.add(port)
     return port
   }
 
@@ -190,14 +192,10 @@ module.exports = class PortManager {
    */
   nextMessage () {
     const portName = Object.keys(this.ports).reduce(messageArbiter)
-    return this.ports[portName].message.shift()
+    return this.ports[portName].messages.shift()
   }
 
-  hasMessage () {
-    return Object.keys(this.ports).some(name => this.ports[name].message.length)
-  }
-
-  async getIdHash (idObj) {
-    return (await this.graph.flush(idObj))['/']
+  hasMessages () {
+    return Object.keys(this.ports).some(name => this.ports[name].messages.length)
   }
 }

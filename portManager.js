@@ -12,8 +12,8 @@ function messageArbiter (nameA, nameB) {
   }
 
   // order by number of ticks if messages have different number of ticks
-  if (a._fromPortTicks !== b._fromPortTicks) {
-    return a._fromPortTicks < b._fromPortTicks ? nameA : nameB
+  if (a._fromTicks !== b._fromTicks) {
+    return a._fromTicks < b._fromTicks ? nameA : nameB
   } else if (a.priority !== b.priority) {
     // decide by priority
     return a.priority > b.priority ? nameA : nameB
@@ -37,11 +37,8 @@ module.exports = class PortManager {
   constructor (opts) {
     Object.assign(this, opts)
     this.ports = this.state.ports
-    this._unboundPorts = new WeakSet()
+    this._unboundPorts = new Set()
     this._waitingPorts = {}
-  }
-
-  addUnboundedPorts (ports) {
   }
 
   /**
@@ -54,16 +51,18 @@ module.exports = class PortManager {
       throw new Error('cannot bind a port that is already bound')
     } else if (this.ports[name]) {
       throw new Error('cannot bind port to a name that is alread bound')
+    } else {
+      this._unboundPorts.delete(port)
+
+      // save the port instance
+      this.ports[name] = port
+
+      // update the dest port
+      const destPort = await this.hypervisor.getDestPort(port)
+      destPort.destName = name
+      destPort.destId = this.id
+      delete destPort.destPort
     }
-
-    // save the port instance
-    this.ports[name] = port
-
-    // update the dest port
-    const destPort = await this.hypervisor.getDestPort(port)
-    destPort.destName = name
-    destPort.destId = this.id
-    delete destPort.destPort
   }
 
   /**
@@ -71,9 +70,10 @@ module.exports = class PortManager {
    * @param {String} name
    * @returns {boolean} whether or not the port was deleted
    */
-  async unbind (name, del) {
+  async unbind (name) {
     const port = this.ports[name]
     delete this.ports[name]
+    this._unboundPorts.add(port)
 
     let destPort = port.destPort
     // if the dest is unbound
@@ -83,12 +83,20 @@ module.exports = class PortManager {
     } else {
       destPort = await this.hypervisor.getDestPort(port)
     }
-    if (del) {
-      delete destPort.destPort
-    } else {
-      destPort.destPort = port
-      return port
-    }
+    destPort.destPort = port
+    return port
+  }
+
+  delete (name) {
+
+  }
+
+  _deleteDestPort (port) {
+    this.exInterface.send(port, 'delete')
+  }
+
+  _delete (name) {
+    delete this.ports[name]
   }
 
   /**
@@ -108,6 +116,7 @@ module.exports = class PortManager {
     message.ports.forEach(port => {
       this._unboundPorts.add(port)
     })
+
     const resolve = this._waitingPorts[name]
     if (resolve) {
       resolve(message)
@@ -191,11 +200,19 @@ module.exports = class PortManager {
    * @returns {Promise}
    */
   nextMessage () {
-    const portName = Object.keys(this.ports).reduce(messageArbiter)
-    return this.ports[portName].messages.shift()
+    const portName = Object.keys(this.ports).reduce(messageArbiter.bind(this))
+    const port = this.ports[portName]
+    const message = port.messages.shift()
+    message._fromPort = port
+    message.fromName = portName
+    return message
   }
 
   hasMessages () {
     return Object.keys(this.ports).some(name => this.ports[name].messages.length)
+  }
+
+  isSaturated () {
+    return Object.keys(this.ports).every(name => this.ports[name].messages.length)
   }
 }

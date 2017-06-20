@@ -44,24 +44,27 @@ module.exports = class ExoInterface {
     }
   }
 
-  _updateContainerState (containerState, message) {
-    this.containerState = containerState
-  }
-
   async _runNextMessage () {
+    if (!this.ports.isSaturated()) {
+      await this.hypervisor.scheduler.wait(this.ticks, this.id)
+    }
+
     if (this.ports.hasMessages()) {
-      await this.hypervisor.scheduler.wait(this.ticks)
       const message = this.ports.nextMessage()
-      this.ticks = message._ticks
-      this.hypervisor.scheduler.update(this, this.ticks)
+      if (this.ticks < message._fromTicks) {
+        this.ticks = message._fromTicks
+        this.hypervisor.scheduler.update(this)
+      }
       this.currentMessage = message
-        // run the next message
+
+      // run the next message
       this.run(message)
     } else {
       // if no more messages then shut down
       this.hypervisor.scheduler.done(this)
     }
   }
+
   /**
    * run the kernels code with a given enviroment
    * The Kernel Stores all of its state in the Environment. The Interface is used
@@ -70,15 +73,21 @@ module.exports = class ExoInterface {
    */
   async run (message, init = false) {
     let result
-    const method = init ? 'initailize' : 'run'
-    try {
-      result = await this.container[method](message) || {}
-    } catch (e) {
-      result = {
-        exception: true,
-        exceptionError: e
+    if (message.data === 'delete') {
+      this.ports._delete(message.portName)
+    } else {
+      const method = init ? 'initailize' : 'run'
+
+      try {
+        result = await this.container[method](message) || {}
+      } catch (e) {
+        result = {
+          exception: true,
+          exceptionError: e
+        }
       }
     }
+    // message.response(result)
     this._runNextMessage()
     return result
   }
@@ -89,7 +98,7 @@ module.exports = class ExoInterface {
    */
   incrementTicks (count) {
     this.ticks += count
-    this.hypervisor.scheduler.update(this, this.ticks)
+    this.hypervisor.scheduler.update(this)
   }
 
   /**
@@ -113,7 +122,12 @@ module.exports = class ExoInterface {
    */
   async send (port, message) {
     // set the port that the message came from
-    message._fromPortTicks = this.ticks
+    message._fromTicks = this.ticks
+
+    // if (this.currentMessage !== message && !message.responsePort) {
+    //   this.currentMessage._addSubMessage(message)
+    // }
+
     if (port.destId) {
       const id = port.destId
       const instance = await this.hypervisor.getInstance(id)

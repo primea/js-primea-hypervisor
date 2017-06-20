@@ -50,8 +50,8 @@ module.exports = class Hypervisor {
     })
 
     // save the newly created instance
-    this.scheduler.update(exoInterface)
     this.scheduler.releaseLock(lock)
+    this.scheduler.update(exoInterface)
     return exoInterface
   }
 
@@ -80,7 +80,7 @@ module.exports = class Hypervisor {
    * @param {Number} ticks the number of ticks at which to create the state root
    * @returns {Promise}
    */
-  async createStateRoot (ticks) {
+  async createStateRoot (ticks = Infinity) {
     await this.scheduler.wait(ticks)
     return this.graph.flush(this._state)
   }

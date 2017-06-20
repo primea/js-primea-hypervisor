@@ -85,7 +85,7 @@ module.exports = class PortManager {
   }
 
   delete (name) {
-
+    delete this.ports[name]
   }
 
   _deleteDestPort (port) {

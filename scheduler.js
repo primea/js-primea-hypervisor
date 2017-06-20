@@ -45,7 +45,7 @@ module.exports = class Scheduler {
   }
 
   wait (ticks, id) {
-    if (!this.locks.size && (ticks <= this.smallest() || !this.isRunning())) {
+    if (!this.locks.size && ticks <= this.smallest()) {
       return
     } else {
       return new Promise((resolve, reject) => {
@@ -59,8 +59,7 @@ module.exports = class Scheduler {
   }
 
   smallest () {
-    const smallest = [...this.instances][0]
-    return smallest ? smallest[1].ticks : 0
+    return [...this.instances][0][1].ticks
   }
 
   _checkWaits () {

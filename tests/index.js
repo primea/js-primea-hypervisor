@@ -109,44 +109,6 @@ node.on('ready', () => {
     root.send(port, message)
   })
 
-  tape.skip('ping pong', async t => {
-    class Ping extends BaseContainer {
-      async run (m) {
-        let port = this.exInterface.ports.get('child')
-        if (!port) {
-          port = this.exInterface.ports.create('pong')
-          this.exInterface.ports.bind(port, 'child')
-        }
-
-        if (this.exInterface.ticks < 100) {
-          this.exInterface.incrementTicks(1)
-          return this.exInterface.send(port, this.exInterface.createMessage())
-        }
-      }
-    }
-
-    class Pong extends BaseContainer {
-      run (m) {
-        const port = m.fromPort
-        this.exInterface.incrementTicks(2)
-        return this.exInterface.send(port, this.exInterface.createMessage())
-      }
-    }
-
-    const hypervisor = new Hypervisor(node.dag)
-
-    hypervisor.registerContainer('ping', Ping)
-    hypervisor.registerContainer('pong', Pong)
-    const root = await hypervisor.createInstance('pong')
-    const port = root.ports.create('ping')
-    root.ports.bind(port, 'child')
-
-    await root.send(port, root.createMessage())
-    await hypervisor.createStateRoot(root, Infinity)
-
-    t.end()
-  })
-
   tape('traps', async t => {
     t.plan(1)
     class Root extends BaseContainer {
@@ -375,9 +337,6 @@ node.on('ready', () => {
       run (m) {
         this.exInterface.incrementTicks(2)
         return this.exInterface.send(m.fromPort, this.exInterface.createMessage({
-          resources: {
-            priority: 100
-          },
           data: 'first'
         }))
       }
@@ -437,5 +396,35 @@ node.on('ready', () => {
     await root.ports.unbind('test')
     const message = root.createMessage({ports: [port]})
     t.equals(message.ports[0], port, 'should create a message if the port is unbound')
+  })
+
+  tape.only('port deletion', async t => {
+    t.plan(2)
+
+    class Root extends BaseContainer {
+      run (m) {
+        const one = this.exInterface.ports.create('first')
+        this.exInterface.ports.bind('one', one)
+        this.exInterface.send(one, this.exInterface.createMessage())
+        this.exInterface.incrementTicks(6)
+      }
+    }
+
+    class First extends BaseContainer {
+      run (m) {
+        this.exInterface.incrementTicks(2)
+        this.exInterface.ports.delete('root')
+      }
+    }
+
+    const hypervisor = new Hypervisor(node.dag)
+
+    hypervisor.registerContainer('root', Root)
+    hypervisor.registerContainer('first', First)
+
+    const root = await hypervisor.createInstance('root')
+    const port = root.ports.create('root')
+    root.ports.bind('first', port)
+    root.send(port, root.createMessage())
   })
 })

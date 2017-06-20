@@ -50,11 +50,14 @@ module.exports = class ExoInterface {
     }
 
     if (this.ports.hasMessages()) {
-      const message = this.ports.nextMessage()
+      let message = this.ports.peekNextMessage()
       if (this.ticks < message._fromTicks) {
         this.ticks = message._fromTicks
+          // check for tie messages
         this.hypervisor.scheduler.update(this)
+        await this.hypervisor.scheduler.wait(this.ticks, this.id)
       }
+      message = this.ports.nextMessage()
       this.currentMessage = message
 
       // run the next message

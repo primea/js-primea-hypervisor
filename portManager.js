@@ -14,9 +14,6 @@ function messageArbiter (nameA, nameB) {
   // order by number of ticks if messages have different number of ticks
   if (a._fromTicks !== b._fromTicks) {
     return a._fromTicks < b._fromTicks ? nameA : nameB
-  } else if (a.priority !== b.priority) {
-    // decide by priority
-    return a.priority > b.priority ? nameA : nameB
   } else {
     // insertion order
     return nameA
@@ -203,6 +200,15 @@ module.exports = class PortManager {
     const portName = Object.keys(this.ports).reduce(messageArbiter.bind(this))
     const port = this.ports[portName]
     const message = port.messages.shift()
+    message._fromPort = port
+    message.fromName = portName
+    return message
+  }
+
+  peekNextMessage () {
+    const portName = Object.keys(this.ports).reduce(messageArbiter.bind(this))
+    const port = this.ports[portName]
+    const message = port.messages[0]
     message._fromPort = port
     message.fromName = portName
     return message

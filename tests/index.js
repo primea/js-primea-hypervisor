@@ -47,6 +47,43 @@ node.on('ready', () => {
     t.deepEquals(stateRoot, expectedState, 'expected root!')
   })
 
+  tape('one child contract with saturated ports', async t => {
+    t.plan(2)
+    let message
+    const expectedState = {
+      '/': 'zdpuAtVcH6MUnvt2RXnLsDXyLB3CBSQ7aydfh2ogSKGCejJCQ'
+    }
+
+    class testVMContainer2 extends BaseContainer {
+      run (m) {
+        t.true(m === message, 'should recive a message')
+      }
+    }
+
+    class testVMContainer extends BaseContainer {
+      run (m) {
+        const port = this.exInterface.ports.create('test2')
+        this.exInterface.ports.bind('child', port)
+        this.exInterface.incrementTicks(2)
+        this.exInterface.send(port, m)
+      }
+    }
+
+    const hypervisor = new Hypervisor(node.dag)
+    hypervisor.registerContainer('test', testVMContainer)
+    hypervisor.registerContainer('test2', testVMContainer2)
+
+    let root = await hypervisor.createInstance('test')
+    let port = root.ports.create('test')
+
+    root.ports.bind('first', port)
+    message = root.createMessage()
+
+    root.send(port, message)
+    const stateRoot = await hypervisor.createStateRoot(Infinity)
+    t.deepEquals(stateRoot, expectedState, 'expected state')
+  })
+
   tape('one child contract', async t => {
     t.plan(4)
     let message
@@ -151,7 +188,6 @@ node.on('ready', () => {
 
           this.exInterface.send(one, this.exInterface.createMessage())
           this.exInterface.send(two, this.exInterface.createMessage())
-
         } else if (runs === 1) {
           runs++
           t.equals(m.data, 'second', 'should recived the second message')
@@ -483,6 +519,59 @@ node.on('ready', () => {
     root.send(port, root.createMessage())
     const sr = await hypervisor.createStateRoot()
     t.deepEquals(sr, expectedSr, 'should produce the corret state root')
+
+    t.end()
+  })
+
+  tape('should not remove connected nodes', async t => {
+    const expectedSr = {
+      '/': 'zdpuAwsZTd5mRZBCYA1FJSHrpYDPgSZSiaTQp9xkUeajaoMHM'
+    }
+    class Root extends BaseContainer {
+      run (m) {
+        if (m.ports.length) {
+          const port = this.exInterface.ports.get('test1')
+          this.exInterface.send(port, m)
+          this.exInterface.ports.unbind('test1')
+          // this.exInterface.ports.unbind('test2')
+        } else {
+          const port1 = this.exInterface.ports.create('sub')
+          this.exInterface.ports.bind('test1', port1)
+          const port2 = this.exInterface.ports.create('sub')
+          this.exInterface.ports.bind('test2', port2)
+          this.exInterface.send(port2, this.exInterface.createMessage({data: 'getChannel'}))
+        }
+      }
+    }
+
+    class Sub extends BaseContainer {
+      run (message) {
+        if (message.data === 'getChannel') {
+          const ports = this.exInterface.ports.createChannel()
+          this.exInterface.ports.bind('channel', ports[0])
+          this.exInterface.send(message.fromPort, this.exInterface.createMessage({
+            data: 'bindPort',
+            ports: [ports[1]]
+          }))
+        } else if (message.data === 'bindPort') {
+          this.exInterface.ports.bind('channel', message.ports[0])
+        }
+      }
+    }
+
+    const hypervisor = new Hypervisor(node.dag)
+
+    hypervisor.registerContainer('root', Root)
+    hypervisor.registerContainer('sub', Sub)
+
+    const root = await hypervisor.createInstance('root')
+    const port = root.ports.create('root')
+    root.ports.bind('first', port)
+    root.send(port, root.createMessage())
+    const sr = await hypervisor.createStateRoot()
+    t.deepEquals(sr, expectedSr, 'should produce the corret state root')
+    // await hypervisor.graph.tree(sr, Infinity)
+    // console.log(JSON.stringify(sr, null, 2))
 
     t.end()
   })

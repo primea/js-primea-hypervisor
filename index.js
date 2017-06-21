@@ -14,34 +14,43 @@ module.exports = class Hypervisor {
   constructor (dag, state = {}) {
     this.graph = new Graph(dag)
     this.scheduler = new Scheduler()
-    this._state = state
+    this.state = state
     this._containerTypes = {}
     this._nodesToCheck = new Set()
   }
 
+  /**
+   * add a potaintail node in the state graph to check for garbage collection
+   * @param {string} id
+   */
+  addNodeToCheck (id) {
+    this._nodesToCheck.add(id)
+  }
+
+  /**
+   * removes a potaintail node in the state graph to check for garbage collection
+   * @param {string} id
+   */
+  removeNodeToCheck (id) {
+    this._nodesToCheck.delete(id)
+  }
+
+  /**
+   * given a port, this finds the corridsponeding endpoint port of the channel
+   * @param {object} port
+   * @returns {Promise}
+   */
   getDestPort (port) {
     if (port.destPort) {
       return port.destPort
     } else {
-      return this.graph.get(this._state, `${port.destId}/ports/${port.destName}`)
+      return this.graph.get(this.state, `${port.destId}/ports/${port.destName}`)
     }
   }
 
-  /**
-   */
-  async getInstance (id) {
-    let instance = this.scheduler.getInstance(id)
-    if (instance) {
-      return instance
-    } else {
-      const lock = this.scheduler.getLock()
-      instance = await this._loadInstance(id, lock)
-      return instance
-    }
-  }
-
+  // loads an instance of a container from the state
   async _loadInstance (id, lock) {
-    const state = await this.graph.get(this._state, id)
+    const state = await this.graph.get(this.state, id)
     const container = this._containerTypes[state.type]
 
     // create a new kernel instance
@@ -58,7 +67,35 @@ module.exports = class Hypervisor {
     return exoInterface
   }
 
+  /**
+   * gets an existsing container instances
+   * @param {string} id - the containers ID
+   * @returns {Promise}
+   */
+  async getInstance (id) {
+    let instance = this.scheduler.getInstance(id)
+    if (instance) {
+      return instance
+    } else {
+      const lock = this.scheduler.getLock()
+      instance = await this._loadInstance(id, lock)
+      return instance
+    }
+  }
+
+  /**
+   * creates an new container instances and save it in the state
+   * @param {string} type - the type of container to create
+   * @param {*} code
+   * @param {array} entryPorts
+   * @param {object} id
+   * @param {object} id.nonce
+   * @param {object} id.parent
+   * @returns {Promise}
+   */
   async createInstance (type, code, entryPorts = [], id = {nonce: 0, parent: null}) {
+    // create a lock to prevent the scheduler from reloving waits before the
+    // new container is loaded
     const lock = this.scheduler.getLock()
     id = await this.getHashFromObj(id)
     const state = {
@@ -68,8 +105,11 @@ module.exports = class Hypervisor {
       code: code
     }
 
-    await this.graph.set(this._state, id, state)
+    // save the container in the state
+    await this.graph.set(this.state, id, state)
+    // create the container instance
     const exoInterface = await this._loadInstance(id, lock)
+    // send the intialization message
     exoInterface.queue(null, new Message({
       ports: entryPorts
     }))
@@ -77,10 +117,14 @@ module.exports = class Hypervisor {
     return exoInterface
   }
 
+  /**
+   * deletes container from the state
+   * @param {string} id
+   */
   deleteInstance (id) {
     if (id !== ROOT_ID) {
       this._nodesToCheck.delete(id)
-      delete this._state[id]
+      delete this.state[id]
     }
   }
 
@@ -90,13 +134,13 @@ module.exports = class Hypervisor {
    * @param {Number} ticks the number of ticks at which to create the state root
    * @returns {Promise}
    */
-  async createStateRoot (ticks = Infinity) {
+  async createStateRoot (ticks) {
     await this.scheduler.wait(ticks)
-    const unlinked = await DFSchecker(this.graph, this._state, ROOT_ID, this._nodesToCheck)
+    const unlinked = await DFSchecker(this.graph, this.state, ROOT_ID, this._nodesToCheck)
     unlinked.forEach(id => {
-      delete this._state[id]
+      delete this.state[id]
     })
-    return this.graph.flush(this._state)
+    return this.graph.flush(this.state)
   }
 
   /**
@@ -112,36 +156,54 @@ module.exports = class Hypervisor {
     }
   }
 
+  /**
+   * get a hash from a POJO
+   * @param {object} obj
+   * @return {Promise}
+   */
   async getHashFromObj (obj) {
     return (await this.graph.flush(obj))['/']
   }
 }
 
+// Implements a parrilizable DFS check for graph connictivity given a set of nodes
+// and a root node. Stating for the set of node to check this does a DFS and
+// will return a set a nodes if any that is not connected to the root node.
 async function DFSchecker (graph, state, root, nodes) {
   const checkedNodesSet = new Set()
   let hasRootSet = new Set()
   const promises = []
 
   for (const id of nodes) {
+    // create a set for each of the starting nodes to track the nodes the DFS has
+    // has traversed
     const checkedNodes = new Set()
     checkedNodesSet.add(checkedNodes)
     promises.push(check(id, checkedNodes))
   }
 
+  // wait for all the search to complete
   await Promise.all(promises)
+  // remove the set of nodes that are connected to the root
   checkedNodesSet.delete(hasRootSet)
   let unLinkedNodesArray = []
 
+  // combine the unconnected sets into a single array
   for (const set of checkedNodesSet) {
     unLinkedNodesArray = unLinkedNodesArray.concat([...set])
   }
   return unLinkedNodesArray
 
+  // does the DFS starting with a single node ID
   async function check (id, checkedNodes) {
-    if (!checkedNodesSet.has(checkedNodes) || checkedNodes.has(id) || hasRootSet === checkedNodes) {
+    if (!checkedNodesSet.has(checkedNodes) || // check if this DFS is still searching
+        checkedNodes.has(id) ||  // check if this DFS has alread seen the node
+        hasRootSet === checkedNodes) { // check that this DFS has alread found the root node
       return
     }
 
+    // check if any of the the other DFSs have seen this node and if so merge
+    // the sets and stop searching
     for (const set of checkedNodesSet) {
       if (set.has(id)) {
         checkedNodes.forEach(id => set.add(id))
@@ -150,15 +212,18 @@ async function DFSchecker (graph, state, root, nodes) {
       }
     }
 
+    // mark the node 'checked'
     checkedNodes.add(id)
 
+    // check to see if we are at the root
     if (id === root) {
       hasRootSet = checkedNodes
       return
     }
 
-    const node = await graph.get(state, id)
+    const node = state[id]['/']
     const promises = []
+    // iterate through the nodes ports and recursivly check them
     for (const name in node.ports) {
       const port = node.ports[name]
       promises.push(check(port.destId, checkedNodes))

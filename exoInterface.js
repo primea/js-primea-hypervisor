@@ -19,7 +19,6 @@ module.exports = class ExoInterface {
 
     this.ticks = 0
     this.containerState = 'idle'
-    this._waitingMap = new Map()
 
     // create the port manager
     this.ports = new PortManager(Object.assign({
@@ -29,7 +28,8 @@ module.exports = class ExoInterface {
 
   /**
    * adds a message to this containers message queue
-   * @param {Message} message
+   * @param {string} portName
+   * @param {object} message
    */
   queue (portName, message) {
     message._hops++
@@ -44,22 +44,26 @@ module.exports = class ExoInterface {
     }
   }
 
+  // waits for the next message
   async _runNextMessage () {
+    // check if the ports are saturated, if so we don't have to wait on the
+    // scheduler
     if (!this.ports.isSaturated()) {
       await this.hypervisor.scheduler.wait(this.ticks, this.id)
     }
 
-    if (this.ports.hasMessages()) {
-      let message = this.ports.peekNextMessage()
+    let message = this.ports.peekNextMessage()
+    if (message) {
       if (this.ticks < message._fromTicks) {
         this.ticks = message._fromTicks
           // check for tie messages
         this.hypervisor.scheduler.update(this)
-        await this.hypervisor.scheduler.wait(this.ticks, this.id)
+        if (!this.ports.isSaturated()) {
+          await this.hypervisor.scheduler.wait(this.ticks, this.id)
+          message = this.ports.peekNextMessage()
+        }
       }
-      message = this.ports.nextMessage()
-      this.currentMessage = message
-
+      message.fromPort.messages.shift()
       // run the next message
       this.run(message)
     } else {
@@ -76,9 +80,7 @@ module.exports = class ExoInterface {
    */
   async run (message, init = false) {
     let result
-    message.ports.forEach(port => {
-      this.ports._unboundPorts.add(port)
-    })
+    message.ports.forEach(port => this.ports._unboundPorts.add(port))
     if (message.data === 'delete') {
       this.ports._delete(message.fromName)
     } else {
@@ -135,6 +137,7 @@ module.exports = class ExoInterface {
     // if (this.currentMessage !== message && !message.responsePort) {
     //   this.currentMessage._addSubMessage(message)
     // }
+
     if (port.destId) {
       const id = port.destId
       const instance = await this.hypervisor.getInstance(id)

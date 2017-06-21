@@ -51,6 +51,7 @@ module.exports = class PortManager {
       throw new Error('cannot bind port to a name that is alread bound')
     } else {
       this._unboundPorts.delete(port)
+      this.hypervisor.removeNodeToCheck(this.id)
 
       // save the port instance
       this.ports[name] = port
@@ -65,36 +66,43 @@ module.exports = class PortManager {
 
   /**
    * unbinds a port given its name
-   * @param {String} name
-   * @returns {boolean} whether or not the port was deleted
+   * @param {string} name
+   * @returns {Promise}
    */
   async unbind (name) {
     const port = this.ports[name]
     delete this.ports[name]
     this._unboundPorts.add(port)
 
-    let destPort = await this.hypervisor.getDestPort(port)
-
+    // update the destination port
+    const destPort = await this.hypervisor.getDestPort(port)
     delete destPort.destName
     delete destPort.destId
     destPort.destPort = port
-    this.hypervisor._nodesToCheck.add(this.id)
+    this.hypervisor.addNodeToCheck(this.id)
     return port
   }
 
+  /**
+   * delete an port given the name it is bound to
+   * @param {string} name
+   */
   delete (name) {
     const port = this.ports[name]
-    this._delete(name)
     this.exInterface.send(port, new Message({
       data: 'delete'
     }))
+    this._delete(name)
   }
 
   _delete (name) {
-    this.hypervisor._nodesToCheck.add(this.id)
+    this.hypervisor.addNodeToCheck(this.id)
     delete this.ports[name]
   }
 
+  /**
+   * clears any unbounded ports referances
+   */
   clearUnboundedPorts () {
     this._unboundPorts.forEach(port => {
       this.exInterface.send(port, new Message({
@@ -136,13 +144,12 @@ module.exports = class PortManager {
   }
 
   /**
-   * creates a new Port given the container type
+   * creates a new container. Returning a port to it.
    * @param {String} type
    * @param {*} data - the data to populate the initail state with
-   * @returns {Promise}
+   * @returns {Object}
    */
   create (type, data) {
-    // const container = this.hypervisor._containerTypes[type]
     let nonce = this.state.nonce
 
     const id = {
@@ -150,17 +157,23 @@ module.exports = class PortManager {
       parent: this.id
     }
 
-    const ports = this.createChannel()
-    this._unboundPorts.delete(ports[1])
-    this.hypervisor.createInstance(type, data, [ports[1]], id)
-
     // incerment the nonce
     nonce = new BN(nonce)
     nonce.iaddn(1)
     this.state.nonce = nonce.toArray()
+
+    // create a new channel for the container
+    const ports = this.createChannel()
+    this._unboundPorts.delete(ports[1])
+    this.hypervisor.createInstance(type, data, [ports[1]], id)
+
     return ports[0]
   }
 
+  /**
+   * creates a channel returns the created ports in an Array
+   * @returns {array}
+   */
   createChannel () {
     const port1 = {
       messages: []
@@ -178,29 +191,27 @@ module.exports = class PortManager {
   }
 
   /**
-   * gets the next canonical message given the an array of ports to choose from
-   * @param {Array} ports
-   * @returns {Promise}
+   * find and returns the next message
+   * @returns {object}
    */
-  nextMessage () {
-    const message = this.peekNextMessage()
-    message._fromPort.messages.shift()
-    return message
-  }
-
   peekNextMessage () {
-    const portName = Object.keys(this.ports).reduce(messageArbiter.bind(this))
-    const port = this.ports[portName]
-    const message = port.messages[0]
-    message._fromPort = port
-    message.fromName = portName
-    return message
+    const names = Object.keys(this.ports)
+    if (names.length) {
+      const portName = names.reduce(messageArbiter.bind(this))
+      const port = this.ports[portName]
+      const message = port.messages[0]
+      if (message) {
+        message._fromPort = port
+        message.fromName = portName
+        return message
+      }
+    }
   }
 
-  hasMessages () {
-    return Object.keys(this.ports).some(name => this.ports[name].messages.length)
-  }
-
+  /**
+   * tests wether or not all the ports have a message
+   * @returns {boolean}
+   */
   isSaturated () {
     return Object.keys(this.ports).every(name => this.ports[name].messages.length)
   }

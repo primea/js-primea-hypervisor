@@ -44,15 +44,14 @@ module.exports = class Scheduler {
     this._checkWaits()
   }
 
-  wait (ticks, id) {
+  wait (ticks = Infinity) {
     if (!this.locks.size && ticks <= this.smallest()) {
       return
     } else {
       return new Promise((resolve, reject) => {
         binarySearchInsert(this._waits, comparator, {
           ticks: ticks,
-          resolve: resolve,
-          id: id
+          resolve: resolve
         })
       })
     }

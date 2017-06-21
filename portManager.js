@@ -1,4 +1,5 @@
 const BN = require('bn.js')
+const Message = require('primea-message')
 
 // decides which message to go first
 function messageArbiter (nameA, nameB) {
@@ -72,28 +73,38 @@ module.exports = class PortManager {
     delete this.ports[name]
     this._unboundPorts.add(port)
 
-    let destPort = port.destPort
-    // if the dest is unbound
-    if (destPort) {
-      delete destPort.destName
-      delete destPort.destId
-    } else {
-      destPort = await this.hypervisor.getDestPort(port)
-    }
+    let destPort = await this.hypervisor.getDestPort(port)
+
+    delete destPort.destName
+    delete destPort.destId
     destPort.destPort = port
+    this.hypervisor._nodesToCheck.add(this.id)
     return port
   }
 
   delete (name) {
-    delete this.ports[name]
-  }
-
-  _deleteDestPort (port) {
-    this.exInterface.send(port, 'delete')
+    const port = this.ports[name]
+    this._delete(name)
+    this.exInterface.send(port, new Message({
+      data: 'delete'
+    }))
   }
 
   _delete (name) {
+    this.hypervisor._nodesToCheck.add(this.id)
     delete this.ports[name]
+  }
+
+  clearUnboundedPorts () {
+    this._unboundPorts.forEach(port => {
+      this.exInterface.send(port, new Message({
+        data: 'delete'
+      }))
+    })
+    this._unboundPorts.clear()
+    if (Object.keys(this.ports).length === 0) {
+      this.hypervisor.deleteInstance(this.id)
+    }
   }
 
   /**
@@ -110,14 +121,7 @@ module.exports = class PortManager {
    * @param {Message} message
    */
   queue (name, message) {
-    message.ports.forEach(port => {
-      this._unboundPorts.add(port)
-    })
-
-    const resolve = this._waitingPorts[name]
-    if (resolve) {
-      resolve(message)
-    } else if (name) {
+    if (name) {
       this.ports[name].messages.push(message)
     }
   }
@@ -146,49 +150,31 @@ module.exports = class PortManager {
       parent: this.id
     }
 
-    const entryPort = {
-      messages: []
-    }
-
-    const port = {
-      messages: [],
-      destPort: entryPort
-    }
-
-    entryPort.destPort = port
-
-    this.hypervisor.createInstance(type, data, [entryPort], id)
+    const ports = this.createChannel()
+    this._unboundPorts.delete(ports[1])
+    this.hypervisor.createInstance(type, data, [ports[1]], id)
 
     // incerment the nonce
     nonce = new BN(nonce)
     nonce.iaddn(1)
     this.state.nonce = nonce.toArray()
-    this._unboundPorts.add(port)
-    return port
+    return ports[0]
   }
 
-  /**
-   * waits till all ports have reached a threshold tick count
-   * @param {Integer} threshold - the number of ticks to wait
-   * @param {Object} fromPort - the port requesting the wait
-   * @param {Array} ports - the ports to wait on
-   * @returns {Promise}
-   */
-  wait (ticks, port) {
-    if (this._waitingPorts[port]) {
-      throw new Error('cannot wait on port that already has a wait on it')
+  createChannel () {
+    const port1 = {
+      messages: []
     }
-    const message = this.ports[port].message.shift()
-    if (message) {
-      return message
-    } else {
-      const waitPromise = this.hypervisor.scheduler.wait(ticks)
-      const promise = new Promise((resolve, reject) => {
-        this._waitingPorts[port] = resolve
-      })
 
-      return Promise.race([waitPromise, promise])
+    const port2 = {
+      messages: [],
+      destPort: port1
     }
+
+    port1.destPort = port2
+    this._unboundPorts.add(port1)
+    this._unboundPorts.add(port2)
+    return [port1, port2]
   }
 
   /**
@@ -197,11 +183,8 @@ module.exports = class PortManager {
    * @returns {Promise}
    */
   nextMessage () {
-    const portName = Object.keys(this.ports).reduce(messageArbiter.bind(this))
-    const port = this.ports[portName]
-    const message = port.messages.shift()
-    message._fromPort = port
-    message.fromName = portName
+    const message = this.peekNextMessage()
+    message._fromPort.messages.shift()
     return message
   }
 

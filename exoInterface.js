@@ -23,7 +23,7 @@ module.exports = class ExoInterface {
 
     // create the port manager
     this.ports = new PortManager(Object.assign({
-      exoInterface: this
+      exInterface: this
     }, opts))
   }
 
@@ -76,8 +76,11 @@ module.exports = class ExoInterface {
    */
   async run (message, init = false) {
     let result
+    message.ports.forEach(port => {
+      this.ports._unboundPorts.add(port)
+    })
     if (message.data === 'delete') {
-      this.ports._delete(message.portName)
+      this.ports._delete(message.fromName)
     } else {
       const method = init ? 'initailize' : 'run'
 
@@ -90,6 +93,7 @@ module.exports = class ExoInterface {
         }
       }
     }
+    this.ports.clearUnboundedPorts()
     // message.response(result)
     this._runNextMessage()
     return result
@@ -126,11 +130,11 @@ module.exports = class ExoInterface {
   async send (port, message) {
     // set the port that the message came from
     message._fromTicks = this.ticks
+    message.ports.forEach(port => this.ports._unboundPorts.delete(port))
 
     // if (this.currentMessage !== message && !message.responsePort) {
     //   this.currentMessage._addSubMessage(message)
     // }
-
     if (port.destId) {
       const id = port.destId
       const instance = await this.hypervisor.getInstance(id)

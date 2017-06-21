@@ -3,6 +3,8 @@ const Message = require('primea-message')
 const ExoInterface = require('./exoInterface.js')
 const Scheduler = require('./scheduler.js')
 
+const ROOT_ID = 'zdpuAm6aTdLVMUuiZypxkwtA7sKm7BWERy8MPbaCrFsmiyzxr'
+
 module.exports = class Hypervisor {
   /**
    * The Hypervisor manages the container instances by instantiating them and
@@ -14,6 +16,7 @@ module.exports = class Hypervisor {
     this.scheduler = new Scheduler()
     this._state = state
     this._containerTypes = {}
+    this._nodesToCheck = new Set()
   }
 
   getDestPort (port) {
@@ -74,6 +77,13 @@ module.exports = class Hypervisor {
     return exoInterface
   }
 
+  deleteInstance (id) {
+    if (id !== ROOT_ID) {
+      this._nodesToCheck.delete(id)
+      delete this._state[id]
+    }
+  }
+
   /**
    * creates a state root starting from a given container and a given number of
    * ticks
@@ -82,6 +92,10 @@ module.exports = class Hypervisor {
    */
   async createStateRoot (ticks = Infinity) {
     await this.scheduler.wait(ticks)
+    const unlinked = await DFSchecker(this.graph, this._state, ROOT_ID, this._nodesToCheck)
+    unlinked.forEach(id => {
+      delete this._state[id]
+    })
     return this.graph.flush(this._state)
   }
 
@@ -100,5 +114,55 @@ module.exports = class Hypervisor {
 
   async getHashFromObj (obj) {
     return (await this.graph.flush(obj))['/']
+  }
+}
+
+async function DFSchecker (graph, state, root, nodes) {
+  const checkedNodesSet = new Set()
+  let hasRootSet = new Set()
+  const promises = []
+
+  for (const id of nodes) {
+    const checkedNodes = new Set()
+    checkedNodesSet.add(checkedNodes)
+    promises.push(check(id, checkedNodes))
+  }
+
+  await Promise.all(promises)
+  checkedNodesSet.delete(hasRootSet)
+  let unLinkedNodesArray = []
+
+  for (const set of checkedNodesSet) {
+    unLinkedNodesArray = unLinkedNodesArray.concat([...set])
+  }
+  return unLinkedNodesArray
+
+  async function check (id, checkedNodes) {
+    if (!checkedNodesSet.has(checkedNodes) || checkedNodes.has(id) || hasRootSet === checkedNodes) {
+      return
+    }
+
+    for (const set of checkedNodesSet) {
+      if (set.has(id)) {
+        checkedNodes.forEach(id => set.add(id))
+        checkedNodesSet.delete(checkedNodes)
+        return
+      }
+    }
+
+    checkedNodes.add(id)
+
+    if (id === root) {
+      hasRootSet = checkedNodes
+      return
+    }
+
+    const node = await graph.get(state, id)
+    const promises = []
+    for (const name in node.ports) {
+      const port = node.ports[name]
+      promises.push(check(port.destId, checkedNodes))
+    }
+    return Promise.all(promises)
   }
 }

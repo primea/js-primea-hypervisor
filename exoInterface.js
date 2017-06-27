@@ -48,40 +48,36 @@ module.exports = class ExoInterface {
   async _runNextMessage () {
     // check if the ports are saturated, if so we don't have to wait on the
     // scheduler
-    try {
-      let message = this.ports.peekNextMessage()
-      let saturated = this.ports.isSaturated()
-      let oldestTime = this.hypervisor.scheduler.smallest()
+    let message = this.ports.peekNextMessage()
+    let saturated = this.ports.isSaturated()
+    let oldestTime = this.hypervisor.scheduler.smallest()
 
-      // this.hypervisor.scheduler.print()
-      while (!saturated &&
-             !((message && oldestTime >= message._fromTicks) ||
-               (!message && (oldestTime === this.ticks || !this.hypervisor.scheduler._running.size)))) {
-        const ticksToWait = message ? message._fromTicks : this.ticks
+    while (!saturated &&
+           !(message && oldestTime >= message._fromTicks ||
+             !message && oldestTime === this.ticks)) {
+      const ticksToWait = message ? message._fromTicks : this.ticks
 
-        await Promise.race([
-          this.hypervisor.scheduler.wait(ticksToWait, this.id).then(m => {
-            // this.hypervisor.scheduler.print()
-            message = this.ports.peekNextMessage()
-          }),
-          this.ports.olderMessage(message).then(m => {
-            message = m
-          }),
-          this.ports.whenSaturated().then(() => {
-            saturated = true
-          })
-        ])
+      await Promise.race([
+        this.hypervisor.scheduler.wait(ticksToWait, this.id).then(m => {
+          message = this.ports.peekNextMessage()
+        }),
+        this.ports.olderMessage(message).then(m => {
+          message = m
+        }),
+        this.ports.whenSaturated().then(() => {
+          saturated = true
+          message = this.ports.peekNextMessage()
+        })
+      ])
 
-        oldestTime = this.hypervisor.scheduler.smallest()
-        saturated = this.ports.isSaturated()
-      }
+      oldestTime = this.hypervisor.scheduler.smallest()
+      saturated = this.ports.isSaturated()
+    }
 
-      if (!message) {
-        // if no more messages then shut down
-        this.hypervisor.scheduler.done(this)
-        return
-      }
-
+    if (!message) {
+      // if no more messages then shut down
+      this.hypervisor.scheduler.done(this)
+    } else {
       message.fromPort.messages.shift()
       if (message._fromTicks > this.ticks) {
         this.ticks = message._fromTicks
@@ -89,8 +85,6 @@ module.exports = class ExoInterface {
       this.hypervisor.scheduler.update(this)
       // run the next message
       this.run(message)
-    } catch (e) {
-      console.log(e)
     }
   }
 

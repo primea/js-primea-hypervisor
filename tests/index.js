@@ -183,10 +183,68 @@ node.on('ready', () => {
           const one = this.exInterface.ports.create('first')
           const two = this.exInterface.ports.create('second')
 
+          this.exInterface.ports.bind('two', two)
+          this.exInterface.ports.bind('one', one)
+
+          await Promise.all([
+            this.exInterface.send(one, this.exInterface.createMessage()),
+            this.exInterface.send(two, this.exInterface.createMessage())
+          ])
+        } else if (runs === 1) {
+          runs++
+          t.equals(m.data, 'first', 'should recive the first message')
+        } else if (runs === 2) {
+          t.equals(m.data, 'second', 'should recived the second message')
+        }
+      }
+    }
+
+    class First extends BaseContainer {
+      run (m) {
+        this.exInterface.incrementTicks(2)
+        return this.exInterface.send(m.fromPort, this.exInterface.createMessage({
+          data: 'first'
+        }))
+      }
+    }
+
+    class Second extends BaseContainer {
+      run (m) {
+        this.exInterface.incrementTicks(3)
+        return this.exInterface.send(m.fromPort, this.exInterface.createMessage({
+          data: 'second'
+        }))
+      }
+    }
+
+    const hypervisor = new Hypervisor(node.dag)
+
+    hypervisor.registerContainer('root', Root)
+    hypervisor.registerContainer('first', First)
+    hypervisor.registerContainer('second', Second)
+
+    const root = await hypervisor.createInstance('root')
+    const port = root.ports.create('root')
+    root.ports.bind('first', port)
+
+    root.send(port, root.createMessage())
+  })
+
+  tape('message should arrive in the correct oder if sent in order', async t => {
+    t.plan(2)
+    let runs = 0
+
+    class Root extends BaseContainer {
+      run (m) {
+        if (!runs) {
+          runs++
+          const one = this.exInterface.ports.create('first')
+          const two = this.exInterface.ports.create('second')
+
           this.exInterface.ports.bind('one', one)
           this.exInterface.ports.bind('two', two)
 
-          await Promise.all([
+          Promise.all([
             this.exInterface.send(one, this.exInterface.createMessage()),
             this.exInterface.send(two, this.exInterface.createMessage())
           ])
@@ -280,6 +338,82 @@ node.on('ready', () => {
     const root = await hypervisor.createInstance('root')
     const port = root.ports.create('root')
     root.ports.bind('first', port)
+
+    root.send(port, root.createMessage())
+  })
+
+  tape('saturation', async t => {
+    t.plan(2)
+    let runs = 0
+
+    class Root extends BaseContainer {
+      run (m) {
+        if (!runs) {
+          runs++
+          const one = this.exInterface.ports.create('first')
+          const two = this.exInterface.ports.create('second')
+
+          this.exInterface.ports.bind('two', two)
+          this.exInterface.ports.bind('one', one)
+
+          Promise.all([
+            this.exInterface.send(one, this.exInterface.createMessage()),
+            this.exInterface.send(two, this.exInterface.createMessage())
+          ])
+          this.exInterface.incrementTicks(6)
+        } else if (runs === 1) {
+          runs++
+          t.equals(m.data, 'first', 'should recive the first message')
+        } else if (runs === 2) {
+          t.equals(m.data, 'second', 'should recived the second message')
+        }
+      }
+    }
+
+    class First extends BaseContainer {
+      run (m) {
+        this.exInterface.incrementTicks(2)
+        this.exInterface.send(m.fromPort, this.exInterface.createMessage({
+          data: 'first'
+        }))
+      }
+    }
+
+    class Second extends BaseContainer {
+      run (m) {
+        // this.exInterface.incrementTicks(3)
+        this.exInterface.incrementTicks(3)
+        this.exInterface.send(m.fromPort, this.exInterface.createMessage({
+          data: 'second'
+        }))
+      }
+    }
+
+    class Waiter extends BaseContainer {
+      initailize () {
+        return new Promise((resolve, reject) => {
+          setTimeout(() => {
+            resolve()
+          }, 200)
+        })
+      }
+    }
+
+    const hypervisor = new Hypervisor(node.dag)
+
+    hypervisor.registerContainer('root', Root)
+    hypervisor.registerContainer('first', First)
+    hypervisor.registerContainer('second', Second)
+    hypervisor.registerContainer('waiter', Waiter)
+
+    const root = await hypervisor.createInstance('root')
+    const port = root.ports.create('root')
+    root.ports.bind('first', port)
+    const port1 = root.ports.create('waiter')
+    root.ports.bind('sencond', port1)
+
+    await root.send(port, root.createMessage())
+    root.incrementTicks(7)
 
     root.send(port, root.createMessage())
   })
@@ -577,7 +711,6 @@ node.on('ready', () => {
     const sr = await hypervisor.createStateRoot()
     t.deepEquals(sr, expectedSr, 'should produce the corret state root')
     // await hypervisor.graph.tree(sr, Infinity)
-    // console.log(JSON.stringify(sr, null, 2))
 
     t.end()
   })

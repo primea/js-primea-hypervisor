@@ -35,7 +35,6 @@ module.exports = class Scheduler {
     this._running.add(instance.id)
     this.instances.delete(instance.id)
     const instanceArray = [...this.instances]
-    // console.log(instanceArray)
     binarySearchInsert(instanceArray, instancesComparator, [instance.id, instance])
     this.instances = new Map(instanceArray)
   }
@@ -52,17 +51,13 @@ module.exports = class Scheduler {
 
   wait (ticks = Infinity, id) {
     this._running.delete(id)
-    if (!this.locks.size && ticks <= this.smallest()) {
-      return Promise.resolve()
-    } else {
-      return new Promise((resolve, reject) => {
-        binarySearchInsert(this._waits, comparator, {
-          ticks: ticks,
-          resolve: resolve
-        })
-        this._checkWaits()
+    return new Promise((resolve, reject) => {
+      binarySearchInsert(this._waits, comparator, {
+        ticks: ticks,
+        resolve: resolve
       })
-    }
+      this._checkWaits()
+    })
   }
 
   smallest () {
@@ -78,28 +73,21 @@ module.exports = class Scheduler {
         this._waits = []
       } else if (!this._running.size) {
         const smallest = this._waits[0].ticks
-        const toUpdate = []
         for (let instance of this.instances) {
           instance = instance[1]
-          const ticks = instance.ticks
-          if (ticks > smallest) {
+          if (instance.ticks > smallest) {
             break
           } else {
-            toUpdate.push(instance)
+            instance.ticks = smallest
+            this._update(instance)
           }
         }
-        toUpdate.forEach(instance => {
-          instance.ticks = smallest
-          this._update(instance)
-        })
-        this._checkWaits()
+        return this._checkWaits()
       } else {
         const smallest = this.smallest()
         for (const index in this._waits) {
           const wait = this._waits[index]
           if (wait.ticks <= smallest) {
-            // this.print()
-            // console.log('resolve', wait.ticks)
             wait.resolve()
           } else {
             this._waits.splice(0, index)

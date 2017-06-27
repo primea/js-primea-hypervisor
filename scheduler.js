@@ -4,9 +4,14 @@ const comparator = function (a, b) {
   return a.ticks - b.ticks
 }
 
+const instancesComparator = function (a, b) {
+  return a[1].ticks - b[1].ticks
+}
+
 module.exports = class Scheduler {
   constructor () {
     this._waits = []
+    this._running = new Set()
     this.instances = new Map()
     this.locks = new Set()
   }
@@ -22,56 +27,79 @@ module.exports = class Scheduler {
   }
 
   update (instance) {
+    this._update(instance)
+    this._checkWaits()
+  }
+
+  _update (instance) {
+    this._running.add(instance.id)
     this.instances.delete(instance.id)
     const instanceArray = [...this.instances]
-    binarySearchInsert(instanceArray, comparator, [instance.id, {
-      ticks: instance.ticks,
-      instance: instance
-    }])
+    // console.log(instanceArray)
+    binarySearchInsert(instanceArray, instancesComparator, [instance.id, instance])
     this.instances = new Map(instanceArray)
-    this._checkWaits()
   }
 
   getInstance (id) {
-    const item = this.instances.get(id)
-    if (item) {
-      return item.instance
-    }
+    return this.instances.get(id)
   }
 
   done (instance) {
+    this._running.delete(instance.id)
     this.instances.delete(instance.id)
     this._checkWaits()
   }
 
-  wait (ticks = Infinity) {
+  wait (ticks = Infinity, id) {
+    this._running.delete(id)
     if (!this.locks.size && ticks <= this.smallest()) {
-      return
+      return Promise.resolve()
     } else {
       return new Promise((resolve, reject) => {
         binarySearchInsert(this._waits, comparator, {
           ticks: ticks,
           resolve: resolve
         })
+        this._checkWaits()
       })
     }
   }
 
   smallest () {
-    return [...this.instances][0][1].ticks
+    return this.instances.size ? [...this.instances][0][1].ticks : 0
   }
 
   _checkWaits () {
     if (!this.locks.size) {
+      // if there are no running containers
       if (!this.isRunning()) {
         // clear any remanding waits
         this._waits.forEach(wait => wait.resolve())
         this._waits = []
+      } else if (!this._running.size) {
+        const smallest = this._waits[0].ticks
+        const toUpdate = []
+        for (let instance of this.instances) {
+          instance = instance[1]
+          const ticks = instance.ticks
+          if (ticks > smallest) {
+            break
+          } else {
+            toUpdate.push(instance)
+          }
+        }
+        toUpdate.forEach(instance => {
+          instance.ticks = smallest
+          this._update(instance)
+        })
+        this._checkWaits()
       } else {
         const smallest = this.smallest()
         for (const index in this._waits) {
           const wait = this._waits[index]
           if (wait.ticks <= smallest) {
+            // this.print()
+            // console.log('resolve', wait.ticks)
             wait.resolve()
           } else {
             this._waits.splice(0, index)

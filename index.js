@@ -62,8 +62,8 @@ module.exports = class Hypervisor {
     })
 
     // save the newly created instance
-    this.scheduler.update(exoInterface)
     this.scheduler.releaseLock(lock)
+    this.scheduler.update(exoInterface)
     return exoInterface
   }
 

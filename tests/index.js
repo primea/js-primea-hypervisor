@@ -177,7 +177,7 @@ node.on('ready', () => {
     let runs = 0
 
     class Root extends BaseContainer {
-      run (m) {
+      async run (m) {
         if (!runs) {
           runs++
           const one = this.exInterface.ports.create('first')
@@ -186,8 +186,10 @@ node.on('ready', () => {
           this.exInterface.ports.bind('one', one)
           this.exInterface.ports.bind('two', two)
 
-          this.exInterface.send(one, this.exInterface.createMessage())
-          this.exInterface.send(two, this.exInterface.createMessage())
+          await Promise.all([
+            this.exInterface.send(one, this.exInterface.createMessage()),
+            this.exInterface.send(two, this.exInterface.createMessage())
+          ])
         } else if (runs === 1) {
           runs++
           t.equals(m.data, 'second', 'should recived the second message')
@@ -200,14 +202,18 @@ node.on('ready', () => {
     class First extends BaseContainer {
       run (m) {
         this.exInterface.incrementTicks(2)
-        this.exInterface.send(m.fromPort, this.exInterface.createMessage({data: 'first'}))
+        return this.exInterface.send(m.fromPort, this.exInterface.createMessage({
+          data: 'first'
+        }))
       }
     }
 
     class Second extends BaseContainer {
       run (m) {
         this.exInterface.incrementTicks(1)
-        this.exInterface.send(m.fromPort, this.exInterface.createMessage({data: 'second'}))
+        return this.exInterface.send(m.fromPort, this.exInterface.createMessage({
+          data: 'second'
+        }))
       }
     }
 

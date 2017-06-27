@@ -48,27 +48,49 @@ module.exports = class ExoInterface {
   async _runNextMessage () {
     // check if the ports are saturated, if so we don't have to wait on the
     // scheduler
-    if (!this.ports.isSaturated()) {
-      await this.hypervisor.scheduler.wait(this.ticks, this.id)
-    }
+    try {
+      let message = this.ports.peekNextMessage()
+      let saturated = this.ports.isSaturated()
+      let oldestTime = this.hypervisor.scheduler.smallest()
 
-    let message = this.ports.peekNextMessage()
-    if (message) {
-      if (this.ticks < message._fromTicks) {
-        this.ticks = message._fromTicks
-          // check for tie messages
-        this.hypervisor.scheduler.update(this)
-        if (!this.ports.isSaturated()) {
-          await this.hypervisor.scheduler.wait(this.ticks, this.id)
-          message = this.ports.peekNextMessage()
-        }
+      // this.hypervisor.scheduler.print()
+      while (!saturated &&
+             !((message && oldestTime >= message._fromTicks) ||
+               (!message && (oldestTime === this.ticks || !this.hypervisor.scheduler._running.size)))) {
+        const ticksToWait = message ? message._fromTicks : this.ticks
+
+        await Promise.race([
+          this.hypervisor.scheduler.wait(ticksToWait, this.id).then(m => {
+            // this.hypervisor.scheduler.print()
+            message = this.ports.peekNextMessage()
+          }),
+          this.ports.olderMessage(message).then(m => {
+            message = m
+          }),
+          this.ports.whenSaturated().then(() => {
+            saturated = true
+          })
+        ])
+
+        oldestTime = this.hypervisor.scheduler.smallest()
+        saturated = this.ports.isSaturated()
       }
+
+      if (!message) {
+        // if no more messages then shut down
+        this.hypervisor.scheduler.done(this)
+        return
+      }
+
       message.fromPort.messages.shift()
+      if (message._fromTicks > this.ticks) {
+        this.ticks = message._fromTicks
+      }
+      this.hypervisor.scheduler.update(this)
       // run the next message
       this.run(message)
-    } else {
-      // if no more messages then shut down
-      this.hypervisor.scheduler.done(this)
+    } catch (e) {
+      console.log(e)
     }
   }
 

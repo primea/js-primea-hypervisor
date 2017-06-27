@@ -37,6 +37,12 @@ module.exports = class PortManager {
     this.ports = this.state.ports
     this._unboundPorts = new Set()
     this._waitingPorts = {}
+    this._saturationPromise = new Promise((resolve, reject) => {
+      this._saturationResolve = resolve
+    })
+    this._oldestMessagePromise = new Promise((resolve, reject) => {
+      this._oldestMessageResolve = resolve
+    })
   }
 
   /**
@@ -130,7 +136,22 @@ module.exports = class PortManager {
    */
   queue (name, message) {
     if (name) {
-      this.ports[name].messages.push(message)
+      const port = this.ports[name]
+      if (port.messages.push(message) === 1 && message._fromTicks < this._messageTickThreshold) {
+        message._fromPort = port
+        message.fromName = name
+        this._oldestMessageResolve(message)
+        this._oldestMessagePromise = new Promise((resolve, reject) => {
+          this._oldestMessageResolve = resolve
+        })
+        this._messageTickThreshold = Infinity
+      }
+    }
+    if (this.isSaturated()) {
+      this._saturationResolve()
+      this._saturationPromise = new Promise((resolve, reject) => {
+        this._saturationResolve = resolve
+      })
     }
   }
 
@@ -200,6 +221,7 @@ module.exports = class PortManager {
       const portName = names.reduce(messageArbiter.bind(this))
       const port = this.ports[portName]
       const message = port.messages[0]
+
       if (message) {
         message._fromPort = port
         message.fromName = portName
@@ -213,6 +235,16 @@ module.exports = class PortManager {
    * @returns {boolean}
    */
   isSaturated () {
-    return Object.keys(this.ports).every(name => this.ports[name].messages.length)
+    const keys = Object.keys(this.ports)
+    return keys.length ? keys.every(name => this.ports[name].messages.length) : 0
+  }
+
+  whenSaturated () {
+    return this._saturationPromise
+  }
+
+  olderMessage (message) {
+    this._messageTickThreshold = message ? message._fromTicks : 0
+    return this._oldestMessagePromise
   }
 }

@@ -1,5 +1,5 @@
 const BN = require('bn.js')
-const Message = require('primea-message')
+const DeleteMessage = require('./deleteMessage')
 
 // decides which message to go first
 function messageArbiter (nameA, nameB) {
@@ -27,16 +27,14 @@ module.exports = class PortManager {
    * fetching and waiting on ports
    * @param {Object} opts
    * @param {Object} opts.state
-   * @param {Object} opts.entryPort
-   * @param {Object} opts.parentPort
    * @param {Object} opts.hypervisor
    * @param {Object} opts.exoInterface
    */
   constructor (opts) {
     Object.assign(this, opts)
     this.ports = this.state.ports
+    // tracks unbounded ports that we have
     this._unboundPorts = new Set()
-    this._waitingPorts = {}
     this._saturationPromise = new Promise((resolve, reject) => {
       this._saturationResolve = resolve
     })
@@ -57,7 +55,11 @@ module.exports = class PortManager {
       throw new Error('cannot bind port to a name that is alread bound')
     } else {
       this._unboundPorts.delete(port)
-      this.hypervisor.removeNodeToCheck(this.id)
+
+      port.messages.forEach(message => {
+        message._fromPort = port
+        message.fromName = name
+      })
 
       // save the port instance
       this.ports[name] = port
@@ -79,13 +81,13 @@ module.exports = class PortManager {
     const port = this.ports[name]
     delete this.ports[name]
     this._unboundPorts.add(port)
+    this.hypervisor.addNodeToCheck(this.id)
 
     // update the destination port
     const destPort = await this.hypervisor.getDestPort(port)
     delete destPort.destName
     delete destPort.destId
     destPort.destPort = port
-    this.hypervisor.addNodeToCheck(this.id)
     return port
   }
 
@@ -95,9 +97,7 @@ module.exports = class PortManager {
    */
   delete (name) {
     const port = this.ports[name]
-    this.exInterface.send(port, new Message({
-      data: 'delete'
-    }))
+    this.exInterface.send(port, new DeleteMessage())
     this._delete(name)
   }
 
@@ -111,13 +111,11 @@ module.exports = class PortManager {
    */
   clearUnboundedPorts () {
     this._unboundPorts.forEach(port => {
-      this.exInterface.send(port, new Message({
-        data: 'delete'
-      }))
+      this.exInterface.send(port, new DeleteMessage())
     })
     this._unboundPorts.clear()
     if (Object.keys(this.ports).length === 0) {
-      this.hypervisor.deleteInstance(this.id)
+      this.hypervisor.addNodeToCheck(this.id)
     }
   }
 
@@ -135,23 +133,25 @@ module.exports = class PortManager {
    * @param {Message} message
    */
   queue (name, message) {
-    if (name) {
-      const port = this.ports[name]
-      if (port.messages.push(message) === 1 && message._fromTicks < this._messageTickThreshold) {
-        message._fromPort = port
-        message.fromName = name
+    const port = this.ports[name]
+
+    message._fromPort = port
+    message.fromName = name
+
+    if (port.messages.push(message) === 1) {
+      if (this._isSaturated()) {
+        this._saturationResolve()
+        this._saturationPromise = new Promise((resolve, reject) => {
+          this._saturationResolve = resolve
+        })
+      }
+
+      if (message._fromTicks < this._messageTickThreshold) {
         this._oldestMessageResolve(message)
         this._oldestMessagePromise = new Promise((resolve, reject) => {
           this._oldestMessageResolve = resolve
         })
         this._messageTickThreshold = Infinity
-      }
-
-      if (this.isSaturated()) {
-        this._saturationResolve()
-        this._saturationPromise = new Promise((resolve, reject) => {
-          this._saturationResolve = resolve
-        })
       }
     }
   }
@@ -187,8 +187,7 @@ module.exports = class PortManager {
     // create a new channel for the container
     const ports = this.createChannel()
     this._unboundPorts.delete(ports[1])
-    const promise = this.hypervisor.createInstance(type, data, [ports[1]], id)
-    this.exInterface._addWork(promise)
+    this.hypervisor.createInstance(type, data, [ports[1]], id)
 
     return ports[0]
   }
@@ -213,39 +212,64 @@ module.exports = class PortManager {
     return [port1, port2]
   }
 
-  /**
-   * find and returns the next message
-   * @returns {object}
-   */
-  peekNextMessage () {
+  // find and returns the next message
+  _peekNextMessage () {
     const names = Object.keys(this.ports)
     if (names.length) {
       const portName = names.reduce(messageArbiter.bind(this))
       const port = this.ports[portName]
-      const message = port.messages[0]
-
-      if (message) {
-        message._fromPort = port
-        message.fromName = portName
-        return message
-      }
+      return port.messages[0]
     }
   }
 
   /**
-   * tests wether or not all the ports have a message
-   * @returns {boolean}
+   * Waits for the the next message if any
+   * @returns {Promise}
    */
-  isSaturated () {
+  async getNextMessage () {
+    let message = this._peekNextMessage()
+    let saturated = this._isSaturated()
+    let oldestTime = this.hypervisor.scheduler.oldest()
+
+    while (!saturated && // end if there are messages on all the ports
+      // end if we have a message older then slowest containers
+      !((message && oldestTime >= message._fromTicks) ||
+        // end if there are no messages and this container is the oldest contaner
+        (!message && oldestTime === this.exInterface.ticks))) {
+      const ticksToWait = message ? message._fromTicks : this.exInterface.ticks
+
+      await Promise.race([
+        this.hypervisor.scheduler.wait(ticksToWait, this.id).then(() => {
+          message = this._peekNextMessage()
+        }),
+        this._olderMessage(message).then(m => {
+          message = m
+        }),
+        this._whenSaturated().then(() => {
+          saturated = true
+          message = this._peekNextMessage()
+        })
+      ])
+
+      oldestTime = this.hypervisor.scheduler.oldest()
+    }
+    return message
+  }
+
+  // tests wether or not all the ports have a message
+  _isSaturated () {
     const keys = Object.keys(this.ports)
     return keys.length ? keys.every(name => this.ports[name].messages.length) : 0
   }
 
-  whenSaturated () {
+  // returns a promise that resolve when the ports are saturated
+  _whenSaturated () {
     return this._saturationPromise
   }
 
-  olderMessage (message) {
+  // returns a promise that resolve when a message older then the given message
+  // is recived
+  _olderMessage (message) {
     this._messageTickThreshold = message ? message._fromTicks : 0
     return this._oldestMessagePromise
   }

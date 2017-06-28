@@ -1,5 +1,6 @@
-const PortManager = require('./portManager.js')
 const Message = require('primea-message')
+const PortManager = require('./portManager.js')
+const DeleteMessage = require('./deleteMessage')
 
 module.exports = class ExoInterface {
   /**
@@ -19,16 +20,11 @@ module.exports = class ExoInterface {
 
     this.ticks = 0
     this.containerState = 'idle'
-    this._pendingSends = new Map()
 
     // create the port manager
     this.ports = new PortManager(Object.assign({
       exInterface: this
     }, opts))
-  }
-
-  _addWork (promise) {
-    this._outStandingWork = Promise.all([this._outStandingWork, promise])
   }
 
   /**
@@ -38,14 +34,16 @@ module.exports = class ExoInterface {
    */
   queue (portName, message) {
     message._hops++
-    this.ports.queue(portName, message)
-    if (this.containerState !== 'running') {
-      this.containerState = 'running'
-      if (portName) {
+    if (portName) {
+      this.ports.queue(portName, message)
+      if (this.containerState !== 'running') {
+        this.containerState = 'running'
         this._runNextMessage()
-      } else {
-        this.run(message, true)
       }
+    } else {
+      // initailiazation message
+      this.containerState = 'running'
+      this.run(message, true)
     }
   }
 
@@ -53,37 +51,15 @@ module.exports = class ExoInterface {
   async _runNextMessage () {
     // check if the ports are saturated, if so we don't have to wait on the
     // scheduler
-    let message = this.ports.peekNextMessage()
-    let saturated = this.ports.isSaturated()
-    let oldestTime = this.hypervisor.scheduler.smallest()
-
-    while (!saturated &&
-           !(message && oldestTime >= message._fromTicks ||
-             !message && oldestTime === this.ticks)) {
-      const ticksToWait = message ? message._fromTicks : this.ticks
-
-      await Promise.race([
-        this.hypervisor.scheduler.wait(ticksToWait, this.id).then(m => {
-          message = this.ports.peekNextMessage()
-        }),
-        this.ports.olderMessage(message).then(m => {
-          message = m
-        }),
-        this.ports.whenSaturated().then(() => {
-          saturated = true
-          message = this.ports.peekNextMessage()
-        })
-      ])
-
-      oldestTime = this.hypervisor.scheduler.smallest()
-      saturated = this.ports.isSaturated()
-    }
+    const message = await this.ports.getNextMessage()
 
     if (!message) {
       // if no more messages then shut down
-      this.hypervisor.scheduler.done(this)
+      this.hypervisor.scheduler.done(this.id)
     } else {
       message.fromPort.messages.shift()
+      // if the message we recived had more ticks then we currently have the
+      // update it
       if (message._fromTicks > this.ticks) {
         this.ticks = message._fromTicks
       }
@@ -102,11 +78,10 @@ module.exports = class ExoInterface {
   async run (message, init = false) {
     let result
     message.ports.forEach(port => this.ports._unboundPorts.add(port))
-    if (message.data === 'delete') {
+    if (message.constructor === DeleteMessage) {
       this.ports._delete(message.fromName)
     } else {
       const method = init ? 'initailize' : 'run'
-
       try {
         result = await this.container[method](message) || {}
       } catch (e) {
@@ -164,6 +139,7 @@ module.exports = class ExoInterface {
       const instance = await this.hypervisor.getInstance(id)
       instance.queue(port.destName, message)
     } else {
+      // port is unbound
       port.destPort.messages.push(message)
     }
   }

@@ -47,6 +47,27 @@ node.on('ready', () => {
     t.deepEquals(stateRoot, expectedState, 'expected root!')
   })
 
+  tape('basic - do not store containers with no ports bound', async t => {
+    t.plan(1)
+    const expectedState = {
+      '/': 'zdpuAx5LRRwTgzPipKEPgh7MHUKu4Pd1BYjDqBcf9whgzvrqf'
+    }
+
+    class testVMContainer extends BaseContainer {
+      initailize () {}
+    }
+
+    const hypervisor = new Hypervisor(node.dag)
+    hypervisor.registerContainer('test', testVMContainer)
+
+    const root = await hypervisor.createInstance('test')
+    const port = root.ports.create('test')
+    root.ports.bind('one', port)
+
+    const stateRoot = await hypervisor.createStateRoot(Infinity)
+    t.deepEquals(stateRoot, expectedState, 'expected root!')
+  })
+
   tape('one child contract with saturated ports', async t => {
     t.plan(2)
     let message

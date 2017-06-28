@@ -2,6 +2,7 @@ const Graph = require('ipld-graph-builder')
 const Message = require('primea-message')
 const ExoInterface = require('./exoInterface.js')
 const Scheduler = require('./scheduler.js')
+const DFSchecker = require('./dfsChecker.js')
 
 const ROOT_ID = 'zdpuAm6aTdLVMUuiZypxkwtA7sKm7BWERy8MPbaCrFsmiyzxr'
 
@@ -10,6 +11,7 @@ module.exports = class Hypervisor {
    * The Hypervisor manages the container instances by instantiating them and
    * destorying them when possible. It also facilitates localating Containers
    * @param {Graph} dag an instance of [ipfs.dag](https://github.com/ipfs/interface-ipfs-core/tree/master/API/dag#dag-api)
+   * @param {object} state - the starting state
    */
   constructor (dag, state = {}) {
     this.graph = new Graph(dag)
@@ -25,14 +27,6 @@ module.exports = class Hypervisor {
    */
   addNodeToCheck (id) {
     this._nodesToCheck.add(id)
-  }
-
-  /**
-   * removes a potaintail node in the state graph to check for garbage collection
-   * @param {string} id
-   */
-  removeNodeToCheck (id) {
-    this._nodesToCheck.delete(id)
   }
 
   /**
@@ -120,17 +114,6 @@ module.exports = class Hypervisor {
   }
 
   /**
-   * deletes container from the state
-   * @param {string} id
-   */
-  deleteInstance (id) {
-    if (id !== ROOT_ID) {
-      this._nodesToCheck.delete(id)
-      delete this.state[id]
-    }
-  }
-
-  /**
    * creates a state root starting from a given container and a given number of
    * ticks
    * @param {Number} ticks the number of ticks at which to create the state root
@@ -165,71 +148,5 @@ module.exports = class Hypervisor {
    */
   async getHashFromObj (obj) {
     return (await this.graph.flush(obj))['/']
-  }
-}
-
-// Implements a parrilizable DFS check for graph connictivity given a set of nodes
-// and a root node. Stating for the set of node to check this does a DFS and
-// will return a set a nodes if any that is not connected to the root node.
-async function DFSchecker (graph, state, root, nodes) {
-  const checkedNodesSet = new Set()
-  let hasRootSet = new Set()
-  const promises = []
-
-  for (const id of nodes) {
-    // create a set for each of the starting nodes to track the nodes the DFS has
-    // has traversed
-    const checkedNodes = new Set()
-    checkedNodesSet.add(checkedNodes)
-    promises.push(check(id, checkedNodes))
-  }
-
-  // wait for all the search to complete
-  await Promise.all(promises)
-  // remove the set of nodes that are connected to the root
-  checkedNodesSet.delete(hasRootSet)
-  let unLinkedNodesArray = []
-
-  // combine the unconnected sets into a single array
-  for (const set of checkedNodesSet) {
-    unLinkedNodesArray = unLinkedNodesArray.concat([...set])
-  }
-  return unLinkedNodesArray
-
-  // does the DFS starting with a single node ID
-  async function check (id, checkedNodes) {
-    if (!checkedNodesSet.has(checkedNodes) || // check if this DFS is still searching
-        checkedNodes.has(id) ||  // check if this DFS has alread seen the node
-        hasRootSet === checkedNodes) { // check that this DFS has alread found the root node
-      return
-    }
-
-    // check if any of the the other DFSs have seen this node and if so merge
-    // the sets and stop searching
-    for (const set of checkedNodesSet) {
-      if (set.has(id)) {
-        checkedNodes.forEach(id => set.add(id))
-        checkedNodesSet.delete(checkedNodes)
-        return
-      }
-    }
-
-    // mark the node 'checked'
-    checkedNodes.add(id)
-
-    // check to see if we are at the root
-    if (id === root) {
-      hasRootSet = checkedNodes
-      return
-    }
-
-    const node = state[id]['/']
-    const promises = []
-    // iterate through the nodes ports and recursivly check them
-    for (const name in node.ports) {
-      const port = node.ports[name]
-      promises.push(check(port.destId, checkedNodes))
-    }
-    return Promise.all(promises)
   }
 }

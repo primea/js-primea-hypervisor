@@ -1,82 +1,71 @@
-const EventEmitter = require('events')
-const PortManager = require('./portManager.js')
 const Message = require('primea-message')
+const PortManager = require('./portManager.js')
+const DeleteMessage = require('./deleteMessage')
 
-module.exports = class ExoInterface extends EventEmitter {
+module.exports = class ExoInterface {
   /**
    * the ExoInterface manages the varous message passing functions and provides
    * an interface for the containers to use
    * @param {Object} opts
+   * @param {Object} opts.id
    * @param {Object} opts.state
-   * @param {Object} opts.entryPort
-   * @param {Object} opts.parentPort
    * @param {Object} opts.hypervisor
    * @param {Object} opts.Container
    */
   constructor (opts) {
-    super()
     this.state = opts.state
-    this.entryPort = opts.entryPort
     this.hypervisor = opts.hypervisor
+    this.id = opts.id
+    this.container = new opts.container.Constructor(this, opts.container.args)
 
-    this.containerState = 'idle'
-
-    // the total number of ticks that the container has ran
     this.ticks = 0
+    this.containerState = 'idle'
 
     // create the port manager
     this.ports = new PortManager(Object.assign({
-      exoInterface: this
+      exInterface: this
     }, opts))
-
-    this._waitingMap = new Map()
-    this.container = new opts.container.Constructor(this, opts.container.args)
-
-    // once we get an result we run the next message
-    this.on('result', this._runNextMessage)
-
-    // on idle clear all the 'wiats'
-    this.on('idle', () => {
-      for (const [, waiter] of this._waitingMap) {
-        waiter.resolve(this.ticks)
-      }
-    })
-  }
-
-  /**
-   * starts the container
-   * @returns {Promise}
-   */
-  start () {
-    return this.ports.start()
   }
 
   /**
    * adds a message to this containers message queue
-   * @param {Message} message
+   * @param {string} portName
+   * @param {object} message
    */
-  queue (message) {
+  queue (portName, message) {
     message._hops++
-    this.ports.queue(message)
-    if (this.containerState !== 'running') {
-      this._updateContainerState('running')
-      this._runNextMessage()
+    if (portName) {
+      this.ports.queue(portName, message)
+      if (this.containerState !== 'running') {
+        this.containerState = 'running'
+        this._runNextMessage()
+      }
+    } else {
+      // initailiazation message
+      this.containerState = 'running'
+      this.run(message, true)
     }
   }
 
-  _updateContainerState (containerState, message) {
-    this.containerState = containerState
-    this.emit(containerState, message)
-  }
-
+  // waits for the next message
   async _runNextMessage () {
+    // check if the ports are saturated, if so we don't have to wait on the
+    // scheduler
     const message = await this.ports.getNextMessage()
-    if (message) {
+
+    if (!message) {
+      // if no more messages then shut down
+      this.hypervisor.scheduler.done(this.id)
+    } else {
+      message.fromPort.messages.shift()
+      // if the message we recived had more ticks then we currently have the
+      // update it
+      if (message._fromTicks > this.ticks) {
+        this.ticks = message._fromTicks
+      }
+      this.hypervisor.scheduler.update(this)
       // run the next message
       this.run(message)
-    } else {
-      // if no more messages then shut down
-      this._updateContainerState('idle')
     }
   }
 
@@ -86,40 +75,26 @@ module.exports = class ExoInterface extends EventEmitter {
    * to by the VM to retrive infromation from the Environment.
    * @returns {Promise}
    */
-  async run (message) {
+  async run (message, init = false) {
     let result
-    try {
-      result = await this.container.run(message) || {}
-    } catch (e) {
-      result = {
-        exception: true,
-        exceptionError: e
+    message.ports.forEach(port => this.ports._unboundPorts.add(port))
+    if (message.constructor === DeleteMessage) {
+      this.ports._delete(message.fromName)
+    } else {
+      const method = init ? 'initailize' : 'run'
+      try {
+        result = await this.container[method](message) || {}
+      } catch (e) {
+        result = {
+          exception: true,
+          exceptionError: e
+        }
       }
     }
-
-    this.emit('result', result)
+    this.ports.clearUnboundedPorts()
+    // message.response(result)
+    this._runNextMessage()
     return result
-  }
-
-  /**
-   * returns a promise that resolves once the kernel hits the threshould tick count
-   * @param {Number} threshould - the number of ticks to wait
-   * @returns {Promise}
-   */
-  wait (threshold, fromPort) {
-    if (threshold <= this.ticks) {
-      return this.ticks
-    } else if (this.containerState === 'idle') {
-      return this.ports.wait(threshold, fromPort)
-    } else {
-      return new Promise((resolve, reject) => {
-        this._waitingMap.set(fromPort, {
-          threshold: threshold,
-          resolve: resolve,
-          from: fromPort
-        })
-      })
-    }
   }
 
   /**
@@ -128,12 +103,7 @@ module.exports = class ExoInterface extends EventEmitter {
    */
   incrementTicks (count) {
     this.ticks += count
-    for (const [fromPort, waiter] of this._waitingMap) {
-      if (waiter.threshold < this.ticks) {
-        this._waitingMap.delete(fromPort)
-        waiter.resolve(this.ticks)
-      }
-    }
+    this.hypervisor.scheduler.update(this)
   }
 
   /**
@@ -155,32 +125,22 @@ module.exports = class ExoInterface extends EventEmitter {
    * @param {Object} portRef - the port
    * @param {Message} message - the message
    */
-  async send (portRef, message) {
-    if (!this.ports.isBound(portRef)) {
-      throw new Error('cannot send message with an unbound port')
-    }
-
+  async send (port, message) {
     // set the port that the message came from
-    message._fromPort = this.entryPort
-    message._fromPortTicks = this.ticks
+    message._fromTicks = this.ticks
+    message.ports.forEach(port => this.ports._unboundPorts.delete(port))
 
-    const container = await this.getInstance(portRef)
-    container.queue(message)
+    // if (this.currentMessage !== message && !message.responsePort) {
+    //   this.currentMessage._addSubMessage(message)
+    // }
 
-    const waiter = this._waitingMap.get(portRef)
-    // if the was a wait on this port the resolve it
-    if (waiter) {
-      waiter.resolve(this.ticks)
-      this._waitingMap.delete(portRef)
+    if (port.destId) {
+      const id = port.destId
+      const instance = await this.hypervisor.getInstance(id)
+      instance.queue(port.destName, message)
+    } else {
+      // port is unbound
+      port.destPort.messages.push(message)
     }
-  }
-
-  /**
-   * gets a container instance given a port
-   * @param {Object} portRef - the port
-   * @returns {Object}
-   */
-  getInstance (portRef) {
-    return this.hypervisor.getInstanceByPort(portRef, this.entryPort)
   }
 }

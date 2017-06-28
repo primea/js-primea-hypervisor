@@ -146,12 +146,13 @@ module.exports = class PortManager {
         })
         this._messageTickThreshold = Infinity
       }
-    }
-    if (this.isSaturated()) {
-      this._saturationResolve()
-      this._saturationPromise = new Promise((resolve, reject) => {
-        this._saturationResolve = resolve
-      })
+
+      if (this.isSaturated()) {
+        this._saturationResolve()
+        this._saturationPromise = new Promise((resolve, reject) => {
+          this._saturationResolve = resolve
+        })
+      }
     }
   }
 
@@ -186,7 +187,8 @@ module.exports = class PortManager {
     // create a new channel for the container
     const ports = this.createChannel()
     this._unboundPorts.delete(ports[1])
-    this.hypervisor.createInstance(type, data, [ports[1]], id)
+    const promise = this.hypervisor.createInstance(type, data, [ports[1]], id)
+    this.exInterface._addWork(promise)
 
     return ports[0]
   }

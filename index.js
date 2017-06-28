@@ -17,6 +17,7 @@ module.exports = class Hypervisor {
     this.state = state
     this._containerTypes = {}
     this._nodesToCheck = new Set()
+    this._loadingInstances = new Map()
   }
 
   /**
@@ -72,14 +73,20 @@ module.exports = class Hypervisor {
    * @param {string} id - the containers ID
    * @returns {Promise}
    */
-  async getInstance (id) {
-    let instance = this.scheduler.getInstance(id)
+  getInstance (id) {
+    let instance = this.scheduler.getInstance(id) || this._loadingInstances.get(id)
     if (instance) {
+      // console.log('have instance', id)
       return instance
     } else {
       const lock = this.scheduler.getLock()
-      instance = await this._loadInstance(id, lock)
-      return instance
+      const promise = this._loadInstance(id, lock)
+      promise.then(() => {
+        this._loadingInstances.delete(id)
+      })
+
+      this._loadingInstances.set(id, promise)
+      return promise
     }
   }
 

@@ -177,7 +177,7 @@ node.on('ready', () => {
     let runs = 0
 
     class Root extends BaseContainer {
-      async run (m) {
+      run (m) {
         if (!runs) {
           runs++
           const one = this.exInterface.ports.create('first')
@@ -186,10 +186,8 @@ node.on('ready', () => {
           this.exInterface.ports.bind('two', two)
           this.exInterface.ports.bind('one', one)
 
-          await Promise.all([
-            this.exInterface.send(one, this.exInterface.createMessage()),
-            this.exInterface.send(two, this.exInterface.createMessage())
-          ])
+          this.exInterface.send(one, this.exInterface.createMessage())
+          this.exInterface.send(two, this.exInterface.createMessage())
         } else if (runs === 1) {
           runs++
           t.equals(m.data, 'first', 'should recive the first message')
@@ -536,6 +534,50 @@ node.on('ready', () => {
     root.send(port, root.createMessage())
   })
 
+  tape('send to the same container at the same time', async t => {
+    t.plan(2)
+
+    let runs = 0
+    let instance
+
+    class Root extends BaseContainer {
+      run (m) {
+        let one = this.exInterface.ports.get('one')
+        if (!one) {
+          one = this.exInterface.ports.create('first')
+          this.exInterface.ports.bind('one', one)
+        } else {
+          this.exInterface.send(one, this.exInterface.createMessage())
+          this.exInterface.send(one, this.exInterface.createMessage())
+        }
+      }
+    }
+
+    class First extends BaseContainer {
+      run (m) {
+        ++runs
+        if (runs === 2) {
+          t.equals(instance, this, 'should have same instances')
+        } else {
+          instance = this
+        }
+      }
+    }
+
+    const hypervisor = new Hypervisor(node.dag)
+
+    hypervisor.registerContainer('root', Root)
+    hypervisor.registerContainer('first', First)
+
+    const root = await hypervisor.createInstance('root')
+    const port = root.ports.create('root')
+    root.ports.bind('first', port)
+    root.send(port, root.createMessage())
+    await hypervisor.createStateRoot()
+    root.send(port, root.createMessage())
+    await hypervisor.createStateRoot()
+    t.equals(runs, 2)
+  })
   tape('checking ports', async t => {
     t.plan(4)
     const hypervisor = new Hypervisor(node.dag)

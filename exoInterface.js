@@ -19,11 +19,16 @@ module.exports = class ExoInterface {
 
     this.ticks = 0
     this.containerState = 'idle'
+    this._pendingSends = new Map()
 
     // create the port manager
     this.ports = new PortManager(Object.assign({
       exInterface: this
     }, opts))
+  }
+
+  _addWork (promise) {
+    this._outStandingWork = Promise.all([this._outStandingWork, promise])
   }
 
   /**

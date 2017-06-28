@@ -1,6 +1,6 @@
 const Graph = require('ipld-graph-builder')
 const Message = require('primea-message')
-const ExoInterface = require('./exoInterface.js')
+const Kernel = require('./kernel.js')
 const Scheduler = require('./scheduler.js')
 const DFSchecker = require('./dfsChecker.js')
 
@@ -48,7 +48,7 @@ module.exports = class Hypervisor {
     const container = this._containerTypes[state.type]
 
     // create a new kernel instance
-    const exoInterface = new ExoInterface({
+    const kernel = new Kernel({
       hypervisor: this,
       state: state,
       container: container,
@@ -56,8 +56,8 @@ module.exports = class Hypervisor {
     })
 
     // save the newly created instance
-    this.scheduler.update(exoInterface)
-    return exoInterface
+    this.scheduler.update(kernel)
+    return kernel
   }
 
   /**

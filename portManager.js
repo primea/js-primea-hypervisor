@@ -97,7 +97,7 @@ module.exports = class PortManager {
    */
   delete (name) {
     const port = this.ports[name]
-    this.exInterface.send(port, new DeleteMessage())
+    this.kernel.send(port, new DeleteMessage())
     this._delete(name)
   }
 
@@ -111,7 +111,7 @@ module.exports = class PortManager {
    */
   clearUnboundedPorts () {
     this._unboundPorts.forEach(port => {
-      this.exInterface.send(port, new DeleteMessage())
+      this.kernel.send(port, new DeleteMessage())
     })
     this._unboundPorts.clear()
     if (Object.keys(this.ports).length === 0) {
@@ -235,8 +235,8 @@ module.exports = class PortManager {
       // end if we have a message older then slowest containers
       !((message && oldestTime >= message._fromTicks) ||
         // end if there are no messages and this container is the oldest contaner
-        (!message && oldestTime === this.exInterface.ticks))) {
-      const ticksToWait = message ? message._fromTicks : this.exInterface.ticks
+        (!message && oldestTime === this.kernel.ticks))) {
+      const ticksToWait = message ? message._fromTicks : this.kernel.ticks
 
       await Promise.race([
         this.hypervisor.scheduler.wait(ticksToWait, this.id).then(() => {

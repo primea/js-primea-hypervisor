@@ -2,7 +2,7 @@ const Message = require('primea-message')
 const PortManager = require('./portManager.js')
 const DeleteMessage = require('./deleteMessage')
 
-module.exports = class ExoInterface {
+module.exports = class Kernel {
   /**
    * the ExoInterface manages the varous message passing functions and provides
    * an interface for the containers to use
@@ -23,7 +23,7 @@ module.exports = class ExoInterface {
 
     // create the port manager
     this.ports = new PortManager(Object.assign({
-      exInterface: this
+      kernel: this
     }, opts))
   }
 

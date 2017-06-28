@@ -14,16 +14,18 @@ module.exports = class Scheduler {
     this._running = new Set()
     this._loadingInstances = new Map()
     this.instances = new Map()
-    this.locks = new Set()
   }
 
   getLock (id) {
-    this.locks.add(id)
-    return id
-  }
-
-  releaseLock (id) {
-    this.locks.delete(id)
+    let r
+    const promise = new Promise((resolve, reject) => {
+      r = resolve
+    })
+    promise.then(() => {
+      this._loadingInstances.delete(id)
+    })
+    this._loadingInstances.set(id, promise)
+    return r
   }
 
   update (instance) {
@@ -65,7 +67,7 @@ module.exports = class Scheduler {
   }
 
   _checkWaits () {
-    if (!this.locks.size) {
+    if (!this._loadingInstances.size) {
       // if there are no running containers
       if (!this.isRunning()) {
         // clear any remanding waits

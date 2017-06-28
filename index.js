@@ -49,7 +49,7 @@ module.exports = class Hypervisor {
   }
 
   // loads an instance of a container from the state
-  async _loadInstance (id, lock) {
+  async _loadInstance (id) {
     const state = await this.graph.get(this.state, id)
     const container = this._containerTypes[state.type]
 
@@ -71,19 +71,15 @@ module.exports = class Hypervisor {
    * @param {string} id - the containers ID
    * @returns {Promise}
    */
-  getInstance (id) {
+  async getInstance (id) {
     let instance = this.scheduler.getInstance(id)
     if (instance) {
       return instance
     } else {
-      const promise = this._loadInstance(id, id)
-      promise.then(() => {
-        this.scheduler._loadingInstances.delete(id)
-        this.scheduler.releaseLock(id)
-      })
-      this.scheduler.getLock(id, promise)
-      this.scheduler._loadingInstances.set(id, promise)
-      return promise
+      const resolve = this.scheduler.getLock(id)
+      const instance = await this._loadInstance(id)
+      resolve(instance)
+      return instance
     }
   }
 
@@ -100,7 +96,7 @@ module.exports = class Hypervisor {
   async createInstance (type, code, entryPorts = [], id = {nonce: 0, parent: null}) {
     // create a lock to prevent the scheduler from reloving waits before the
     // new container is loaded
-    this.scheduler.getLock(id)
+    const resolve = this.scheduler.getLock(id)
     const idHash = await this.getHashFromObj(id)
     const state = {
       nonce: [0],
@@ -112,9 +108,9 @@ module.exports = class Hypervisor {
     // save the container in the state
     await this.graph.set(this.state, idHash, state)
     // create the container instance
-    const exoInterface = await this._loadInstance(idHash, id)
+    const exoInterface = await this._loadInstance(idHash)
 
-    this.scheduler.releaseLock(id)
+    resolve(exoInterface)
     // send the intialization message
     exoInterface.queue(null, new Message({
       ports: entryPorts

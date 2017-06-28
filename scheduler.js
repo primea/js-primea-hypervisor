@@ -12,12 +12,12 @@ module.exports = class Scheduler {
   constructor () {
     this._waits = []
     this._running = new Set()
+    this._loadingInstances = new Map()
     this.instances = new Map()
     this.locks = new Set()
   }
 
-  getLock () {
-    const id = Symbol('lock')
+  getLock (id) {
     this.locks.add(id)
     return id
   }
@@ -40,7 +40,7 @@ module.exports = class Scheduler {
   }
 
   getInstance (id) {
-    return this.instances.get(id)
+    return this.instances.get(id) || this._loadingInstances.get(id)
   }
 
   done (instance) {

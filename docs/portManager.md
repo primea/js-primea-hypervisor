@@ -3,19 +3,20 @@
 ### Table of Contents
 
 -   [constructor](#constructor)
--   [start](#start)
 -   [bind](#bind)
+-   [unbind](#unbind)
+-   [delete](#delete)
+-   [clearUnboundedPorts](#clearunboundedports)
+-   [isBound](#isbound)
 -   [queue](#queue)
 -   [get](#get)
--   [delete](#delete)
--   [isValidPort](#isvalidport)
 -   [create](#create)
--   [wait](#wait)
+-   [createChannel](#createchannel)
 -   [getNextMessage](#getnextmessage)
 
 ## constructor
 
-[portManager.js:41-44](https://github.com/primea/js-primea-hypervisor/blob/9b7a855ce9b773c9162179ef6cdb3c70739711f0/portManager.js#L41-L44 "Source code on GitHub")
+[portManager.js:33-44](https://github.com/primea/js-primea-hypervisor/blob/b507f49239a73767abbee979b4e637a6ca469764/portManager.js#L33-L44 "Source code on GitHub")
 
 The port manager manages the the ports. This inculdes creation, deletion
 fetching and waiting on ports
@@ -24,66 +25,51 @@ fetching and waiting on ports
 
 -   `opts` **[Object](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Object)** 
     -   `opts.state` **[Object](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Object)** 
-    -   `opts.entryPort` **[Object](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Object)** 
-    -   `opts.parentPort` **[Object](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Object)** 
     -   `opts.hypervisor` **[Object](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Object)** 
     -   `opts.exoInterface` **[Object](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Object)** 
 
-## start
-
-[portManager.js:51-63](https://github.com/primea/js-primea-hypervisor/blob/9b7a855ce9b773c9162179ef6cdb3c70739711f0/portManager.js#L51-L63 "Source code on GitHub")
-
-starts the port manager. This fetchs the ports from the state and maps
-them to thier names
-
-Returns **[Promise](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Promise)** 
-
 ## bind
 
-[portManager.js:75-79](https://github.com/primea/js-primea-hypervisor/blob/9b7a855ce9b773c9162179ef6cdb3c70739711f0/portManager.js#L75-L79 "Source code on GitHub")
+[portManager.js:51-73](https://github.com/primea/js-primea-hypervisor/blob/b507f49239a73767abbee979b4e637a6ca469764/portManager.js#L51-L73 "Source code on GitHub")
 
 binds a port to a name
 
 **Parameters**
 
--   `port` **[Object](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Object)** the port to bind
 -   `name` **[String](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String)** the name of the port
+-   `port` **[Object](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Object)** the port to bind
 
-## queue
+## unbind
 
-[portManager.js:85-87](https://github.com/primea/js-primea-hypervisor/blob/9b7a855ce9b773c9162179ef6cdb3c70739711f0/portManager.js#L85-L87 "Source code on GitHub")
+[portManager.js:80-92](https://github.com/primea/js-primea-hypervisor/blob/b507f49239a73767abbee979b4e637a6ca469764/portManager.js#L80-L92 "Source code on GitHub")
 
-queues a message on a port
-
-**Parameters**
-
--   `message` **Message** 
-
-## get
-
-[portManager.js:94-96](https://github.com/primea/js-primea-hypervisor/blob/9b7a855ce9b773c9162179ef6cdb3c70739711f0/portManager.js#L94-L96 "Source code on GitHub")
-
-gets a port given it's name
+unbinds a port given its name
 
 **Parameters**
 
--   `name` **[String](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String)** 
+-   `name` **[string](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String)** 
 
-Returns **[Object](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Object)** 
+Returns **[Promise](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Promise)** 
 
 ## delete
 
-[portManager.js:102-106](https://github.com/primea/js-primea-hypervisor/blob/9b7a855ce9b773c9162179ef6cdb3c70739711f0/portManager.js#L102-L106 "Source code on GitHub")
+[portManager.js:98-102](https://github.com/primea/js-primea-hypervisor/blob/b507f49239a73767abbee979b4e637a6ca469764/portManager.js#L98-L102 "Source code on GitHub")
 
-deletes a port given its name
+delete an port given the name it is bound to
 
 **Parameters**
 
--   `name` **[String](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String)** 
+-   `name` **[string](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String)** 
 
-## isValidPort
+## clearUnboundedPorts
 
-[portManager.js:113-115](https://github.com/primea/js-primea-hypervisor/blob/9b7a855ce9b773c9162179ef6cdb3c70739711f0/portManager.js#L113-L115 "Source code on GitHub")
+[portManager.js:112-120](https://github.com/primea/js-primea-hypervisor/blob/b507f49239a73767abbee979b4e637a6ca469764/portManager.js#L112-L120 "Source code on GitHub")
+
+clears any unbounded ports referances
+
+## isBound
+
+[portManager.js:127-129](https://github.com/primea/js-primea-hypervisor/blob/b507f49239a73767abbee979b4e637a6ca469764/portManager.js#L127-L129 "Source code on GitHub")
 
 check if a port object is still valid
 
@@ -93,40 +79,54 @@ check if a port object is still valid
 
 Returns **[Boolean](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Boolean)** 
 
+## queue
+
+[portManager.js:135-157](https://github.com/primea/js-primea-hypervisor/blob/b507f49239a73767abbee979b4e637a6ca469764/portManager.js#L135-L157 "Source code on GitHub")
+
+queues a message on a port
+
+**Parameters**
+
+-   `name`  
+-   `message` **Message** 
+
+## get
+
+[portManager.js:164-166](https://github.com/primea/js-primea-hypervisor/blob/b507f49239a73767abbee979b4e637a6ca469764/portManager.js#L164-L166 "Source code on GitHub")
+
+gets a port given it's name
+
+**Parameters**
+
+-   `name` **[String](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String)** 
+
+Returns **[Object](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Object)** 
+
 ## create
 
-[portManager.js:122-146](https://github.com/primea/js-primea-hypervisor/blob/9b7a855ce9b773c9162179ef6cdb3c70739711f0/portManager.js#L122-L146 "Source code on GitHub")
+[portManager.js:174-193](https://github.com/primea/js-primea-hypervisor/blob/b507f49239a73767abbee979b4e637a6ca469764/portManager.js#L174-L193 "Source code on GitHub")
 
-creates a new Port given the container type
+creates a new container. Returning a port to it.
 
 **Parameters**
 
 -   `type` **[String](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String)** 
+-   `data` **any** the data to populate the initail state with
 
-Returns **[Object](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Object)** the newly created port
+Returns **[Object](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Object)** 
 
-## wait
+## createChannel
 
-[portManager.js:155-167](https://github.com/primea/js-primea-hypervisor/blob/9b7a855ce9b773c9162179ef6cdb3c70739711f0/portManager.js#L155-L167 "Source code on GitHub")
+[portManager.js:199-213](https://github.com/primea/js-primea-hypervisor/blob/b507f49239a73767abbee979b4e637a6ca469764/portManager.js#L199-L213 "Source code on GitHub")
 
-waits till all ports have reached a threshold tick count
+creates a channel returns the created ports in an Array
 
-**Parameters**
-
--   `threshold` **Integer** the number of ticks to wait
--   `fromPort` **[Object](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Object)** the port requesting the wait (optional, default `this.entryPort`)
--   `ports` **[Array](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array)** the ports to wait on (optional, default `[...this._portMap]`)
-
-Returns **[Promise](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Promise)** 
+Returns **[array](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array)** 
 
 ## getNextMessage
 
-[portManager.js:174-187](https://github.com/primea/js-primea-hypervisor/blob/9b7a855ce9b773c9162179ef6cdb3c70739711f0/portManager.js#L174-L187 "Source code on GitHub")
+[portManager.js:229-257](https://github.com/primea/js-primea-hypervisor/blob/b507f49239a73767abbee979b4e637a6ca469764/portManager.js#L229-L257 "Source code on GitHub")
 
-gets the next canonical message given the an array of ports to choose from
-
-**Parameters**
-
--   `ports` **[Array](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array)**  (optional, default `[...this._portMap]`)
+Waits for the the next message if any
 
 Returns **[Promise](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Promise)** 

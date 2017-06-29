@@ -7,7 +7,7 @@ const node = new IPFS({
   start: false
 })
 
-// the Hypervisor starts an manages "containers" each container is 
+// the Hypervisor starts an manages "containers"
 class ExampleContainer {
   // the constructor is given an instance of the kernel
   // https://github.com/primea/js-primea-hypervisor/blob/master/docs/kernel.md

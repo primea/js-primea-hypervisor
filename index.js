@@ -60,6 +60,11 @@ module.exports = class Hypervisor {
     return kernel
   }
 
+  // get a hash from a POJO
+  async _getHashFromObj (obj) {
+    return (await this.graph.flush(obj))['/']
+  }
+
   /**
    * gets an existsing container instances
    * @param {string} id - the containers ID
@@ -91,7 +96,7 @@ module.exports = class Hypervisor {
     // create a lock to prevent the scheduler from reloving waits before the
     // new container is loaded
     const resolve = this.scheduler.getLock(id)
-    const idHash = await this.getHashFromObj(id)
+    const idHash = await this._getHashFromObj(id)
     const state = {
       nonce: [0],
       ports: {},
@@ -139,14 +144,5 @@ module.exports = class Hypervisor {
       Constructor: Constructor,
       args: args
     }
-  }
-
-  /**
-   * get a hash from a POJO
-   * @param {object} obj
-   * @return {Promise}
-   */
-  async getHashFromObj (obj) {
-    return (await this.graph.flush(obj))['/']
   }
 }

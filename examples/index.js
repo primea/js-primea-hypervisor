@@ -72,6 +72,20 @@ node.on('ready', async() => {
     ports: [chanRef2]
   }))
 
+  // after the recieving containers bind the ports in the messages the channel
+  // topology will look like this. Where "[]" are the containers, "*" are the
+  // ports that the container have and "(name)" is the port name.
+  //
+  //        root container
+  //           [   ]
+  //      (one) * * (two)
+  //           /    \
+  //          /      \
+  //         /        \
+  // (parent)*          * (parent)
+  //      [  ]*--------*[  ]
+  //     (channel)    (channel)
+
   // create a new state root. The state root is not created untill the
   // hypervisor has finished all of it's work
   const stateRoot = await hypervisor.createStateRoot()

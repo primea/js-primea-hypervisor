@@ -9,11 +9,10 @@
 -   [createInstance](#createinstance)
 -   [createStateRoot](#createstateroot)
 -   [registerContainer](#registercontainer)
--   [getHashFromObj](#gethashfromobj)
 
 ## constructor
 
-[index.js:16-22](https://github.com/primea/js-primea-hypervisor/blob/b507f49239a73767abbee979b4e637a6ca469764/index.js#L16-L22 "Source code on GitHub")
+[index.js:16-22](https://github.com/primea/js-primea-hypervisor/blob/317d79e49cb56dd81cb9c94072cd24ad6a825757/index.js#L16-L22 "Source code on GitHub")
 
 The Hypervisor manages the container instances by instantiating them and
 destorying them when possible. It also facilitates localating Containers
@@ -25,7 +24,7 @@ destorying them when possible. It also facilitates localating Containers
 
 ## addNodeToCheck
 
-[index.js:28-30](https://github.com/primea/js-primea-hypervisor/blob/b507f49239a73767abbee979b4e637a6ca469764/index.js#L28-L30 "Source code on GitHub")
+[index.js:28-30](https://github.com/primea/js-primea-hypervisor/blob/317d79e49cb56dd81cb9c94072cd24ad6a825757/index.js#L28-L30 "Source code on GitHub")
 
 add a potaintail node in the state graph to check for garbage collection
 
@@ -35,7 +34,7 @@ add a potaintail node in the state graph to check for garbage collection
 
 ## getDestPort
 
-[index.js:37-43](https://github.com/primea/js-primea-hypervisor/blob/b507f49239a73767abbee979b4e637a6ca469764/index.js#L37-L43 "Source code on GitHub")
+[index.js:37-43](https://github.com/primea/js-primea-hypervisor/blob/317d79e49cb56dd81cb9c94072cd24ad6a825757/index.js#L37-L43 "Source code on GitHub")
 
 given a port, this finds the corridsponeding endpoint port of the channel
 
@@ -47,7 +46,7 @@ Returns **[Promise](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Refe
 
 ## getInstance
 
-[index.js:68-78](https://github.com/primea/js-primea-hypervisor/blob/b507f49239a73767abbee979b4e637a6ca469764/index.js#L68-L78 "Source code on GitHub")
+[index.js:73-83](https://github.com/primea/js-primea-hypervisor/blob/317d79e49cb56dd81cb9c94072cd24ad6a825757/index.js#L73-L83 "Source code on GitHub")
 
 gets an existsing container instances
 
@@ -59,7 +58,7 @@ Returns **[Promise](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Refe
 
 ## createInstance
 
-[index.js:90-114](https://github.com/primea/js-primea-hypervisor/blob/b507f49239a73767abbee979b4e637a6ca469764/index.js#L90-L114 "Source code on GitHub")
+[index.js:95-119](https://github.com/primea/js-primea-hypervisor/blob/317d79e49cb56dd81cb9c94072cd24ad6a825757/index.js#L95-L119 "Source code on GitHub")
 
 creates an new container instances and save it in the state
 
@@ -76,7 +75,7 @@ Returns **[Promise](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Refe
 
 ## createStateRoot
 
-[index.js:122-129](https://github.com/primea/js-primea-hypervisor/blob/b507f49239a73767abbee979b4e637a6ca469764/index.js#L122-L129 "Source code on GitHub")
+[index.js:127-134](https://github.com/primea/js-primea-hypervisor/blob/317d79e49cb56dd81cb9c94072cd24ad6a825757/index.js#L127-L134 "Source code on GitHub")
 
 creates a state root starting from a given container and a given number of
 ticks
@@ -89,7 +88,7 @@ Returns **[Promise](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Refe
 
 ## registerContainer
 
-[index.js:137-142](https://github.com/primea/js-primea-hypervisor/blob/b507f49239a73767abbee979b4e637a6ca469764/index.js#L137-L142 "Source code on GitHub")
+[index.js:142-147](https://github.com/primea/js-primea-hypervisor/blob/317d79e49cb56dd81cb9c94072cd24ad6a825757/index.js#L142-L147 "Source code on GitHub")
 
 regirsters a container with the hypervisor
 
@@ -98,15 +97,3 @@ regirsters a container with the hypervisor
 -   `type` **[String](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String)** the name of the type
 -   `Constructor` **Class** a Class for instantiating the container
 -   `args` **any** any args that the contructor takes
-
-## getHashFromObj
-
-[index.js:149-151](https://github.com/primea/js-primea-hypervisor/blob/b507f49239a73767abbee979b4e637a6ca469764/index.js#L149-L151 "Source code on GitHub")
-
-get a hash from a POJO
-
-**Parameters**
-
--   `obj` **[object](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Object)** 
-
-Returns **[Promise](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Promise)** 

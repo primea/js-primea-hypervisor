@@ -16,7 +16,7 @@
 
 ## constructor
 
-[portManager.js:33-44](https://github.com/primea/js-primea-hypervisor/blob/b507f49239a73767abbee979b4e637a6ca469764/portManager.js#L33-L44 "Source code on GitHub")
+[portManager.js:33-44](https://github.com/primea/js-primea-hypervisor/blob/317d79e49cb56dd81cb9c94072cd24ad6a825757/portManager.js#L33-L44 "Source code on GitHub")
 
 The port manager manages the the ports. This inculdes creation, deletion
 fetching and waiting on ports
@@ -30,7 +30,7 @@ fetching and waiting on ports
 
 ## bind
 
-[portManager.js:51-73](https://github.com/primea/js-primea-hypervisor/blob/b507f49239a73767abbee979b4e637a6ca469764/portManager.js#L51-L73 "Source code on GitHub")
+[portManager.js:51-73](https://github.com/primea/js-primea-hypervisor/blob/317d79e49cb56dd81cb9c94072cd24ad6a825757/portManager.js#L51-L73 "Source code on GitHub")
 
 binds a port to a name
 
@@ -41,7 +41,7 @@ binds a port to a name
 
 ## unbind
 
-[portManager.js:80-92](https://github.com/primea/js-primea-hypervisor/blob/b507f49239a73767abbee979b4e637a6ca469764/portManager.js#L80-L92 "Source code on GitHub")
+[portManager.js:80-92](https://github.com/primea/js-primea-hypervisor/blob/317d79e49cb56dd81cb9c94072cd24ad6a825757/portManager.js#L80-L92 "Source code on GitHub")
 
 unbinds a port given its name
 
@@ -53,7 +53,7 @@ Returns **[Promise](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Refe
 
 ## delete
 
-[portManager.js:98-102](https://github.com/primea/js-primea-hypervisor/blob/b507f49239a73767abbee979b4e637a6ca469764/portManager.js#L98-L102 "Source code on GitHub")
+[portManager.js:98-102](https://github.com/primea/js-primea-hypervisor/blob/317d79e49cb56dd81cb9c94072cd24ad6a825757/portManager.js#L98-L102 "Source code on GitHub")
 
 delete an port given the name it is bound to
 
@@ -63,13 +63,13 @@ delete an port given the name it is bound to
 
 ## clearUnboundedPorts
 
-[portManager.js:112-120](https://github.com/primea/js-primea-hypervisor/blob/b507f49239a73767abbee979b4e637a6ca469764/portManager.js#L112-L120 "Source code on GitHub")
+[portManager.js:112-120](https://github.com/primea/js-primea-hypervisor/blob/317d79e49cb56dd81cb9c94072cd24ad6a825757/portManager.js#L112-L120 "Source code on GitHub")
 
 clears any unbounded ports referances
 
 ## isBound
 
-[portManager.js:127-129](https://github.com/primea/js-primea-hypervisor/blob/b507f49239a73767abbee979b4e637a6ca469764/portManager.js#L127-L129 "Source code on GitHub")
+[portManager.js:127-129](https://github.com/primea/js-primea-hypervisor/blob/317d79e49cb56dd81cb9c94072cd24ad6a825757/portManager.js#L127-L129 "Source code on GitHub")
 
 check if a port object is still valid
 
@@ -81,7 +81,7 @@ Returns **[Boolean](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Refe
 
 ## queue
 
-[portManager.js:135-157](https://github.com/primea/js-primea-hypervisor/blob/b507f49239a73767abbee979b4e637a6ca469764/portManager.js#L135-L157 "Source code on GitHub")
+[portManager.js:135-157](https://github.com/primea/js-primea-hypervisor/blob/317d79e49cb56dd81cb9c94072cd24ad6a825757/portManager.js#L135-L157 "Source code on GitHub")
 
 queues a message on a port
 
@@ -92,7 +92,7 @@ queues a message on a port
 
 ## get
 
-[portManager.js:164-166](https://github.com/primea/js-primea-hypervisor/blob/b507f49239a73767abbee979b4e637a6ca469764/portManager.js#L164-L166 "Source code on GitHub")
+[portManager.js:164-166](https://github.com/primea/js-primea-hypervisor/blob/317d79e49cb56dd81cb9c94072cd24ad6a825757/portManager.js#L164-L166 "Source code on GitHub")
 
 gets a port given it's name
 
@@ -104,7 +104,7 @@ Returns **[Object](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Refer
 
 ## create
 
-[portManager.js:174-193](https://github.com/primea/js-primea-hypervisor/blob/b507f49239a73767abbee979b4e637a6ca469764/portManager.js#L174-L193 "Source code on GitHub")
+[portManager.js:174-193](https://github.com/primea/js-primea-hypervisor/blob/317d79e49cb56dd81cb9c94072cd24ad6a825757/portManager.js#L174-L193 "Source code on GitHub")
 
 creates a new container. Returning a port to it.
 
@@ -117,7 +117,7 @@ Returns **[Object](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Refer
 
 ## createChannel
 
-[portManager.js:199-213](https://github.com/primea/js-primea-hypervisor/blob/b507f49239a73767abbee979b4e637a6ca469764/portManager.js#L199-L213 "Source code on GitHub")
+[portManager.js:199-213](https://github.com/primea/js-primea-hypervisor/blob/317d79e49cb56dd81cb9c94072cd24ad6a825757/portManager.js#L199-L213 "Source code on GitHub")
 
 creates a channel returns the created ports in an Array
 
@@ -125,7 +125,7 @@ Returns **[array](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Refere
 
 ## getNextMessage
 
-[portManager.js:229-257](https://github.com/primea/js-primea-hypervisor/blob/b507f49239a73767abbee979b4e637a6ca469764/portManager.js#L229-L257 "Source code on GitHub")
+[portManager.js:229-257](https://github.com/primea/js-primea-hypervisor/blob/317d79e49cb56dd81cb9c94072cd24ad6a825757/portManager.js#L229-L257 "Source code on GitHub")
 
 Waits for the the next message if any
 

@@ -4,13 +4,13 @@ const DeleteMessage = require('./deleteMessage')
 
 module.exports = class Kernel {
   /**
-   * the ExoInterface manages the varous message passing functions and provides
+   * the Kernel manages the varous message passing functions and provides
    * an interface for the containers to use
    * @param {Object} opts
-   * @param {Object} opts.id
-   * @param {Object} opts.state
+   * @param {Object} opts.id - the UUID of the Kernel
+   * @param {Object} opts.state - the state of the container
    * @param {Object} opts.hypervisor
-   * @param {Object} opts.Container
+   * @param {Object} opts.container - the container constuctor and argments
    */
   constructor (opts) {
     this.state = opts.state
@@ -71,8 +71,8 @@ module.exports = class Kernel {
 
   /**
    * run the kernels code with a given enviroment
-   * The Kernel Stores all of its state in the Environment. The Interface is used
-   * to by the VM to retrive infromation from the Environment.
+   * @param {object} message - the message to run
+   * @param {boolean} init - whether or not to run the intialization routine
    * @returns {Promise}
    */
   async run (message, init = false) {

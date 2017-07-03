@@ -92,11 +92,12 @@ module.exports = class Hypervisor {
    * @param {object} id.parent
    * @returns {Promise}
    */
-  async createInstance (type, code, entryPorts = [], id = {nonce: 0, parent: null}) {
+  async createInstance (type, message = new Message(), id = {nonce: 0, parent: null}) {
     // create a lock to prevent the scheduler from reloving waits before the
     // new container is loaded
     const resolve = this.scheduler.getLock(id)
     const idHash = await this._getHashFromObj(id)
+    const code = message.data.byteLength ? message.data : undefined
     const state = {
       nonce: [0],
       ports: {},
@@ -107,15 +108,13 @@ module.exports = class Hypervisor {
     // save the container in the state
     await this.graph.set(this.state, idHash, state)
     // create the container instance
-    const exoInterface = await this._loadInstance(idHash)
+    const instance = await this._loadInstance(idHash)
 
-    resolve(exoInterface)
+    resolve(instance)
     // send the intialization message
-    exoInterface.queue(null, new Message({
-      ports: entryPorts
-    }))
+    instance.initialize(message)
 
-    return exoInterface
+    return instance
   }
 
   /**

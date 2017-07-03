@@ -33,18 +33,16 @@ module.exports = class Kernel {
    * @param {object} message
    */
   queue (portName, message) {
-    message._hops++
-    if (portName) {
-      this.ports.queue(portName, message)
-      if (this.containerState !== 'running') {
-        this.containerState = 'running'
-        this._runNextMessage()
-      }
-    } else {
-      // initailiazation message
+    this.ports.queue(portName, message)
+    if (this.containerState !== 'running') {
       this.containerState = 'running'
-      this.run(message, true)
+      this._runNextMessage()
     }
+  }
+
+  initialize (message) {
+    this.containerState = 'running'
+    this.run(message, 'initialize')
   }
 
   // waits for the next message
@@ -75,13 +73,15 @@ module.exports = class Kernel {
    * @param {boolean} init - whether or not to run the intialization routine
    * @returns {Promise}
    */
-  async run (message, init = false) {
+  async run (message, method = 'run') {
     let result
+
     message.ports.forEach(port => this.ports._unboundPorts.add(port))
+    message._hops++
+
     if (message.constructor === DeleteMessage) {
       this.ports._delete(message.fromName)
     } else {
-      const method = init ? 'initailize' : 'run'
       try {
         result = await this.container[method](message) || {}
       } catch (e) {
@@ -92,7 +92,10 @@ module.exports = class Kernel {
       }
     }
     this.ports.clearUnboundedPorts()
-    // message.response(result)
+    // const responsePort = this.message.responsePort
+    // if (responsePort) {
+    //   this.send(responsePort, new Message({data: result}))
+    // }
     this._runNextMessage()
     return result
   }

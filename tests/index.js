@@ -12,7 +12,7 @@ class BaseContainer {
     this.exInterface = exInterface
   }
 
-  initailize (message) {
+  initialize (message) {
     const port = message.ports[0]
     if (port) {
       this.exInterface.ports.bind('root', port)
@@ -25,7 +25,7 @@ node.on('ready', () => {
     t.plan(2)
     let message
     const expectedState = {
-      '/': 'zdpuAyGKaZ3nbBQdgESbEgVYr81TcAFB6LE2MQQPWLZaYxuF3'
+      '/': 'zdpuB1wc9Pb6jUzfNt4nAxAEUxB7kNhg4vbq7YLcEyBUb6iAB'
     }
 
     class testVMContainer extends BaseContainer {
@@ -38,10 +38,18 @@ node.on('ready', () => {
     hypervisor.registerContainer('test', testVMContainer)
 
     const rootContainer = await hypervisor.createInstance('test')
-    const port = rootContainer.ports.create('test')
+
+    const [portRef1, portRef2] = rootContainer.ports.createChannel()
+    const initMessage = rootContainer.createMessage({
+      data: Buffer.from('test code'),
+      ports: [portRef2]
+    })
+
+    rootContainer.ports.create('test', initMessage)
+
+    rootContainer.ports.bind('first', portRef1)
     message = rootContainer.createMessage()
-    rootContainer.ports.bind('first', port)
-    rootContainer.send(port, message)
+    rootContainer.send(portRef1, message)
 
     const stateRoot = await hypervisor.createStateRoot(Infinity)
     t.deepEquals(stateRoot, expectedState, 'expected root!')
@@ -54,15 +62,19 @@ node.on('ready', () => {
     }
 
     class testVMContainer extends BaseContainer {
-      initailize () {}
+      initialize () {}
     }
 
     const hypervisor = new Hypervisor(node.dag)
     hypervisor.registerContainer('test', testVMContainer)
 
     const root = await hypervisor.createInstance('test')
-    const port = root.ports.create('test')
-    root.ports.bind('one', port)
+    const [portRef1, portRef2] = root.ports.createChannel()
+
+    root.ports.bind('one', portRef1)
+    root.ports.create('test', root.createMessage({
+      ports: [portRef2]
+    }))
 
     const stateRoot = await hypervisor.createStateRoot(Infinity)
     t.deepEquals(stateRoot, expectedState, 'expected root!')
@@ -83,10 +95,13 @@ node.on('ready', () => {
 
     class testVMContainer extends BaseContainer {
       run (m) {
-        const port = this.exInterface.ports.create('test2')
-        this.exInterface.ports.bind('child', port)
+        const [portRef1, portRef2] = this.exInterface.ports.createChannel()
+        this.exInterface.ports.create('test2', this.exInterface.createMessage({
+          ports: [portRef2]
+        }))
+        this.exInterface.ports.bind('child', portRef1)
         this.exInterface.incrementTicks(2)
-        this.exInterface.send(port, m)
+        this.exInterface.send(portRef1, m)
       }
     }
 
@@ -94,13 +109,18 @@ node.on('ready', () => {
     hypervisor.registerContainer('test', testVMContainer)
     hypervisor.registerContainer('test2', testVMContainer2)
 
-    let root = await hypervisor.createInstance('test')
-    let port = root.ports.create('test')
+    const root = await hypervisor.createInstance('test')
+    const [portRef1, portRef2] = root.ports.createChannel()
+    root.ports.create('test', root.createMessage({
+      ports: [portRef2]
+    }))
 
-    root.ports.bind('first', port)
-    message = root.createMessage()
+    root.ports.bind('first', portRef1)
+    message = root.createMessage({
+      data: 'test'
+    })
 
-    root.send(port, message)
+    root.send(portRef1, message)
     const stateRoot = await hypervisor.createStateRoot(Infinity)
     t.deepEquals(stateRoot, expectedState, 'expected state')
   })
@@ -128,9 +148,12 @@ node.on('ready', () => {
 
     class testVMContainer extends BaseContainer {
       run (m) {
-        const port = this.exInterface.ports.create('test2')
-        this.exInterface.ports.bind('child', port)
-        this.exInterface.send(port, m)
+        const [portRef1, portRef2] = this.exInterface.ports.createChannel()
+        this.exInterface.ports.create('test2', this.exInterface.createMessage({
+          ports: [portRef2]
+        }))
+        this.exInterface.ports.bind('child', portRef1)
+        this.exInterface.send(portRef1, m)
         this.exInterface.incrementTicks(1)
       }
     }
@@ -141,15 +164,19 @@ node.on('ready', () => {
 
     let root = await hypervisor.createInstance('test')
     const rootId = root.id
-    let port = root.ports.create('test')
+    const [portRef1, portRef2] = root.ports.createChannel()
+    root.ports.create('test', root.createMessage({
+      ports: [portRef2]
+    }))
 
-    root.ports.bind('first', port)
+    root.ports.bind('first', portRef1)
     message = root.createMessage()
 
-    root.send(port, message)
+    root.send(portRef1, message)
     const stateRoot = await hypervisor.createStateRoot(Infinity)
     t.true(hasResolved, 'should resolve before generating the state root')
     t.deepEquals(stateRoot, expectedState, 'expected state')
+
     // test reviving the state
     class testVMContainer3 extends BaseContainer {
       run (m) {
@@ -161,7 +188,7 @@ node.on('ready', () => {
 
     hypervisor.registerContainer('test', testVMContainer3)
     root = await hypervisor.getInstance(rootId)
-    port = root.ports.get('first')
+    const port = root.ports.get('first')
     root.send(port, message)
   })
 
@@ -169,13 +196,27 @@ node.on('ready', () => {
     t.plan(1)
     class Root extends BaseContainer {
       async run (m) {
-        const one = this.exInterface.ports.create('root')
-        const two = this.exInterface.ports.create('root')
-        const three = this.exInterface.ports.create('root')
+        const [portRef1, portRef2] = this.exInterface.ports.createChannel()
+        const [portRef3, portRef4] = this.exInterface.ports.createChannel()
+        const [portRef5, portRef6] = this.exInterface.ports.createChannel()
 
-        this.exInterface.ports.bind('one', one)
-        this.exInterface.ports.bind('two', two)
-        this.exInterface.ports.bind('three', three)
+        this.exInterface.ports.bind('one', portRef1)
+        this.exInterface.ports.bind('two', portRef3)
+        this.exInterface.ports.bind('three', portRef5)
+
+        const message1 = this.exInterface.createMessage({
+          ports: [portRef2]
+        })
+        const message2 = this.exInterface.createMessage({
+          ports: [portRef4]
+        })
+        const message3 = this.exInterface.createMessage({
+          ports: [portRef6]
+        })
+
+        this.exInterface.ports.create('root', message1)
+        this.exInterface.ports.create('root', message2)
+        this.exInterface.ports.create('root', message3)
 
         throw new Error('it is a trap!!!')
       }
@@ -201,14 +242,25 @@ node.on('ready', () => {
       run (m) {
         if (!runs) {
           runs++
-          const one = this.exInterface.ports.create('first')
-          const two = this.exInterface.ports.create('second')
 
-          this.exInterface.ports.bind('two', two)
-          this.exInterface.ports.bind('one', one)
+          const [portRef1, portRef2] = this.exInterface.ports.createChannel()
+          const [portRef3, portRef4] = this.exInterface.ports.createChannel()
 
-          this.exInterface.send(one, this.exInterface.createMessage())
-          this.exInterface.send(two, this.exInterface.createMessage())
+          this.exInterface.ports.bind('two', portRef3)
+          this.exInterface.ports.bind('one', portRef1)
+
+          const message1 = this.exInterface.createMessage({
+            ports: [portRef2]
+          })
+          const message2 = this.exInterface.createMessage({
+            ports: [portRef4]
+          })
+
+          this.exInterface.ports.create('first', message1)
+          this.exInterface.ports.create('second', message2)
+
+          this.exInterface.send(portRef1, this.exInterface.createMessage())
+          this.exInterface.send(portRef3, this.exInterface.createMessage())
         } else if (runs === 1) {
           runs++
           t.equals(m.data, 'first', 'should recive the first message')
@@ -243,10 +295,15 @@ node.on('ready', () => {
     hypervisor.registerContainer('second', Second)
 
     const root = await hypervisor.createInstance('root')
-    const port = root.ports.create('root')
-    root.ports.bind('first', port)
 
-    root.send(port, root.createMessage())
+    const [portRef1, portRef2] = root.ports.createChannel()
+    root.ports.create('root', root.createMessage({
+      ports: [portRef2]
+    }))
+
+    root.ports.bind('first', portRef1)
+    const message = root.createMessage()
+    root.send(portRef1, message)
   })
 
   tape('message should arrive in the correct oder if sent in order', async t => {
@@ -257,16 +314,25 @@ node.on('ready', () => {
       run (m) {
         if (!runs) {
           runs++
-          const one = this.exInterface.ports.create('first')
-          const two = this.exInterface.ports.create('second')
 
-          this.exInterface.ports.bind('one', one)
-          this.exInterface.ports.bind('two', two)
+          const [portRef1, portRef2] = this.exInterface.ports.createChannel()
+          const [portRef3, portRef4] = this.exInterface.ports.createChannel()
 
-          Promise.all([
-            this.exInterface.send(one, this.exInterface.createMessage()),
-            this.exInterface.send(two, this.exInterface.createMessage())
-          ])
+          this.exInterface.ports.bind('one', portRef1)
+          this.exInterface.ports.bind('two', portRef3)
+
+          const message1 = this.exInterface.createMessage({
+            ports: [portRef2]
+          })
+          const message2 = this.exInterface.createMessage({
+            ports: [portRef4]
+          })
+
+          this.exInterface.ports.create('first', message1)
+          this.exInterface.ports.create('second', message2)
+
+          this.exInterface.send(portRef1, this.exInterface.createMessage())
+          this.exInterface.send(portRef3, this.exInterface.createMessage())
         } else if (runs === 1) {
           runs++
           t.equals(m.data, 'second', 'should recived the second message')
@@ -301,10 +367,15 @@ node.on('ready', () => {
     hypervisor.registerContainer('second', Second)
 
     const root = await hypervisor.createInstance('root')
-    const port = root.ports.create('root')
-    root.ports.bind('first', port)
 
-    root.send(port, root.createMessage())
+    const [portRef1, portRef2] = root.ports.createChannel()
+    root.ports.create('root', root.createMessage({
+      ports: [portRef2]
+    }))
+
+    root.ports.bind('first', portRef1)
+    const message = root.createMessage()
+    root.send(portRef1, message)
   })
 
   tape('message should arrive in the correct oder if sent in order', async t => {
@@ -315,14 +386,24 @@ node.on('ready', () => {
       run (m) {
         if (!runs) {
           runs++
-          const one = this.exInterface.ports.create('first')
-          const two = this.exInterface.ports.create('second')
+          const [portRef1, portRef2] = this.exInterface.ports.createChannel()
+          const [portRef3, portRef4] = this.exInterface.ports.createChannel()
 
-          this.exInterface.ports.bind('one', one)
-          this.exInterface.ports.bind('two', two)
+          this.exInterface.ports.bind('one', portRef1)
+          this.exInterface.ports.bind('two', portRef3)
 
-          this.exInterface.send(one, this.exInterface.createMessage())
-          this.exInterface.send(two, this.exInterface.createMessage())
+          const message1 = this.exInterface.createMessage({
+            ports: [portRef2]
+          })
+          const message2 = this.exInterface.createMessage({
+            ports: [portRef4]
+          })
+
+          this.exInterface.ports.create('first', message1)
+          this.exInterface.ports.create('second', message2)
+
+          this.exInterface.send(portRef1, this.exInterface.createMessage())
+          this.exInterface.send(portRef3, this.exInterface.createMessage())
 
           this.exInterface.incrementTicks(6)
         } else if (runs === 1) {
@@ -337,14 +418,18 @@ node.on('ready', () => {
     class First extends BaseContainer {
       run (m) {
         this.exInterface.incrementTicks(1)
-        this.exInterface.send(m.fromPort, this.exInterface.createMessage({data: 'first'}))
+        this.exInterface.send(m.fromPort, this.exInterface.createMessage({
+          data: 'first'
+        }))
       }
     }
 
     class Second extends BaseContainer {
       run (m) {
         this.exInterface.incrementTicks(2)
-        this.exInterface.send(m.fromPort, this.exInterface.createMessage({data: 'second'}))
+        this.exInterface.send(m.fromPort, this.exInterface.createMessage({
+          data: 'second'
+        }))
       }
     }
 
@@ -355,10 +440,14 @@ node.on('ready', () => {
     hypervisor.registerContainer('second', Second)
 
     const root = await hypervisor.createInstance('root')
-    const port = root.ports.create('root')
-    root.ports.bind('first', port)
+    const [portRef1, portRef2] = root.ports.createChannel()
+    root.ports.create('root', root.createMessage({
+      ports: [portRef2]
+    }))
 
-    root.send(port, root.createMessage())
+    root.ports.bind('first', portRef1)
+    const message = root.createMessage()
+    root.send(portRef1, message)
   })
 
   tape('saturation', async t => {
@@ -369,21 +458,31 @@ node.on('ready', () => {
       run (m) {
         if (!runs) {
           runs++
-          const one = this.exInterface.ports.create('first')
-          const two = this.exInterface.ports.create('second')
+          const [portRef1, portRef2] = this.exInterface.ports.createChannel()
+          const [portRef3, portRef4] = this.exInterface.ports.createChannel()
 
-          this.exInterface.ports.bind('two', two)
-          this.exInterface.ports.bind('one', one)
+          this.exInterface.ports.bind('one', portRef1)
+          this.exInterface.ports.bind('two', portRef3)
 
-          Promise.all([
-            this.exInterface.send(one, this.exInterface.createMessage()),
-            this.exInterface.send(two, this.exInterface.createMessage())
-          ])
+          const message1 = this.exInterface.createMessage({
+            ports: [portRef2]
+          })
+          const message2 = this.exInterface.createMessage({
+            ports: [portRef4]
+          })
+
+          this.exInterface.ports.create('first', message1)
+          this.exInterface.ports.create('second', message2)
+
+          this.exInterface.send(portRef1, this.exInterface.createMessage())
+          this.exInterface.send(portRef3, this.exInterface.createMessage())
+
           this.exInterface.incrementTicks(6)
         } else if (runs === 1) {
           runs++
           t.equals(m.data, 'first', 'should recive the first message')
         } else if (runs === 2) {
+          runs++
           t.equals(m.data, 'second', 'should recived the second message')
         }
       }
@@ -400,8 +499,8 @@ node.on('ready', () => {
 
     class Second extends BaseContainer {
       run (m) {
-        // this.exInterface.incrementTicks(3)
         this.exInterface.incrementTicks(3)
+        console.log('sending second', this.exInterface.ticks)
         this.exInterface.send(m.fromPort, this.exInterface.createMessage({
           data: 'second'
         }))
@@ -409,7 +508,7 @@ node.on('ready', () => {
     }
 
     class Waiter extends BaseContainer {
-      initailize () {
+      initialize () {
         return new Promise((resolve, reject) => {
           setTimeout(() => {
             resolve()
@@ -426,15 +525,24 @@ node.on('ready', () => {
     hypervisor.registerContainer('waiter', Waiter)
 
     const root = await hypervisor.createInstance('root')
-    const port = root.ports.create('root')
-    root.ports.bind('first', port)
-    const port1 = root.ports.create('waiter')
-    root.ports.bind('sencond', port1)
+    const [portRef1, portRef2] = root.ports.createChannel()
 
-    await root.send(port, root.createMessage())
-    root.incrementTicks(7)
+    const message = root.createMessage()
+    root.send(portRef1, message)
+    root.ports.bind('first', portRef1)
+    root.ports.create('root', root.createMessage({
+      ports: [portRef2]
+    }))
 
-    root.send(port, root.createMessage())
+    const [portRef3, portRef4] = root.ports.createChannel()
+    root.ports.bind('sencond', portRef3)
+    root.ports.create('waiter', root.createMessage({
+      ports: [portRef4]
+    }))
+
+    root.incrementTicks(100)
+    root.send(portRef1, root.createMessage({data: 'testss'}))
+    hypervisor.scheduler.done(root.id)
   })
 
   tape('message should arrive in the correct order, even in a tie of ticks', async t => {
@@ -446,14 +554,24 @@ node.on('ready', () => {
       run (m) {
         if (!runs) {
           runs++
-          const one = this.exInterface.ports.create('first')
-          const two = this.exInterface.ports.create('second')
+          const [portRef1, portRef2] = this.exInterface.ports.createChannel()
+          const [portRef3, portRef4] = this.exInterface.ports.createChannel()
 
-          this.exInterface.ports.bind('two', two)
-          this.exInterface.ports.bind('one', one)
+          this.exInterface.ports.bind('two', portRef3)
+          this.exInterface.ports.bind('one', portRef1)
 
-          this.exInterface.send(one, this.exInterface.createMessage())
-          this.exInterface.send(two, this.exInterface.createMessage())
+          const message1 = this.exInterface.createMessage({
+            ports: [portRef2]
+          })
+          const message2 = this.exInterface.createMessage({
+            ports: [portRef4]
+          })
+
+          this.exInterface.ports.create('first', message1)
+          this.exInterface.ports.create('second', message2)
+
+          this.exInterface.send(portRef1, this.exInterface.createMessage())
+          this.exInterface.send(portRef3, this.exInterface.createMessage())
 
           this.exInterface.incrementTicks(6)
         } else if (runs === 1) {
@@ -490,11 +608,14 @@ node.on('ready', () => {
     hypervisor.registerContainer('second', Second)
 
     const root = await hypervisor.createInstance('root')
+    const [portRef1, portRef2] = root.ports.createChannel()
+    const message = root.createMessage()
 
-    const port = root.ports.create('root')
-    root.ports.bind('first', port)
-
-    root.send(port, root.createMessage())
+    root.send(portRef1, message)
+    root.ports.bind('first', portRef1)
+    root.ports.create('root', root.createMessage({
+      ports: [portRef2]
+    }))
   })
 
   tape('message should arrive in the correct order, with a tie in ticks but with differnt proity', async t => {
@@ -506,14 +627,24 @@ node.on('ready', () => {
       run (m) {
         if (!runs) {
           runs++
-          const one = this.exInterface.ports.create('first')
-          const two = this.exInterface.ports.create('second')
+          const [portRef1, portRef2] = this.exInterface.ports.createChannel()
+          const [portRef3, portRef4] = this.exInterface.ports.createChannel()
 
-          this.exInterface.ports.bind('one', one)
-          this.exInterface.ports.bind('two', two)
+          this.exInterface.ports.bind('one', portRef1)
+          this.exInterface.ports.bind('two', portRef3)
 
-          this.exInterface.send(two, this.exInterface.createMessage())
-          this.exInterface.send(one, this.exInterface.createMessage())
+          const message1 = this.exInterface.createMessage({
+            ports: [portRef2]
+          })
+          const message2 = this.exInterface.createMessage({
+            ports: [portRef4]
+          })
+
+          this.exInterface.ports.create('first', message1)
+          this.exInterface.ports.create('second', message2)
+
+          this.exInterface.send(portRef1, this.exInterface.createMessage())
+          this.exInterface.send(portRef3, this.exInterface.createMessage())
 
           this.exInterface.incrementTicks(6)
         } else if (runs === 1) {
@@ -550,9 +681,14 @@ node.on('ready', () => {
     hypervisor.registerContainer('second', Second)
 
     const root = await hypervisor.createInstance('root')
-    const port = root.ports.create('root')
-    root.ports.bind('first', port)
-    root.send(port, root.createMessage())
+    const [portRef1, portRef2] = root.ports.createChannel()
+    const message = root.createMessage()
+
+    root.send(portRef1, message)
+    root.ports.bind('first', portRef1)
+    root.ports.create('root', root.createMessage({
+      ports: [portRef2]
+    }))
   })
 
   tape('send to the same container at the same time', async t => {
@@ -565,8 +701,12 @@ node.on('ready', () => {
       run (m) {
         let one = this.exInterface.ports.get('one')
         if (!one) {
-          one = this.exInterface.ports.create('first')
-          this.exInterface.ports.bind('one', one)
+          const [portRef1, portRef2] = this.exInterface.ports.createChannel()
+          this.exInterface.ports.bind('one', portRef1)
+          const message1 = this.exInterface.createMessage({
+            ports: [portRef2]
+          })
+          this.exInterface.ports.create('first', message1)
         } else {
           this.exInterface.send(one, this.exInterface.createMessage())
           this.exInterface.send(one, this.exInterface.createMessage())
@@ -591,47 +731,59 @@ node.on('ready', () => {
     hypervisor.registerContainer('first', First)
 
     const root = await hypervisor.createInstance('root')
-    const port = root.ports.create('root')
-    root.ports.bind('first', port)
-    root.send(port, root.createMessage())
+    const [portRef1, portRef2] = root.ports.createChannel()
+    root.ports.bind('first', portRef1)
+    root.ports.create('root', root.createMessage({
+      ports: [portRef2]
+    }))
+
+    const message = root.createMessage()
+    root.send(portRef1, message)
     await hypervisor.createStateRoot()
-    root.send(port, root.createMessage())
+    root.send(portRef1, root.createMessage())
     await hypervisor.createStateRoot()
     t.equals(runs, 2)
   })
+
   tape('checking ports', async t => {
     t.plan(4)
     const hypervisor = new Hypervisor(node.dag)
     hypervisor.registerContainer('base', BaseContainer)
 
     const root = await hypervisor.createInstance('base')
-    let port = root.ports.create('base')
-    await root.ports.bind('test', port)
+
+    const [portRef1, portRef2] = root.ports.createChannel()
+    root.ports.create('base', root.createMessage({
+      ports: [portRef2]
+    }))
+    root.ports.bind('test', portRef1)
 
     try {
       root.createMessage({
-        ports: [port]
+        ports: [portRef1]
       })
     } catch (e) {
       t.pass('should thow if sending a port that is bound')
     }
 
     try {
-      await root.ports.bind('test', port)
+      await root.ports.bind('test', portRef1)
     } catch (e) {
       t.pass('should thow if binding an already bound port')
     }
 
     try {
-      let port2 = root.ports.create('base')
-      await root.ports.bind('test', port2)
+      const [portRef3] = root.ports.createChannel()
+      await root.ports.bind('test', portRef3)
     } catch (e) {
       t.pass('should thow if binding an already bound name')
     }
 
     await root.ports.unbind('test')
-    const message = root.createMessage({ports: [port]})
-    t.equals(message.ports[0], port, 'should create a message if the port is unbound')
+    const message = root.createMessage({
+      ports: [portRef1]
+    })
+    t.equals(message.ports[0], portRef1, 'should create a message if the port is unbound')
   })
 
   tape('port deletion', async t => {
@@ -640,9 +792,14 @@ node.on('ready', () => {
     }
     class Root extends BaseContainer {
       run (m) {
-        const one = this.exInterface.ports.create('first')
-        this.exInterface.ports.bind('one', one)
-        this.exInterface.send(one, this.exInterface.createMessage())
+        const [portRef1, portRef2] = this.exInterface.ports.createChannel()
+        this.exInterface.ports.bind('one', portRef1)
+        const message1 = this.exInterface.createMessage({
+          ports: [portRef2]
+        })
+
+        this.exInterface.ports.create('first', message1)
+        this.exInterface.send(portRef1, this.exInterface.createMessage())
         this.exInterface.incrementTicks(6)
       }
     }
@@ -660,9 +817,15 @@ node.on('ready', () => {
     hypervisor.registerContainer('first', First)
 
     const root = await hypervisor.createInstance('root')
-    const port = root.ports.create('root')
-    root.ports.bind('first', port)
-    root.send(port, root.createMessage())
+    const [portRef1, portRef2] = root.ports.createChannel()
+    root.ports.bind('first', portRef1)
+    root.ports.create('root', root.createMessage({
+      ports: [portRef2]
+    }))
+
+    const message = root.createMessage()
+    root.send(portRef1, message)
+
     const sr = await hypervisor.createStateRoot()
     t.deepEquals(sr, expectedSr, 'should produce the corret state root')
 
@@ -684,9 +847,14 @@ node.on('ready', () => {
     hypervisor.registerContainer('root', Root)
 
     const root = await hypervisor.createInstance('root')
-    const port = root.ports.create('root')
-    root.ports.bind('first', port)
-    root.send(port, root.createMessage())
+    const [portRef1, portRef2] = root.ports.createChannel()
+    root.ports.bind('first', portRef1)
+    root.ports.create('root', root.createMessage({
+      ports: [portRef2]
+    }))
+
+    const message = root.createMessage()
+    root.send(portRef1, message)
     const sr = await hypervisor.createStateRoot()
     t.deepEquals(sr, expectedSr, 'should produce the corret state root')
 
@@ -699,15 +867,21 @@ node.on('ready', () => {
     }
     class Root extends BaseContainer {
       run (m) {
-        this.exInterface.ports.create('sub')
+        const [, portRef2] = this.exInterface.ports.createChannel()
+        this.exInterface.ports.create('sub', this.exInterface.createMessage({
+          ports: [portRef2]
+        }))
       }
     }
 
     class Sub extends BaseContainer {
       initailize (message) {
         this.exInterface.ports.bind('root', message.ports[0])
-        const port = this.exInterface.ports.create('root')
-        this.exInterface.ports.bind('child', port)
+        const [portRef1, portRef2] = root.ports.createChannel()
+        root.ports.bind('child', portRef1)
+        root.ports.create('root', root.createMessage({
+          ports: [portRef2]
+        }))
       }
     }
 
@@ -717,12 +891,16 @@ node.on('ready', () => {
     hypervisor.registerContainer('sub', Sub)
 
     const root = await hypervisor.createInstance('root')
-    const port = root.ports.create('root')
-    root.ports.bind('first', port)
-    root.send(port, root.createMessage())
-    const sr = await hypervisor.createStateRoot()
-    t.deepEquals(sr, expectedSr, 'should produce the corret state root')
+    const [portRef1, portRef2] = root.ports.createChannel()
+    root.ports.bind('first', portRef1)
+    root.ports.create('root', root.createMessage({
+      ports: [portRef2]
+    }))
 
+    root.send(portRef1, root.createMessage())
+    const sr = await hypervisor.createStateRoot()
+
+    t.deepEquals(sr, expectedSr, 'should produce the corret state root')
     t.end()
   })
 
@@ -736,13 +914,21 @@ node.on('ready', () => {
           const port = this.exInterface.ports.get('test1')
           this.exInterface.send(port, m)
           this.exInterface.ports.unbind('test1')
-          // this.exInterface.ports.unbind('test2')
         } else {
-          const port1 = this.exInterface.ports.create('sub')
-          this.exInterface.ports.bind('test1', port1)
-          const port2 = this.exInterface.ports.create('sub')
-          this.exInterface.ports.bind('test2', port2)
-          this.exInterface.send(port2, this.exInterface.createMessage({data: 'getChannel'}))
+          const [portRef1, portRef2] = this.exInterface.ports.createChannel()
+          this.exInterface.ports.create('sub', this.exInterface.createMessage({
+            ports: [portRef2]
+          }))
+          this.exInterface.ports.bind('test1', portRef1)
+
+          const [portRef3, portRef4] = this.exInterface.ports.createChannel()
+          this.exInterface.ports.create('sub', this.exInterface.createMessage({
+            ports: [portRef4]
+          }))
+          this.exInterface.ports.bind('test2', portRef3)
+          this.exInterface.send(portRef3, this.exInterface.createMessage({
+            data: 'getChannel'
+          }))
         }
       }
     }
@@ -768,12 +954,16 @@ node.on('ready', () => {
     hypervisor.registerContainer('sub', Sub)
 
     const root = await hypervisor.createInstance('root')
-    const port = root.ports.create('root')
-    root.ports.bind('first', port)
-    root.send(port, root.createMessage())
+    const [portRef1, portRef2] = root.ports.createChannel()
+    root.ports.bind('first', portRef1)
+    root.ports.create('root', root.createMessage({
+      ports: [portRef2]
+    }))
+
+    root.send(portRef1, root.createMessage())
     const sr = await hypervisor.createStateRoot()
     t.deepEquals(sr, expectedSr, 'should produce the corret state root')
-    // await hypervisor.graph.tree(sr, Infinity)
+      // await hypervisor.graph.tree(sr, Infinity)
 
     t.end()
   })
@@ -790,11 +980,20 @@ node.on('ready', () => {
           this.exInterface.ports.unbind('test1')
           this.exInterface.ports.unbind('test2')
         } else {
-          const port1 = this.exInterface.ports.create('sub')
-          this.exInterface.ports.bind('test1', port1)
-          const port2 = this.exInterface.ports.create('sub')
-          this.exInterface.ports.bind('test2', port2)
-          this.exInterface.send(port2, this.exInterface.createMessage({data: 'getChannel'}))
+          const [portRef1, portRef2] = this.exInterface.ports.createChannel()
+          this.exInterface.ports.create('sub', this.exInterface.createMessage({
+            ports: [portRef2]
+          }))
+          this.exInterface.ports.bind('test1', portRef1)
+
+          const [portRef3, portRef4] = this.exInterface.ports.createChannel()
+          this.exInterface.ports.create('sub', this.exInterface.createMessage({
+            ports: [portRef4]
+          }))
+          this.exInterface.ports.bind('test2', portRef3)
+          this.exInterface.send(portRef3, this.exInterface.createMessage({
+            data: 'getChannel'
+          }))
         }
       }
     }
@@ -820,9 +1019,15 @@ node.on('ready', () => {
     hypervisor.registerContainer('sub', Sub)
 
     const root = await hypervisor.createInstance('root')
-    const port = root.ports.create('root')
-    root.ports.bind('first', port)
-    root.send(port, root.createMessage())
+
+    const [portRef1, portRef2] = root.ports.createChannel()
+    root.ports.bind('first', portRef1)
+    root.ports.create('root', root.createMessage({
+      ports: [portRef2]
+    }))
+
+    root.send(portRef1, root.createMessage())
+
     const sr = await hypervisor.createStateRoot()
     t.deepEquals(sr, expectedSr, 'should produce the corret state root')
 

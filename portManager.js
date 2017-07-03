@@ -171,7 +171,7 @@ module.exports = class PortManager {
    * @param {*} data - the data to populate the initail state with
    * @returns {Object}
    */
-  create (type, data) {
+  create (type, message) {
     let nonce = this.state.nonce
 
     const id = {
@@ -183,13 +183,9 @@ module.exports = class PortManager {
     nonce = new BN(nonce)
     nonce.iaddn(1)
     this.state.nonce = nonce.toArray()
+    message.ports.forEach(port => this._unboundPorts.delete(port))
 
-    // create a new channel for the container
-    const ports = this.createChannel()
-    this._unboundPorts.delete(ports[1])
-    this.hypervisor.createInstance(type, data, [ports[1]], id)
-
-    return ports[0]
+    this.hypervisor.createInstance(type, message, id)
   }
 
   /**
@@ -253,6 +249,7 @@ module.exports = class PortManager {
 
       oldestTime = this.hypervisor.scheduler.oldest()
     }
+
     return message
   }
 

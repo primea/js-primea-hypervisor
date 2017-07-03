@@ -42,7 +42,7 @@ module.exports = class Kernel {
 
   initialize (message) {
     this.containerState = 'running'
-    this.run(message, true)
+    this.run(message, 'initialize')
   }
 
   // waits for the next message
@@ -73,7 +73,7 @@ module.exports = class Kernel {
    * @param {boolean} init - whether or not to run the intialization routine
    * @returns {Promise}
    */
-  async run (message, init = false) {
+  async run (message, method = 'run') {
     let result
 
     message.ports.forEach(port => this.ports._unboundPorts.add(port))
@@ -82,7 +82,6 @@ module.exports = class Kernel {
     if (message.constructor === DeleteMessage) {
       this.ports._delete(message.fromName)
     } else {
-      const method = init ? 'initialize' : 'run'
       try {
         result = await this.container[method](message) || {}
       } catch (e) {

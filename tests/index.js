@@ -500,7 +500,6 @@ node.on('ready', () => {
     class Second extends BaseContainer {
       run (m) {
         this.exInterface.incrementTicks(3)
-        console.log('sending second', this.exInterface.ticks)
         this.exInterface.send(m.fromPort, this.exInterface.createMessage({
           data: 'second'
         }))

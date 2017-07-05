@@ -1,4 +1,5 @@
 const Message = require('primea-message')
+const BN = require('bn.js')
 const PortManager = require('./portManager.js')
 const DeleteMessage = require('./deleteMessage')
 
@@ -76,7 +77,10 @@ module.exports = class Kernel {
   async run (message, method = 'run') {
     let result
 
-    message.ports.forEach(port => this.ports._unboundPorts.add(port))
+    const responsePort = message.responsePort
+    delete message.responsePort
+
+    this.ports.addReceivedPorts(message)
     message._hops++
 
     if (message.constructor === DeleteMessage) {
@@ -91,13 +95,28 @@ module.exports = class Kernel {
         }
       }
     }
+
+    if (responsePort) {
+      this.send(responsePort, new Message({
+        data: result
+      }))
+      this.ports._unboundPorts.add(responsePort)
+    }
+
     this.ports.clearUnboundedPorts()
-    // const responsePort = this.message.responsePort
-    // if (responsePort) {
-    //   this.send(responsePort, new Message({data: result}))
-    // }
     this._runNextMessage()
     return result
+  }
+
+  getResponsePort (message) {
+    if (message.responsePort) {
+      return message.responsePort.destPort
+    } else {
+      const [portRef1, portRef2] = this.ports.createChannel()
+      message.responsePort = portRef2
+      this.ports._unboundPorts.delete(portRef2)
+      return portRef1
+    }
   }
 
   /**
@@ -115,12 +134,31 @@ module.exports = class Kernel {
    */
   createMessage (opts) {
     const message = new Message(opts)
-    for (const port of message.ports) {
-      if (this.ports.isBound(port)) {
-        throw new Error('message must not contain bound ports')
-      }
-    }
+    this.ports.checkSendingPorts(message)
     return message
+  }
+
+  /**
+   * creates a new container. Returning a port to it.
+   * @param {String} type
+   * @param {*} data - the data to populate the initail state with
+   * @returns {Object}
+   */
+  createInstance (type, message) {
+    let nonce = this.state.nonce
+
+    const id = {
+      nonce: nonce,
+      parent: this.id
+    }
+
+    // incerment the nonce
+    nonce = new BN(nonce)
+    nonce.iaddn(1)
+    this.state.nonce = nonce.toArray()
+    this.ports.removeSentPorts(message)
+
+    this.hypervisor.createInstance(type, message, id)
   }
 
   /**
@@ -131,7 +169,7 @@ module.exports = class Kernel {
   async send (port, message) {
     // set the port that the message came from
     message._fromTicks = this.ticks
-    message.ports.forEach(port => this.ports._unboundPorts.delete(port))
+    this.ports.removeSentPorts(message)
 
     // if (this.currentMessage !== message && !message.responsePort) {
     //   this.currentMessage._addSubMessage(message)

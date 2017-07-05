@@ -1,4 +1,3 @@
-const BN = require('bn.js')
 const DeleteMessage = require('./deleteMessage')
 
 // decides which message to go first
@@ -166,29 +165,6 @@ module.exports = class PortManager {
   }
 
   /**
-   * creates a new container. Returning a port to it.
-   * @param {String} type
-   * @param {*} data - the data to populate the initail state with
-   * @returns {Object}
-   */
-  create (type, message) {
-    let nonce = this.state.nonce
-
-    const id = {
-      nonce: nonce,
-      parent: this.id
-    }
-
-    // incerment the nonce
-    nonce = new BN(nonce)
-    nonce.iaddn(1)
-    this.state.nonce = nonce.toArray()
-    message.ports.forEach(port => this._unboundPorts.delete(port))
-
-    this.hypervisor.createInstance(type, message, id)
-  }
-
-  /**
    * creates a channel returns the created ports in an Array
    * @returns {array}
    */
@@ -269,5 +245,21 @@ module.exports = class PortManager {
   _olderMessage (message) {
     this._messageTickThreshold = message ? message._fromTicks : 0
     return this._oldestMessagePromise
+  }
+
+  removeSentPorts (message) {
+    message.ports.forEach(port => this._unboundPorts.delete(port))
+  }
+
+  addReceivedPorts (message) {
+    message.ports.forEach(port => this._unboundPorts.add(port))
+  }
+
+  checkSendingPorts (message) {
+    for (const port of message.ports) {
+      if (this.isBound(port)) {
+        throw new Error('message must not contain bound ports')
+      }
+    }
   }
 }

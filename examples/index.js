@@ -43,23 +43,24 @@ node.on('ready', async() => {
   // create a root instance of the example container
   const root = await hypervisor.createInstance('example')
 
+  // create two channels
   const [portRef1, portRef2] = root.ports.createChannel()
   const [portRef3, portRef4] = root.ports.createChannel()
 
   // create two instances of the example container. These containers wiil be
   // given channels to the parent container
-  root.ports.create('example', root.createMessage({
+  root.createInstance('example', root.createMessage({
     ports: [portRef2]
   }))
 
-  root.ports.create('example', root.createMessage({
+  root.createInstance('example', root.createMessage({
     ports: [portRef4]
   }))
 
-  // bind the ports of the newly created containers. Binding ports allows the
-  // root container tot receieve messages from the containers. If no other
-  // container bound these ports then the corrisponding containers would be
-  // garbage collected
+  // bind the ports of the channels to the newly created containers. Binding
+  // ports allows the root container tt receieve messages from the containers.
+  // If no other container bound these ports then the corrisponding containers
+  // would be garbage collected
   root.ports.bind('one', portRef1)
   root.ports.bind('two', portRef3)
 

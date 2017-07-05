@@ -76,6 +76,9 @@ module.exports = class Kernel {
   async run (message, method = 'run') {
     let result
 
+    const responsePort = message.responsePort
+    delete message.responsePort
+
     message.ports.forEach(port => this.ports._unboundPorts.add(port))
     message._hops++
 
@@ -91,13 +94,28 @@ module.exports = class Kernel {
         }
       }
     }
+
+    if (responsePort) {
+      this.send(responsePort, new Message({
+        data: result
+      }))
+      this.ports._unboundPorts.add(responsePort)
+    }
+
     this.ports.clearUnboundedPorts()
-    // const responsePort = this.message.responsePort
-    // if (responsePort) {
-    //   this.send(responsePort, new Message({data: result}))
-    // }
     this._runNextMessage()
     return result
+  }
+
+  getResponsePort (message) {
+    if (message.responsePort) {
+      return message.responsePort.destPort
+    } else {
+      const [portRef1, portRef2] = this.ports.createChannel()
+      message.responsePort = portRef2
+      this.ports._unboundPorts.delete(portRef2)
+      return portRef1
+    }
   }
 
   /**

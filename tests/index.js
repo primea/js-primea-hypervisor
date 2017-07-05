@@ -1032,4 +1032,44 @@ node.on('ready', () => {
 
     t.end()
   })
+
+  tape('response ports', async t => {
+    t.plan(2)
+    let runs = 0
+    const returnValue = 'this is a test'
+
+    class testVMContainer extends BaseContainer {
+      run (m) {
+        runs++
+        if (runs === 1) {
+          return returnValue
+        } else {
+          t.equals(m.data, returnValue, 'should have correct return value')
+        }
+      }
+    }
+
+    const hypervisor = new Hypervisor(node.dag)
+
+    hypervisor.registerContainer('test', testVMContainer)
+
+    const rootContainer = await hypervisor.createInstance('test')
+
+    const [portRef1, portRef2] = rootContainer.ports.createChannel()
+    const initMessage = rootContainer.createMessage({
+      ports: [portRef2]
+    })
+
+    rootContainer.ports.create('test', initMessage)
+
+    rootContainer.ports.bind('first', portRef1)
+    const message = rootContainer.createMessage()
+    const rPort = rootContainer.getResponsePort(message)
+    const rPort2 = rootContainer.getResponsePort(message)
+
+    t.equals(rPort2, rPort)
+
+    rootContainer.send(portRef1, message)
+    rootContainer.ports.bind('response', rPort)
+  })
 })

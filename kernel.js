@@ -80,7 +80,7 @@ module.exports = class Kernel {
     const responsePort = message.responsePort
     delete message.responsePort
 
-    message.ports.forEach(port => this.ports._unboundPorts.add(port))
+    this.ports.addReceivedPorts(message)
     message._hops++
 
     if (message.constructor === DeleteMessage) {
@@ -134,11 +134,7 @@ module.exports = class Kernel {
    */
   createMessage (opts) {
     const message = new Message(opts)
-    for (const port of message.ports) {
-      if (this.ports.isBound(port)) {
-        throw new Error('message must not contain bound ports')
-      }
-    }
+    this.ports.checkSendingPorts(message)
     return message
   }
 

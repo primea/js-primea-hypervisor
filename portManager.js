@@ -250,4 +250,16 @@ module.exports = class PortManager {
   removeSentPorts (message) {
     message.ports.forEach(port => this._unboundPorts.delete(port))
   }
+
+  addReceivedPorts (message) {
+    message.ports.forEach(port => this._unboundPorts.add(port))
+  }
+
+  checkSendingPorts(message) {
+    for (const port of message.ports) {
+      if (this.isBound(port)) {
+        throw new Error('message must not contain bound ports')
+      }
+    }
+  }
 }

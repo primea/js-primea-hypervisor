@@ -45,7 +45,7 @@ node.on('ready', () => {
       ports: [portRef2]
     })
 
-    rootContainer.ports.create('test', initMessage)
+    rootContainer.createInstance('test', initMessage)
 
     rootContainer.ports.bind('first', portRef1)
     message = rootContainer.createMessage()
@@ -72,7 +72,7 @@ node.on('ready', () => {
     const [portRef1, portRef2] = root.ports.createChannel()
 
     root.ports.bind('one', portRef1)
-    root.ports.create('test', root.createMessage({
+    root.createInstance('test', root.createMessage({
       ports: [portRef2]
     }))
 
@@ -96,7 +96,7 @@ node.on('ready', () => {
     class testVMContainer extends BaseContainer {
       run (m) {
         const [portRef1, portRef2] = this.exInterface.ports.createChannel()
-        this.exInterface.ports.create('test2', this.exInterface.createMessage({
+        this.exInterface.createInstance('test2', this.exInterface.createMessage({
           ports: [portRef2]
         }))
         this.exInterface.ports.bind('child', portRef1)
@@ -111,7 +111,7 @@ node.on('ready', () => {
 
     const root = await hypervisor.createInstance('test')
     const [portRef1, portRef2] = root.ports.createChannel()
-    root.ports.create('test', root.createMessage({
+    root.createInstance('test', root.createMessage({
       ports: [portRef2]
     }))
 
@@ -149,7 +149,7 @@ node.on('ready', () => {
     class testVMContainer extends BaseContainer {
       run (m) {
         const [portRef1, portRef2] = this.exInterface.ports.createChannel()
-        this.exInterface.ports.create('test2', this.exInterface.createMessage({
+        this.exInterface.createInstance('test2', this.exInterface.createMessage({
           ports: [portRef2]
         }))
         this.exInterface.ports.bind('child', portRef1)
@@ -165,7 +165,7 @@ node.on('ready', () => {
     let root = await hypervisor.createInstance('test')
     const rootId = root.id
     const [portRef1, portRef2] = root.ports.createChannel()
-    root.ports.create('test', root.createMessage({
+    root.createInstance('test', root.createMessage({
       ports: [portRef2]
     }))
 
@@ -214,9 +214,9 @@ node.on('ready', () => {
           ports: [portRef6]
         })
 
-        this.exInterface.ports.create('root', message1)
-        this.exInterface.ports.create('root', message2)
-        this.exInterface.ports.create('root', message3)
+        this.exInterface.createInstance('root', message1)
+        this.exInterface.createInstance('root', message2)
+        this.exInterface.createInstance('root', message3)
 
         throw new Error('it is a trap!!!')
       }
@@ -256,8 +256,8 @@ node.on('ready', () => {
             ports: [portRef4]
           })
 
-          this.exInterface.ports.create('first', message1)
-          this.exInterface.ports.create('second', message2)
+          this.exInterface.createInstance('first', message1)
+          this.exInterface.createInstance('second', message2)
 
           this.exInterface.send(portRef1, this.exInterface.createMessage())
           this.exInterface.send(portRef3, this.exInterface.createMessage())
@@ -297,7 +297,7 @@ node.on('ready', () => {
     const root = await hypervisor.createInstance('root')
 
     const [portRef1, portRef2] = root.ports.createChannel()
-    root.ports.create('root', root.createMessage({
+    root.createInstance('root', root.createMessage({
       ports: [portRef2]
     }))
 
@@ -328,8 +328,8 @@ node.on('ready', () => {
             ports: [portRef4]
           })
 
-          this.exInterface.ports.create('first', message1)
-          this.exInterface.ports.create('second', message2)
+          this.exInterface.createInstance('first', message1)
+          this.exInterface.createInstance('second', message2)
 
           this.exInterface.send(portRef1, this.exInterface.createMessage())
           this.exInterface.send(portRef3, this.exInterface.createMessage())
@@ -369,7 +369,7 @@ node.on('ready', () => {
     const root = await hypervisor.createInstance('root')
 
     const [portRef1, portRef2] = root.ports.createChannel()
-    root.ports.create('root', root.createMessage({
+    root.createInstance('root', root.createMessage({
       ports: [portRef2]
     }))
 
@@ -399,8 +399,8 @@ node.on('ready', () => {
             ports: [portRef4]
           })
 
-          this.exInterface.ports.create('first', message1)
-          this.exInterface.ports.create('second', message2)
+          this.exInterface.createInstance('first', message1)
+          this.exInterface.createInstance('second', message2)
 
           this.exInterface.send(portRef1, this.exInterface.createMessage())
           this.exInterface.send(portRef3, this.exInterface.createMessage())
@@ -441,7 +441,7 @@ node.on('ready', () => {
 
     const root = await hypervisor.createInstance('root')
     const [portRef1, portRef2] = root.ports.createChannel()
-    root.ports.create('root', root.createMessage({
+    root.createInstance('root', root.createMessage({
       ports: [portRef2]
     }))
 
@@ -471,8 +471,8 @@ node.on('ready', () => {
             ports: [portRef4]
           })
 
-          this.exInterface.ports.create('first', message1)
-          this.exInterface.ports.create('second', message2)
+          this.exInterface.createInstance('first', message1)
+          this.exInterface.createInstance('second', message2)
 
           this.exInterface.send(portRef1, this.exInterface.createMessage())
           this.exInterface.send(portRef3, this.exInterface.createMessage())
@@ -529,13 +529,13 @@ node.on('ready', () => {
     const message = root.createMessage()
     root.send(portRef1, message)
     root.ports.bind('first', portRef1)
-    root.ports.create('root', root.createMessage({
+    root.createInstance('root', root.createMessage({
       ports: [portRef2]
     }))
 
     const [portRef3, portRef4] = root.ports.createChannel()
     root.ports.bind('sencond', portRef3)
-    root.ports.create('waiter', root.createMessage({
+    root.createInstance('waiter', root.createMessage({
       ports: [portRef4]
     }))
 
@@ -566,8 +566,8 @@ node.on('ready', () => {
             ports: [portRef4]
           })
 
-          this.exInterface.ports.create('first', message1)
-          this.exInterface.ports.create('second', message2)
+          this.exInterface.createInstance('first', message1)
+          this.exInterface.createInstance('second', message2)
 
           this.exInterface.send(portRef1, this.exInterface.createMessage())
           this.exInterface.send(portRef3, this.exInterface.createMessage())
@@ -612,7 +612,7 @@ node.on('ready', () => {
 
     root.send(portRef1, message)
     root.ports.bind('first', portRef1)
-    root.ports.create('root', root.createMessage({
+    root.createInstance('root', root.createMessage({
       ports: [portRef2]
     }))
   })
@@ -639,8 +639,8 @@ node.on('ready', () => {
             ports: [portRef4]
           })
 
-          this.exInterface.ports.create('first', message1)
-          this.exInterface.ports.create('second', message2)
+          this.exInterface.createInstance('first', message1)
+          this.exInterface.createInstance('second', message2)
 
           this.exInterface.send(portRef1, this.exInterface.createMessage())
           this.exInterface.send(portRef3, this.exInterface.createMessage())
@@ -685,7 +685,7 @@ node.on('ready', () => {
 
     root.send(portRef1, message)
     root.ports.bind('first', portRef1)
-    root.ports.create('root', root.createMessage({
+    root.createInstance('root', root.createMessage({
       ports: [portRef2]
     }))
   })
@@ -705,7 +705,7 @@ node.on('ready', () => {
           const message1 = this.exInterface.createMessage({
             ports: [portRef2]
           })
-          this.exInterface.ports.create('first', message1)
+          this.exInterface.createInstance('first', message1)
         } else {
           this.exInterface.send(one, this.exInterface.createMessage())
           this.exInterface.send(one, this.exInterface.createMessage())
@@ -732,7 +732,7 @@ node.on('ready', () => {
     const root = await hypervisor.createInstance('root')
     const [portRef1, portRef2] = root.ports.createChannel()
     root.ports.bind('first', portRef1)
-    root.ports.create('root', root.createMessage({
+    root.createInstance('root', root.createMessage({
       ports: [portRef2]
     }))
 
@@ -752,7 +752,7 @@ node.on('ready', () => {
     const root = await hypervisor.createInstance('base')
 
     const [portRef1, portRef2] = root.ports.createChannel()
-    root.ports.create('base', root.createMessage({
+    root.createInstance('base', root.createMessage({
       ports: [portRef2]
     }))
     root.ports.bind('test', portRef1)
@@ -797,7 +797,7 @@ node.on('ready', () => {
           ports: [portRef2]
         })
 
-        this.exInterface.ports.create('first', message1)
+        this.exInterface.createInstance('first', message1)
         this.exInterface.send(portRef1, this.exInterface.createMessage())
         this.exInterface.incrementTicks(6)
       }
@@ -818,7 +818,7 @@ node.on('ready', () => {
     const root = await hypervisor.createInstance('root')
     const [portRef1, portRef2] = root.ports.createChannel()
     root.ports.bind('first', portRef1)
-    root.ports.create('root', root.createMessage({
+    root.createInstance('root', root.createMessage({
       ports: [portRef2]
     }))
 
@@ -837,7 +837,7 @@ node.on('ready', () => {
     }
     class Root extends BaseContainer {
       run (m) {
-        this.exInterface.ports.create('root')
+        this.exInterface.createInstance('root')
       }
     }
 
@@ -848,7 +848,7 @@ node.on('ready', () => {
     const root = await hypervisor.createInstance('root')
     const [portRef1, portRef2] = root.ports.createChannel()
     root.ports.bind('first', portRef1)
-    root.ports.create('root', root.createMessage({
+    root.createInstance('root', root.createMessage({
       ports: [portRef2]
     }))
 
@@ -867,7 +867,7 @@ node.on('ready', () => {
     class Root extends BaseContainer {
       run (m) {
         const [, portRef2] = this.exInterface.ports.createChannel()
-        this.exInterface.ports.create('sub', this.exInterface.createMessage({
+        this.exInterface.createInstance('sub', this.exInterface.createMessage({
           ports: [portRef2]
         }))
       }
@@ -878,7 +878,7 @@ node.on('ready', () => {
         this.exInterface.ports.bind('root', message.ports[0])
         const [portRef1, portRef2] = root.ports.createChannel()
         root.ports.bind('child', portRef1)
-        root.ports.create('root', root.createMessage({
+        root.createInstance('root', root.createMessage({
           ports: [portRef2]
         }))
       }
@@ -892,7 +892,7 @@ node.on('ready', () => {
     const root = await hypervisor.createInstance('root')
     const [portRef1, portRef2] = root.ports.createChannel()
     root.ports.bind('first', portRef1)
-    root.ports.create('root', root.createMessage({
+    root.createInstance('root', root.createMessage({
       ports: [portRef2]
     }))
 
@@ -915,13 +915,13 @@ node.on('ready', () => {
           this.exInterface.ports.unbind('test1')
         } else {
           const [portRef1, portRef2] = this.exInterface.ports.createChannel()
-          this.exInterface.ports.create('sub', this.exInterface.createMessage({
+          this.exInterface.createInstance('sub', this.exInterface.createMessage({
             ports: [portRef2]
           }))
           this.exInterface.ports.bind('test1', portRef1)
 
           const [portRef3, portRef4] = this.exInterface.ports.createChannel()
-          this.exInterface.ports.create('sub', this.exInterface.createMessage({
+          this.exInterface.createInstance('sub', this.exInterface.createMessage({
             ports: [portRef4]
           }))
           this.exInterface.ports.bind('test2', portRef3)
@@ -955,7 +955,7 @@ node.on('ready', () => {
     const root = await hypervisor.createInstance('root')
     const [portRef1, portRef2] = root.ports.createChannel()
     root.ports.bind('first', portRef1)
-    root.ports.create('root', root.createMessage({
+    root.createInstance('root', root.createMessage({
       ports: [portRef2]
     }))
 
@@ -980,13 +980,13 @@ node.on('ready', () => {
           this.exInterface.ports.unbind('test2')
         } else {
           const [portRef1, portRef2] = this.exInterface.ports.createChannel()
-          this.exInterface.ports.create('sub', this.exInterface.createMessage({
+          this.exInterface.createInstance('sub', this.exInterface.createMessage({
             ports: [portRef2]
           }))
           this.exInterface.ports.bind('test1', portRef1)
 
           const [portRef3, portRef4] = this.exInterface.ports.createChannel()
-          this.exInterface.ports.create('sub', this.exInterface.createMessage({
+          this.exInterface.createInstance('sub', this.exInterface.createMessage({
             ports: [portRef4]
           }))
           this.exInterface.ports.bind('test2', portRef3)
@@ -1021,7 +1021,7 @@ node.on('ready', () => {
 
     const [portRef1, portRef2] = root.ports.createChannel()
     root.ports.bind('first', portRef1)
-    root.ports.create('root', root.createMessage({
+    root.createInstance('root', root.createMessage({
       ports: [portRef2]
     }))
 
@@ -1060,7 +1060,7 @@ node.on('ready', () => {
       ports: [portRef2]
     })
 
-    rootContainer.ports.create('test', initMessage)
+    rootContainer.createInstance('test', initMessage)
 
     rootContainer.ports.bind('first', portRef1)
     const message = rootContainer.createMessage()

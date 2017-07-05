@@ -1,4 +1,5 @@
 const Message = require('primea-message')
+const BN = require('bn.js')
 const PortManager = require('./portManager.js')
 const DeleteMessage = require('./deleteMessage')
 
@@ -142,6 +143,29 @@ module.exports = class Kernel {
   }
 
   /**
+   * creates a new container. Returning a port to it.
+   * @param {String} type
+   * @param {*} data - the data to populate the initail state with
+   * @returns {Object}
+   */
+  createInstance (type, message) {
+    let nonce = this.state.nonce
+
+    const id = {
+      nonce: nonce,
+      parent: this.id
+    }
+
+    // incerment the nonce
+    nonce = new BN(nonce)
+    nonce.iaddn(1)
+    this.state.nonce = nonce.toArray()
+    this.ports.removeSentPorts(message)
+
+    this.hypervisor.createInstance(type, message, id)
+  }
+
+  /**
    * sends a message to a given port
    * @param {Object} portRef - the port
    * @param {Message} message - the message
@@ -149,7 +173,7 @@ module.exports = class Kernel {
   async send (port, message) {
     // set the port that the message came from
     message._fromTicks = this.ticks
-    message.ports.forEach(port => this.ports._unboundPorts.delete(port))
+    this.ports.removeSentPorts(message)
 
     // if (this.currentMessage !== message && !message.responsePort) {
     //   this.currentMessage._addSubMessage(message)

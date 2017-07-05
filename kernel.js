@@ -61,8 +61,8 @@ module.exports = class Kernel {
       // update it
       if (message._fromTicks > this.ticks) {
         this.ticks = message._fromTicks
+        this.hypervisor.scheduler.update(this)
       }
-      this.hypervisor.scheduler.update(this)
       // run the next message
       this.run(message)
     }
@@ -105,7 +105,6 @@ module.exports = class Kernel {
 
     this.ports.clearUnboundedPorts()
     this._runNextMessage()
-    return result
   }
 
   getResponsePort (message) {

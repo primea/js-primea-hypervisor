@@ -53,9 +53,10 @@ module.exports = class Kernel {
         const message = await this.ports.getNextMessage()
         if (!message) break
 
+        // dequqe message
         message.fromPort.messages.shift()
-          // if the message we recived had more ticks then we currently have the
-          // update it
+        // if the message we recived had more ticks then we currently have the
+        // update it
         if (message._fromTicks > this.ticks) {
           this.ticks = message._fromTicks
           this.hypervisor.scheduler.update(this)
@@ -81,7 +82,6 @@ module.exports = class Kernel {
     delete message.responsePort
 
     this.ports.addReceivedPorts(message)
-    message._hops++
 
     if (message.constructor === DeleteMessage) {
       this.ports._delete(message.fromName)
@@ -164,6 +164,7 @@ module.exports = class Kernel {
    * @param {Message} message - the message
    */
   async send (port, message) {
+    message._hops++
     // set the port that the message came from
     message._fromTicks = this.ticks
     this.ports.removeSentPorts(message)

@@ -22,7 +22,7 @@ class BaseContainer {
 
 node.on('ready', () => {
   tape('basic', async t => {
-    t.plan(2)
+    t.plan(3)
     let message
     const expectedState = {
       '/': 'zdpuB1wc9Pb6jUzfNt4nAxAEUxB7kNhg4vbq7YLcEyBUb6iAB'
@@ -53,6 +53,7 @@ node.on('ready', () => {
 
     const stateRoot = await hypervisor.createStateRoot(Infinity)
     t.deepEquals(stateRoot, expectedState, 'expected root!')
+    t.equals(hypervisor.scheduler.oldest(), 0)
   })
 
   tape('basic - do not store containers with no ports bound', async t => {

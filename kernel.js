@@ -35,35 +35,36 @@ module.exports = class Kernel {
    */
   queue (portName, message) {
     this.ports.queue(portName, message)
-    if (this.containerState !== 'running') {
-      this.containerState = 'running'
-      return this._runNextMessage()
-    }
+    return this._startMessageLoop()
   }
 
-  initialize (message) {
-    this.containerState = 'running'
-    return this.run(message, 'initialize')
+  async initialize (message) {
+    await this.run(message, 'initialize')
+    return this._startMessageLoop()
   }
 
   // waits for the next message
-  async _runNextMessage () {
-    // check if the ports are saturated, if so we don't have to wait on the
-    // scheduler
-    const message = await this.ports.getNextMessage()
+  async _startMessageLoop () {
+    // this ensure we only every have one loop running at a time
+    if (this.containerState !== 'running') {
+      this.containerState = 'running'
 
-    if (message) {
-      message.fromPort.messages.shift()
-      // if the message we recived had more ticks then we currently have the
-      // update it
-      if (message._fromTicks > this.ticks) {
-        this.ticks = message._fromTicks
-        this.hypervisor.scheduler.update(this)
+      while (1) {
+        const message = await this.ports.getNextMessage()
+        if (!message) break
+
+        // dequqe message
+        message.fromPort.messages.shift()
+        // if the message we recived had more ticks then we currently have the
+        // update it
+        if (message._fromTicks > this.ticks) {
+          this.ticks = message._fromTicks
+          this.hypervisor.scheduler.update(this)
+        }
+        // run the next message
+        await this.run(message)
       }
-      // run the next message
-      return this.run(message)
-    } else {
-      // if no more messages then shut down
+      // no more messages; shut down
       this.hypervisor.scheduler.done(this.id)
     }
   }
@@ -81,7 +82,6 @@ module.exports = class Kernel {
     delete message.responsePort
 
     this.ports.addReceivedPorts(message)
-    message._hops++
 
     if (message.constructor === DeleteMessage) {
       this.ports._delete(message.fromName)
@@ -100,11 +100,9 @@ module.exports = class Kernel {
       this.send(responsePort, new Message({
         data: result
       }))
-      this.ports._unboundPorts.add(responsePort)
     }
 
     this.ports.clearUnboundedPorts()
-    return this._runNextMessage()
   }
 
   getResponsePort (message) {
@@ -165,7 +163,8 @@ module.exports = class Kernel {
    * @param {Object} portRef - the port
    * @param {Message} message - the message
    */
-  async send (port, message) {
+  send (port, message) {
+    message._hops++
     // set the port that the message came from
     message._fromTicks = this.ticks
     this.ports.removeSentPorts(message)
@@ -173,14 +172,6 @@ module.exports = class Kernel {
     // if (this.currentMessage !== message && !message.responsePort) {
     //   this.currentMessage._addSubMessage(message)
     // }
-
-    if (port.destId) {
-      const id = port.destId
-      const instance = await this.hypervisor.getInstance(id)
-      return instance.queue(port.destName, message)
-    } else {
-      // port is unbound
-      port.destPort.messages.push(message)
-    }
+    return this.hypervisor.send(port, message)
   }
 }

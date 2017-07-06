@@ -42,6 +42,17 @@ module.exports = class Hypervisor {
     }
   }
 
+  async send (port, message) {
+    if (port.destId) {
+      const id = port.destId
+      const instance = await this.getInstance(id)
+      return instance.queue(port.destName, message)
+    } else {
+      // port is unbound
+      port.destPort.messages.push(message)
+    }
+  }
+
   // loads an instance of a container from the state
   async _loadInstance (id) {
     const state = await this.graph.get(this.state, id)

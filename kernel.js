@@ -52,10 +52,7 @@ module.exports = class Kernel {
     // scheduler
     const message = await this.ports.getNextMessage()
 
-    if (!message) {
-      // if no more messages then shut down
-      this.hypervisor.scheduler.done(this.id)
-    } else {
+    if (message) {
       message.fromPort.messages.shift()
       // if the message we recived had more ticks then we currently have the
       // update it
@@ -65,6 +62,9 @@ module.exports = class Kernel {
       }
       // run the next message
       return this.run(message)
+    } else {
+      // if no more messages then shut down
+      this.hypervisor.scheduler.done(this.id)
     }
   }
 

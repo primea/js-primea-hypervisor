@@ -109,10 +109,9 @@ module.exports = class Hypervisor {
     await this.graph.set(this.state, idHash, state)
     // create the container instance
     const instance = await this._loadInstance(idHash)
-
     resolve(instance)
     // send the intialization message
-    instance.initialize(message)
+    await instance.initialize(message)
 
     return instance
   }

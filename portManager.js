@@ -113,7 +113,7 @@ module.exports = class PortManager {
       this.kernel.send(port, new DeleteMessage())
     })
     this._unboundPorts.clear()
-    if (Object.keys(this.ports).length === 0) {
+    if (!Object.keys(this.ports).length) {
       this.hypervisor.addNodeToCheck(this.id)
     }
   }

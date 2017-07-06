@@ -50,7 +50,7 @@ module.exports = class Kernel {
       this.containerState = 'running'
 
       while (1) {
-        let message = await this.ports.getNextMessage()
+        const message = await this.ports.getNextMessage()
         if (!message) break
 
         message.fromPort.messages.shift()

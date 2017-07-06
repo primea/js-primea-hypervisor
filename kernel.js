@@ -163,7 +163,7 @@ module.exports = class Kernel {
    * @param {Object} portRef - the port
    * @param {Message} message - the message
    */
-  async send (port, message) {
+  send (port, message) {
     message._hops++
     // set the port that the message came from
     message._fromTicks = this.ticks
@@ -172,14 +172,6 @@ module.exports = class Kernel {
     // if (this.currentMessage !== message && !message.responsePort) {
     //   this.currentMessage._addSubMessage(message)
     // }
-
-    if (port.destId) {
-      const id = port.destId
-      const instance = await this.hypervisor.getInstance(id)
-      return instance.queue(port.destName, message)
-    } else {
-      // port is unbound
-      port.destPort.messages.push(message)
-    }
+    return this.hypervisor.send(port, message)
   }
 }

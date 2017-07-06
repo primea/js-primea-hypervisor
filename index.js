@@ -61,8 +61,8 @@ module.exports = class Hypervisor {
   }
 
   // get a hash from a POJO
-  async _getHashFromObj (obj) {
-    return (await this.graph.flush(obj))['/']
+  _getHashFromObj (obj) {
+    return this.graph.flush(obj).then(obj => obj['/'])
   }
 
   /**

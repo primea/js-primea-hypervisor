@@ -37,13 +37,13 @@ module.exports = class Kernel {
     this.ports.queue(portName, message)
     if (this.containerState !== 'running') {
       this.containerState = 'running'
-      this._runNextMessage()
+      return this._runNextMessage()
     }
   }
 
   initialize (message) {
     this.containerState = 'running'
-    this.run(message, 'initialize')
+    return this.run(message, 'initialize')
   }
 
   // waits for the next message
@@ -64,7 +64,7 @@ module.exports = class Kernel {
         this.hypervisor.scheduler.update(this)
       }
       // run the next message
-      this.run(message)
+      return this.run(message)
     }
   }
 
@@ -104,7 +104,7 @@ module.exports = class Kernel {
     }
 
     this.ports.clearUnboundedPorts()
-    this._runNextMessage()
+    return this._runNextMessage()
   }
 
   getResponsePort (message) {
@@ -157,7 +157,7 @@ module.exports = class Kernel {
     this.state.nonce = nonce.toArray()
     this.ports.removeSentPorts(message)
 
-    this.hypervisor.createInstance(type, message, id)
+    return this.hypervisor.createInstance(type, message, id)
   }
 
   /**
@@ -177,7 +177,7 @@ module.exports = class Kernel {
     if (port.destId) {
       const id = port.destId
       const instance = await this.hypervisor.getInstance(id)
-      instance.queue(port.destName, message)
+      return instance.queue(port.destName, message)
     } else {
       // port is unbound
       port.destPort.messages.push(message)

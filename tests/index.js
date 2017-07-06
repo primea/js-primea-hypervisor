@@ -273,7 +273,7 @@ node.on('ready', () => {
     class First extends BaseContainer {
       run (m) {
         this.kernel.incrementTicks(2)
-        return this.kernel.send(m.fromPort, this.kernel.createMessage({
+        this.kernel.send(m.fromPort, this.kernel.createMessage({
           data: 'first'
         }))
       }
@@ -282,7 +282,7 @@ node.on('ready', () => {
     class Second extends BaseContainer {
       run (m) {
         this.kernel.incrementTicks(3)
-        return this.kernel.send(m.fromPort, this.kernel.createMessage({
+        this.kernel.send(m.fromPort, this.kernel.createMessage({
           data: 'second'
         }))
       }
@@ -345,7 +345,7 @@ node.on('ready', () => {
     class First extends BaseContainer {
       run (m) {
         this.kernel.incrementTicks(2)
-        return this.kernel.send(m.fromPort, this.kernel.createMessage({
+        this.kernel.send(m.fromPort, this.kernel.createMessage({
           data: 'first'
         }))
       }
@@ -354,7 +354,7 @@ node.on('ready', () => {
     class Second extends BaseContainer {
       run (m) {
         this.kernel.incrementTicks(1)
-        return this.kernel.send(m.fromPort, this.kernel.createMessage({
+        this.kernel.send(m.fromPort, this.kernel.createMessage({
           data: 'second'
         }))
       }
@@ -585,7 +585,7 @@ node.on('ready', () => {
     class First extends BaseContainer {
       run (m) {
         this.kernel.incrementTicks(2)
-        return this.kernel.send(m.fromPort, this.kernel.createMessage({
+        this.kernel.send(m.fromPort, this.kernel.createMessage({
           data: 'first'
         }))
       }
@@ -594,7 +594,7 @@ node.on('ready', () => {
     class Second extends BaseContainer {
       run (m) {
         this.kernel.incrementTicks(2)
-        return this.kernel.send(m.fromPort, this.kernel.createMessage({
+        this.kernel.send(m.fromPort, this.kernel.createMessage({
           data: 'second'
         }))
       }
@@ -658,7 +658,7 @@ node.on('ready', () => {
     class First extends BaseContainer {
       run (m) {
         this.kernel.incrementTicks(2)
-        return this.kernel.send(m.fromPort, this.kernel.createMessage({
+        this.kernel.send(m.fromPort, this.kernel.createMessage({
           data: 'first'
         }))
       }
@@ -667,7 +667,7 @@ node.on('ready', () => {
     class Second extends BaseContainer {
       run (m) {
         this.kernel.incrementTicks(2)
-        return this.kernel.send(m.fromPort, this.kernel.createMessage({
+        this.kernel.send(m.fromPort, this.kernel.createMessage({
           data: 'second'
         }))
       }

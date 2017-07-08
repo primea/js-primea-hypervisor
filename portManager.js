@@ -243,7 +243,7 @@ module.exports = class PortManager {
   // returns a promise that resolve when a message older then the given message
   // is recived
   _olderMessage (message) {
-    this._messageTickThreshold = message ? message._fromTicks : 0
+    this._messageTickThreshold = message ? message._fromTicks : -1
     return this._oldestMessagePromise
   }
 

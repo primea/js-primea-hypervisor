@@ -18,6 +18,7 @@ module.exports = class Kernel {
     this.hypervisor = opts.hypervisor
     this.id = opts.id
     this.container = new opts.container.Constructor(this, opts.container.args)
+    this.timeout = 0
 
     this.ticks = 0
     this.containerState = 'idle'
@@ -50,7 +51,7 @@ module.exports = class Kernel {
       this.containerState = 'running'
 
       while (1) {
-        const message = await this.ports.getNextMessage()
+        const message = await this.ports.getNextMessage(this.timeout)
         if (!message) break
 
         // dequqe message
@@ -64,9 +65,14 @@ module.exports = class Kernel {
         // run the next message
         await this.run(message)
       }
-      // no more messages; shut down
-      this.hypervisor.scheduler.done(this.id)
+
+      this.containerState = 'idle'
+      this.container.onIdle()
     }
+  }
+
+  shutdown () {
+    this.hypervisor.scheduler.done(this.id)
   }
 
   /**
@@ -76,16 +82,14 @@ module.exports = class Kernel {
    * @returns {Promise}
    */
   async run (message, method = 'run') {
-    let result
-
-    const responsePort = message.responsePort
-    delete message.responsePort
-
-    this.ports.addReceivedPorts(message)
-
     if (message.constructor === DeleteMessage) {
       this.ports._delete(message.fromName)
     } else {
+      const responsePort = message.responsePort
+      delete message.responsePort
+
+      this.ports.addReceivedPorts(message)
+      let result
       try {
         result = await this.container[method](message) || {}
       } catch (e) {
@@ -94,12 +98,12 @@ module.exports = class Kernel {
           exceptionError: e
         }
       }
-    }
 
-    if (responsePort) {
-      this.send(responsePort, new Message({
-        data: result
-      }))
+      if (responsePort) {
+        this.send(responsePort, new Message({
+          data: result
+        }))
+      }
     }
 
     this.ports.clearUnboundedPorts()

@@ -18,6 +18,10 @@ class BaseContainer {
       this.kernel.ports.bind('root', port)
     }
   }
+
+  onIdle () {
+    this.kernel.shutdown()
+  }
 }
 
 node.on('ready', () => {

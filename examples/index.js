@@ -32,6 +32,10 @@ class ExampleContainer {
       this.kernel.ports.bind('channel', message.ports[0])
     }
   }
+
+  onIdle () {
+    this.kernel.shutdown()
+  }
 }
 
 // wait untill the ipfs node is ready

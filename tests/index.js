@@ -13,6 +13,7 @@ class BaseContainer {
   }
 
   initialize (message) {
+    this.kernel.state.code = message.data.byteLength ? message.data : undefined
     const port = message.ports[0]
     if (port) {
       this.kernel.ports.bind('root', port)
@@ -63,7 +64,7 @@ node.on('ready', () => {
   tape('basic - do not store containers with no ports bound', async t => {
     t.plan(1)
     const expectedState = {
-      '/': 'zdpuAx5LRRwTgzPipKEPgh7MHUKu4Pd1BYjDqBcf9whgzvrqf'
+      '/': 'zdpuAozDi6tKPbqmHJxo7aNES2xVt1MkaCLyxcioEKzz3M2WH'
     }
 
     class testVMContainer extends BaseContainer {

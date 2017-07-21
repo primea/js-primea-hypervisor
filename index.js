@@ -108,12 +108,11 @@ module.exports = class Hypervisor {
     // new container is loaded
     const resolve = this.scheduler.getLock(id)
     const idHash = await this._getHashFromObj(id)
-    const code = message.data.byteLength ? message.data : undefined
+    // const code = message.data.byteLength ? message.data : undefined
     const state = {
       nonce: [0],
       ports: {},
-      type: type,
-      code: code
+      type: type
     }
 
     // save the container in the state

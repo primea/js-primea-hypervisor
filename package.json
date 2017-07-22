@@ -33,6 +33,7 @@
     "binary-search-insert": "^1.0.3",
     "bn.js": "^4.11.6",
     "ipld-graph-builder": "1.2.2",
+    "primea-abstract-container": "0.0.1",
     "primea-message": "0.0.1"
   },
   "devDependencies": {

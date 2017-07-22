@@ -1,5 +1,6 @@
 const IPFS = require('ipfs')
 const Hypervisor = require('../')
+const AbstractContainer = require('primea-abstract-container')
 
 // the hypervisor store all of it's state using ipfs.dag api
 // https://github.com/ipfs/interface-ipfs-core/tree/master/API/dag
@@ -8,33 +9,27 @@ const node = new IPFS({
 })
 
 // the Hypervisor starts an manages "containers"
-class ExampleContainer {
-  // the constructor is given an instance of the kernel
-  // https://github.com/primea/js-primea-hypervisor/blob/master/docs/kernel.md
-  constructor (kernel) {
-    this.kernel = kernel
-  }
-
+class ExampleContainer extends AbstractContainer {
   // this method runs once when the container is intailly created. It is given
   // a message with a single port, which is a channel to its parent with the
   // exception of the root container (the container that is intailial created)
-  initialize (message) {
+  async initialize (message) {
     const port = message.ports[0]
     // the root container doesn't get a port
     if (port) {
       this.kernel.ports.bind('parent', port)
+    } else {
+      super.intialize(message)
     }
   }
 
   // the function is called for each message that a container gets
-  run (message) {
+  async run (message) {
     if (message.data === 'bindPort') {
       this.kernel.ports.bind('channel', message.ports[0])
+    } else {
+      super.run(message)
     }
-  }
-
-  onIdle () {
-    this.kernel.shutdown()
   }
 }
 

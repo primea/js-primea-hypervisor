@@ -148,6 +148,7 @@ module.exports = class Hypervisor {
    * @param {*} args - any args that the contructor takes
    */
   registerContainer (type, Constructor, args) {
+    Constructor.type = type
     this._containerTypes[type] = {
       Constructor: Constructor,
       args: args

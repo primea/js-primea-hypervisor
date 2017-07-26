@@ -1,5 +1,6 @@
 const tape = require('tape')
 const IPFS = require('ipfs')
+const AbstractContainer = require('primea-abstract-container')
 const Hypervisor = require('../')
 
 // start ipfs
@@ -7,21 +8,13 @@ const node = new IPFS({
   start: false
 })
 
-class BaseContainer {
-  constructor (kernel) {
-    this.kernel = kernel
-  }
-
+class BaseContainer extends AbstractContainer {
   initialize (message) {
     this.kernel.state.code = message.data.byteLength ? message.data : undefined
     const port = message.ports[0]
     if (port) {
       this.kernel.ports.bind('root', port)
     }
-  }
-
-  onIdle () {
-    this.kernel.shutdown()
   }
 }
 

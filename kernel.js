@@ -91,7 +91,7 @@ module.exports = class Kernel {
       this.ports.addReceivedPorts(message)
       let result
       try {
-        result = await this.container[method](message) || {}
+        result = await this.container[method](message)
       } catch (e) {
         result = {
           exception: true,

@@ -15,6 +15,7 @@ module.exports = class Kernel {
    */
   constructor (opts) {
     this.state = opts.state
+    this.code = opts.code
     this.hypervisor = opts.hypervisor
     this.id = opts.id
     this.container = new opts.container.Constructor(this, opts.container.args)

@@ -61,6 +61,8 @@ module.exports = class Hypervisor {
     const container = this._containerTypes[state.type]
     let code
 
+    // checks if the code stored in the state is an array and that the elements
+    // are merkle link
     if (state.code && state.code[0]['/']) {
       await this.graph.tree(state.code, 1)
       code = state.code.map(a => a['/']).reduce((a, b) => a + b)

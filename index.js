@@ -4,9 +4,6 @@ const Kernel = require('./kernel.js')
 const Scheduler = require('./scheduler.js')
 const DFSchecker = require('./dfsChecker.js')
 const chunk = require('chunk')
-const flatten = require('flatten')
-
-const ROOT_ID = 'zdpuAm6aTdLVMUuiZypxkwtA7sKm7BWERy8MPbaCrFsmiyzxr'
 
 module.exports = class Hypervisor {
   /**
@@ -22,7 +19,8 @@ module.exports = class Hypervisor {
     this._containerTypes = {}
     this._nodesToCheck = new Set()
 
-    this.MAX_DATA_BYTES = 6553
+    this.ROOT_ID = 'zdpuAm6aTdLVMUuiZypxkwtA7sKm7BWERy8MPbaCrFsmiyzxr'
+    this.MAX_DATA_BYTES = 65533
   }
 
   /**
@@ -61,15 +59,20 @@ module.exports = class Hypervisor {
   async _loadInstance (id) {
     const state = await this.graph.get(this.state, id)
     const container = this._containerTypes[state.type]
+    let code
 
-    // if (state.code && Array.isArray(state.code[0])) {
-    //   state.code = flatten(state.code)
-    // }
+    if (state.code && state.code[0]['/']) {
+      await this.graph.tree(state.code, 1)
+      code = state.code.map(a => a['/']).reduce((a, b) => a + b)
+    } else {
+      code = state.code
+    }
 
     // create a new kernel instance
     const kernel = new Kernel({
       hypervisor: this,
       state: state,
+      code: code,
       container: container,
       id: id
     })
@@ -96,6 +99,7 @@ module.exports = class Hypervisor {
     } else {
       const resolve = this.scheduler.getLock(id)
       const instance = await this._loadInstance(id)
+      await instance.startup()
       resolve(instance)
       return instance
     }
@@ -123,6 +127,10 @@ module.exports = class Hypervisor {
       type: type
     }
 
+    if (message.data.length) {
+      state.code = message.data
+    }
+
     // save the container in the state
     await this.graph.set(this.state, idHash, state)
     // create the container instance
@@ -137,8 +145,6 @@ module.exports = class Hypervisor {
           '/': chk
         }
       })
-    } else {
-      console.log(state.code)
     }
 
     return instance
@@ -152,11 +158,10 @@ module.exports = class Hypervisor {
    */
   async createStateRoot (ticks) {
     await this.scheduler.wait(ticks)
-    const unlinked = await DFSchecker(this.graph, this.state, ROOT_ID, this._nodesToCheck)
+    const unlinked = await DFSchecker(this.graph, this.state, this.ROOT_ID, this._nodesToCheck)
     unlinked.forEach(id => {
       delete this.state[id]
     })
-    console.log(this.state)
     return this.graph.flush(this.state)
   }
 

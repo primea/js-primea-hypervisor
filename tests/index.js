@@ -1,6 +1,7 @@
 const tape = require('tape')
 const IPFS = require('ipfs')
 const AbstractContainer = require('primea-abstract-container')
+const Message = require('primea-message')
 const Hypervisor = require('../')
 
 // start ipfs
@@ -1070,5 +1071,34 @@ node.on('ready', () => {
 
     rootContainer.send(portRef1, message)
     rootContainer.ports.bind('response', rPort)
+  })
+
+  tape('start up', async t => {
+    t.plan(1)
+    class testVMContainer extends BaseContainer {
+      run () {}
+      startup () {
+        t.true(true, 'should start up')
+      }
+    }
+
+    const hypervisor = new Hypervisor(node.dag)
+    hypervisor.registerContainer('test', testVMContainer)
+    await hypervisor.createInstance('test')
+    hypervisor.getInstance(hypervisor.ROOT_ID)
+  })
+
+  tape('large code size', async t => {
+    t.plan(1)
+    const content = Buffer.from(new ArrayBuffer(1000000))
+    class testVMContainer extends BaseContainer {
+      run () {}
+    }
+
+    const hypervisor = new Hypervisor(node.dag)
+    hypervisor.registerContainer('test', testVMContainer)
+    await hypervisor.createInstance('test', new Message({data: content}))
+    const instance = await hypervisor.getInstance(hypervisor.ROOT_ID)
+    t.equals(content.length, instance.code.length)
   })
 })

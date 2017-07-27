@@ -33,7 +33,7 @@
     "binary-search-insert": "^1.0.3",
     "bn.js": "^4.11.6",
     "chunk": "0.0.2",
-    "ipld-graph-builder": "1.2.2",
+    "ipld-graph-builder": "1.2.3",
     "primea-abstract-container": "0.0.2",
     "primea-message": "0.0.1"
   },

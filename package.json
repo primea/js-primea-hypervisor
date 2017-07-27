@@ -38,7 +38,7 @@
   },
   "devDependencies": {
     "coveralls": "^2.13.1",
-    "documentation": "^4.0.0-rc.1",
+    "documentation": "^5.0.0",
     "ipfs": "^0.25.0",
     "istanbul": "^1.1.0-alpha.1",
     "level-promise": "^2.1.1",

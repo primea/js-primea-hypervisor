@@ -73,6 +73,9 @@ module.exports = class Kernel {
 
   shutdown () {
     this.hypervisor.scheduler.done(this.id)
+    if (this.container.shutdown) {
+      this.container.shutdown()
+    }
   }
 
   /**

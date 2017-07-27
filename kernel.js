@@ -76,12 +76,6 @@ module.exports = class Kernel {
     this.hypervisor.scheduler.done(this.id)
   }
 
-  startup () {
-    if (this.container.startup) {
-      return this.container.startup()
-    }
-  }
-
   /**
    * run the kernels code with a given enviroment
    * @param {object} message - the message to run

@@ -1073,21 +1073,6 @@ node.on('ready', () => {
     rootContainer.ports.bind('response', rPort)
   })
 
-  tape('start up', async t => {
-    t.plan(1)
-    class testVMContainer extends BaseContainer {
-      run () {}
-      startup () {
-        t.true(true, 'should start up')
-      }
-    }
-
-    const hypervisor = new Hypervisor(node.dag)
-    hypervisor.registerContainer('test', testVMContainer)
-    await hypervisor.createInstance('test')
-    hypervisor.getInstance(hypervisor.ROOT_ID)
-  })
-
   tape('large code size', async t => {
     t.plan(1)
     const content = Buffer.from(new ArrayBuffer(1000000))

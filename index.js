@@ -101,7 +101,6 @@ module.exports = class Hypervisor {
     } else {
       const resolve = this.scheduler.getLock(id)
       const instance = await this._loadInstance(id)
-      await instance.startup()
       resolve(instance)
       return instance
     }

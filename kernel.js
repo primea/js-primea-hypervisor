@@ -41,7 +41,7 @@ module.exports = class Kernel {
   }
 
   async initialize (message) {
-    await this.run(message, 'initialize')
+    await this.run(message, 'onInitialize')
     return this._startMessageLoop()
   }
 

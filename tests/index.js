@@ -10,7 +10,7 @@ const node = new IPFS({
 })
 
 class BaseContainer extends AbstractContainer {
-  initialize (message) {
+  onInitialize (message) {
     this.kernel.state.code = message.data.byteLength ? message.data : undefined
     const port = message.ports[0]
     if (port) {
@@ -62,7 +62,7 @@ node.on('ready', () => {
     }
 
     class testVMContainer extends BaseContainer {
-      initialize () {}
+      onInitialize () {}
     }
 
     const hypervisor = new Hypervisor(node.dag)
@@ -507,7 +507,7 @@ node.on('ready', () => {
     }
 
     class Waiter extends BaseContainer {
-      initialize () {
+      onInitialize () {
         return new Promise((resolve, reject) => {
           setTimeout(() => {
             resolve()
@@ -874,7 +874,7 @@ node.on('ready', () => {
     }
 
     class Sub extends BaseContainer {
-      initailize (message) {
+      onInitailize (message) {
         this.kernel.ports.bind('root', message.ports[0])
         const [portRef1, portRef2] = root.ports.createChannel()
         root.ports.bind('child', portRef1)

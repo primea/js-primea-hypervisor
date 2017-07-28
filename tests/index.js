@@ -28,7 +28,7 @@ node.on('ready', () => {
     }
 
     class testVMContainer extends BaseContainer {
-      run (m) {
+      onMessage (m) {
         t.true(m === message, 'should recive a message')
       }
     }
@@ -88,13 +88,13 @@ node.on('ready', () => {
     }
 
     class testVMContainer2 extends BaseContainer {
-      run (m) {
+      onMessage (m) {
         t.true(m === message, 'should recive a message')
       }
     }
 
     class testVMContainer extends BaseContainer {
-      run (m) {
+      onMessage (m) {
         const [portRef1, portRef2] = this.kernel.ports.createChannel()
         this.kernel.createInstance('test2', this.kernel.createMessage({
           ports: [portRef2]
@@ -134,7 +134,7 @@ node.on('ready', () => {
     let hasResolved = false
 
     class testVMContainer2 extends BaseContainer {
-      run (m) {
+      onMessage (m) {
         t.true(m === message, 'should recive a message')
         return new Promise((resolve, reject) => {
           setTimeout(() => {
@@ -147,7 +147,7 @@ node.on('ready', () => {
     }
 
     class testVMContainer extends BaseContainer {
-      run (m) {
+      onMessage (m) {
         const [portRef1, portRef2] = this.kernel.ports.createChannel()
         this.kernel.createInstance('test2', this.kernel.createMessage({
           ports: [portRef2]
@@ -179,7 +179,7 @@ node.on('ready', () => {
 
     // test reviving the state
     class testVMContainer3 extends BaseContainer {
-      run (m) {
+      onMessage (m) {
         const port = this.kernel.ports.get('child')
         this.kernel.send(port, m)
         this.kernel.incrementTicks(1)
@@ -195,7 +195,7 @@ node.on('ready', () => {
   tape('traps', async t => {
     t.plan(1)
     class Root extends BaseContainer {
-      async run (m) {
+      async onMessage (m) {
         const [portRef1, portRef2] = this.kernel.ports.createChannel()
         const [portRef3, portRef4] = this.kernel.ports.createChannel()
         const [portRef5, portRef6] = this.kernel.ports.createChannel()
@@ -239,7 +239,7 @@ node.on('ready', () => {
     let runs = 0
 
     class Root extends BaseContainer {
-      run (m) {
+      onMessage (m) {
         if (!runs) {
           runs++
 
@@ -271,7 +271,7 @@ node.on('ready', () => {
     }
 
     class First extends BaseContainer {
-      run (m) {
+      onMessage (m) {
         this.kernel.incrementTicks(2)
         this.kernel.send(m.fromPort, this.kernel.createMessage({
           data: 'first'
@@ -280,7 +280,7 @@ node.on('ready', () => {
     }
 
     class Second extends BaseContainer {
-      run (m) {
+      onMessage (m) {
         this.kernel.incrementTicks(3)
         this.kernel.send(m.fromPort, this.kernel.createMessage({
           data: 'second'
@@ -311,7 +311,7 @@ node.on('ready', () => {
     let runs = 0
 
     class Root extends BaseContainer {
-      run (m) {
+      onMessage (m) {
         if (!runs) {
           runs++
 
@@ -343,7 +343,7 @@ node.on('ready', () => {
     }
 
     class First extends BaseContainer {
-      run (m) {
+      onMessage (m) {
         this.kernel.incrementTicks(2)
         this.kernel.send(m.fromPort, this.kernel.createMessage({
           data: 'first'
@@ -352,7 +352,7 @@ node.on('ready', () => {
     }
 
     class Second extends BaseContainer {
-      run (m) {
+      onMessage (m) {
         this.kernel.incrementTicks(1)
         this.kernel.send(m.fromPort, this.kernel.createMessage({
           data: 'second'
@@ -383,7 +383,7 @@ node.on('ready', () => {
     let runs = 0
 
     class Root extends BaseContainer {
-      run (m) {
+      onMessage (m) {
         if (!runs) {
           runs++
           const [portRef1, portRef2] = this.kernel.ports.createChannel()
@@ -416,7 +416,7 @@ node.on('ready', () => {
     }
 
     class First extends BaseContainer {
-      run (m) {
+      onMessage (m) {
         this.kernel.incrementTicks(1)
         this.kernel.send(m.fromPort, this.kernel.createMessage({
           data: 'first'
@@ -425,7 +425,7 @@ node.on('ready', () => {
     }
 
     class Second extends BaseContainer {
-      run (m) {
+      onMessage (m) {
         this.kernel.incrementTicks(2)
         this.kernel.send(m.fromPort, this.kernel.createMessage({
           data: 'second'
@@ -455,7 +455,7 @@ node.on('ready', () => {
     let runs = 0
 
     class Root extends BaseContainer {
-      run (m) {
+      onMessage (m) {
         if (!runs) {
           runs++
           const [portRef1, portRef2] = this.kernel.ports.createChannel()
@@ -489,7 +489,7 @@ node.on('ready', () => {
     }
 
     class First extends BaseContainer {
-      run (m) {
+      onMessage (m) {
         this.kernel.incrementTicks(2)
         this.kernel.send(m.fromPort, this.kernel.createMessage({
           data: 'first'
@@ -498,7 +498,7 @@ node.on('ready', () => {
     }
 
     class Second extends BaseContainer {
-      run (m) {
+      onMessage (m) {
         this.kernel.incrementTicks(3)
         this.kernel.send(m.fromPort, this.kernel.createMessage({
           data: 'second'
@@ -550,7 +550,7 @@ node.on('ready', () => {
     let runs = 0
 
     class Root extends BaseContainer {
-      run (m) {
+      onMessage (m) {
         if (!runs) {
           runs++
           const [portRef1, portRef2] = this.kernel.ports.createChannel()
@@ -583,7 +583,7 @@ node.on('ready', () => {
     }
 
     class First extends BaseContainer {
-      run (m) {
+      onMessage (m) {
         this.kernel.incrementTicks(2)
         this.kernel.send(m.fromPort, this.kernel.createMessage({
           data: 'first'
@@ -592,7 +592,7 @@ node.on('ready', () => {
     }
 
     class Second extends BaseContainer {
-      run (m) {
+      onMessage (m) {
         this.kernel.incrementTicks(2)
         this.kernel.send(m.fromPort, this.kernel.createMessage({
           data: 'second'
@@ -623,7 +623,7 @@ node.on('ready', () => {
     let runs = 0
 
     class Root extends BaseContainer {
-      run (m) {
+      onMessage (m) {
         if (!runs) {
           runs++
           const [portRef1, portRef2] = this.kernel.ports.createChannel()
@@ -656,7 +656,7 @@ node.on('ready', () => {
     }
 
     class First extends BaseContainer {
-      run (m) {
+      onMessage (m) {
         this.kernel.incrementTicks(2)
         this.kernel.send(m.fromPort, this.kernel.createMessage({
           data: 'first'
@@ -665,7 +665,7 @@ node.on('ready', () => {
     }
 
     class Second extends BaseContainer {
-      run (m) {
+      onMessage (m) {
         this.kernel.incrementTicks(2)
         this.kernel.send(m.fromPort, this.kernel.createMessage({
           data: 'second'
@@ -697,7 +697,7 @@ node.on('ready', () => {
     let instance
 
     class Root extends BaseContainer {
-      run (m) {
+      onMessage (m) {
         let one = this.kernel.ports.get('one')
         if (!one) {
           const [portRef1, portRef2] = this.kernel.ports.createChannel()
@@ -714,7 +714,7 @@ node.on('ready', () => {
     }
 
     class First extends BaseContainer {
-      run (m) {
+      onMessage (m) {
         ++runs
         if (runs === 2) {
           t.equals(instance, this, 'should have same instances')
@@ -790,7 +790,7 @@ node.on('ready', () => {
       '/': 'zdpuB2QXxn1KQtLFfBqaritTRoe5BuKP5sNFSrPtRT6sxkY7Z'
     }
     class Root extends BaseContainer {
-      run (m) {
+      onMessage (m) {
         const [portRef1, portRef2] = this.kernel.ports.createChannel()
         this.kernel.ports.bind('one', portRef1)
         const message1 = this.kernel.createMessage({
@@ -804,7 +804,7 @@ node.on('ready', () => {
     }
 
     class First extends BaseContainer {
-      run (m) {
+      onMessage (m) {
         this.kernel.incrementTicks(2)
         this.kernel.ports.delete('root')
       }
@@ -836,7 +836,7 @@ node.on('ready', () => {
       '/': 'zdpuB2QXxn1KQtLFfBqaritTRoe5BuKP5sNFSrPtRT6sxkY7Z'
     }
     class Root extends BaseContainer {
-      run (m) {
+      onMessage (m) {
         this.kernel.createInstance('root')
       }
     }
@@ -865,7 +865,7 @@ node.on('ready', () => {
       '/': 'zdpuB2QXxn1KQtLFfBqaritTRoe5BuKP5sNFSrPtRT6sxkY7Z'
     }
     class Root extends BaseContainer {
-      run (m) {
+      onMessage (m) {
         const [, portRef2] = this.kernel.ports.createChannel()
         this.kernel.createInstance('sub', this.kernel.createMessage({
           ports: [portRef2]
@@ -908,7 +908,7 @@ node.on('ready', () => {
       '/': 'zdpuAwsZTd5mRZBCYA1FJSHrpYDPgSZSiaTQp9xkUeajaoMHM'
     }
     class Root extends BaseContainer {
-      run (m) {
+      onMessage (m) {
         if (m.ports.length) {
           const port = this.kernel.ports.get('test1')
           this.kernel.send(port, m)
@@ -933,7 +933,7 @@ node.on('ready', () => {
     }
 
     class Sub extends BaseContainer {
-      run (message) {
+      onMessage (message) {
         if (message.data === 'getChannel') {
           const ports = this.kernel.ports.createChannel()
           this.kernel.ports.bind('channel', ports[0])
@@ -972,7 +972,7 @@ node.on('ready', () => {
       '/': 'zdpuAmi9tkYTpoVsZvqQgxpQFRhCgYFVv4W3fjjfVhf1j8swv'
     }
     class Root extends BaseContainer {
-      run (m) {
+      onMessage (m) {
         if (m.ports.length) {
           const port = this.kernel.ports.get('test1')
           this.kernel.send(port, m)
@@ -998,7 +998,7 @@ node.on('ready', () => {
     }
 
     class Sub extends BaseContainer {
-      run (message) {
+      onMessage (message) {
         if (message.data === 'getChannel') {
           const ports = this.kernel.ports.createChannel()
           this.kernel.ports.bind('channel', ports[0])
@@ -1039,7 +1039,7 @@ node.on('ready', () => {
     const returnValue = 'this is a test'
 
     class testVMContainer extends BaseContainer {
-      run (m) {
+      onMessage (m) {
         runs++
         if (runs === 1) {
           return returnValue
@@ -1076,8 +1076,8 @@ node.on('ready', () => {
   tape('start up', async t => {
     t.plan(1)
     class testVMContainer extends BaseContainer {
-      run () {}
-      startup () {
+      onMessage () {}
+      onStartup () {
         t.true(true, 'should start up')
       }
     }
@@ -1092,7 +1092,7 @@ node.on('ready', () => {
     t.plan(1)
     const content = Buffer.from(new ArrayBuffer(1000000))
     class testVMContainer extends BaseContainer {
-      run () {}
+      onMessage () {}
     }
 
     const hypervisor = new Hypervisor(node.dag)

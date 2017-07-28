@@ -77,9 +77,7 @@ module.exports = class Kernel {
   }
 
   startup () {
-    if (this.container.startup) {
-      return this.container.startup()
-    }
+    return this.container.onStartup()
   }
 
   /**
@@ -88,7 +86,7 @@ module.exports = class Kernel {
    * @param {boolean} init - whether or not to run the intialization routine
    * @returns {Promise}
    */
-  async run (message, method = 'run') {
+  async run (message, method = 'onMessage') {
     if (message.constructor === DeleteMessage) {
       this.ports._delete(message.fromName)
     } else {

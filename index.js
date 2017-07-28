@@ -101,6 +101,7 @@ module.exports = class Hypervisor {
     } else {
       const resolve = this.scheduler.getLock(id)
       const instance = await this._loadInstance(id)
+      await instance.startup()
       resolve(instance)
       return instance
     }
@@ -138,7 +139,7 @@ module.exports = class Hypervisor {
     const instance = await this._loadInstance(idHash)
     resolve(instance)
     // send the intialization message
-    await instance.initialize(message)
+    await instance.create(message)
 
     if (state.code && state.code.length > this.MAX_DATA_BYTES) {
       state.code = chunk(state.code, this.MAX_DATA_BYTES).map(chk => {

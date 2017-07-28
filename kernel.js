@@ -40,8 +40,8 @@ module.exports = class Kernel {
     return this._startMessageLoop()
   }
 
-  async initialize (message) {
-    await this.run(message, 'initialize')
+  async create (message) {
+    await this.message(message, 'onCreation')
     return this._startMessageLoop()
   }
 
@@ -64,7 +64,7 @@ module.exports = class Kernel {
           this.hypervisor.scheduler.update(this)
         }
         // run the next message
-        await this.run(message)
+        await this.message(message)
       }
 
       this.containerState = 'idle'
@@ -76,13 +76,17 @@ module.exports = class Kernel {
     this.hypervisor.scheduler.done(this.id)
   }
 
+  startup () {
+    return this.container.onStartup()
+  }
+
   /**
    * run the kernels code with a given enviroment
    * @param {object} message - the message to run
    * @param {boolean} init - whether or not to run the intialization routine
    * @returns {Promise}
    */
-  async run (message, method = 'run') {
+  async message (message, method = 'onMessage') {
     if (message.constructor === DeleteMessage) {
       this.ports._delete(message.fromName)
     } else {

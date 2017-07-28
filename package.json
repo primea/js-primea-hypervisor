@@ -34,7 +34,7 @@
     "bn.js": "^4.11.6",
     "chunk": "0.0.2",
     "ipld-graph-builder": "1.2.3",
-    "primea-message": "0.0.1"
+    "primea-message": "0.0.2"
   },
   "devDependencies": {
     "primea-abstract-container": "0.0.4",

@@ -226,7 +226,7 @@ node.on('ready', () => {
 
     hypervisor.registerContainer('root', Root)
     const root = await hypervisor.createInstance('root')
-    await root.run(root.createMessage())
+    await root.message(root.createMessage())
     const stateRoot = await hypervisor.createStateRoot()
 
     t.deepEquals(stateRoot, {

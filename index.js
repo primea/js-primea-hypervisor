@@ -16,7 +16,7 @@ module.exports = class Hypervisor {
     this.graph = new Graph(dag)
     this.scheduler = new Scheduler()
     this.state = state
-    this._containerTypes = {}
+    this._containerTypes = []
     this._nodesToCheck = new Set()
 
     this.ROOT_ID = 'zdpuAm6aTdLVMUuiZypxkwtA7sKm7BWERy8MPbaCrFsmiyzxr'
@@ -169,13 +169,11 @@ module.exports = class Hypervisor {
 
   /**
    * regirsters a container with the hypervisor
-   * @param {String} type - the name of the type
    * @param {Class} Constructor - a Class for instantiating the container
    * @param {*} args - any args that the contructor takes
    */
-  registerContainer (type, Constructor, args) {
-    Constructor.type = type
-    this._containerTypes[type] = {
+  registerContainer (Constructor, args) {
+    this._containerTypes[Constructor.type] = {
       Constructor: Constructor,
       args: args
     }

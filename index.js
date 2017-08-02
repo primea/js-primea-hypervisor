@@ -171,9 +171,10 @@ module.exports = class Hypervisor {
    * regirsters a container with the hypervisor
    * @param {Class} Constructor - a Class for instantiating the container
    * @param {*} args - any args that the contructor takes
+   * @param {interger} typeId - the container's type identification ID
    */
-  registerContainer (Constructor, args) {
-    this._containerTypes[Constructor.typeId] = {
+  registerContainer (Constructor, args, typeId = Constructor.typeId) {
+    this._containerTypes[typeId] = {
       Constructor: Constructor,
       args: args
     }

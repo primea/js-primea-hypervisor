@@ -17,6 +17,9 @@ class BaseContainer extends AbstractContainer {
       this.kernel.ports.bind('root', port)
     }
   }
+  static get typeId () {
+    return 9
+  }
 }
 
 node.on('ready', () => {
@@ -24,7 +27,7 @@ node.on('ready', () => {
     t.plan(3)
     let message
     const expectedState = {
-      '/': 'zdpuB1wc9Pb6jUzfNt4nAxAEUxB7kNhg4vbq7YLcEyBUb6iAB'
+      '/': 'zdpuAmN9VSrvNbArWkAEhEYaKhhCT3rk8xMhUam6eUfQmr6aZ'
     }
 
     class testVMContainer extends BaseContainer {
@@ -34,9 +37,9 @@ node.on('ready', () => {
     }
 
     const hypervisor = new Hypervisor(node.dag)
-    hypervisor.registerContainer('test', testVMContainer)
+    hypervisor.registerContainer(testVMContainer)
 
-    const rootContainer = await hypervisor.createInstance('test')
+    const rootContainer = await hypervisor.createInstance(testVMContainer.typeId)
 
     const [portRef1, portRef2] = rootContainer.ports.createChannel()
     const initMessage = rootContainer.createMessage({
@@ -44,7 +47,7 @@ node.on('ready', () => {
       ports: [portRef2]
     })
 
-    rootContainer.createInstance('test', initMessage)
+    rootContainer.createInstance(testVMContainer.typeId, initMessage)
 
     rootContainer.ports.bind('first', portRef1)
     message = rootContainer.createMessage()
@@ -58,7 +61,7 @@ node.on('ready', () => {
   tape('basic - do not store containers with no ports bound', async t => {
     t.plan(1)
     const expectedState = {
-      '/': 'zdpuAozDi6tKPbqmHJxo7aNES2xVt1MkaCLyxcioEKzz3M2WH'
+      '/': 'zdpuAxGvPHM4DRbq7GeyGjwuPA8NT7DZLszcDDX9R5iwHWnTo'
     }
 
     class testVMContainer extends BaseContainer {
@@ -66,13 +69,13 @@ node.on('ready', () => {
     }
 
     const hypervisor = new Hypervisor(node.dag)
-    hypervisor.registerContainer('test', testVMContainer)
+    hypervisor.registerContainer(testVMContainer)
 
-    const root = await hypervisor.createInstance('test')
+    const root = await hypervisor.createInstance(testVMContainer.typeId)
     const [portRef1, portRef2] = root.ports.createChannel()
 
     root.ports.bind('one', portRef1)
-    root.createInstance('test', root.createMessage({
+    root.createInstance(testVMContainer.typeId, root.createMessage({
       ports: [portRef2]
     }))
 
@@ -84,19 +87,22 @@ node.on('ready', () => {
     t.plan(2)
     let message
     const expectedState = {
-      '/': 'zdpuAtVcH6MUnvt2RXnLsDXyLB3CBSQ7aydfh2ogSKGCejJCQ'
+      '/': 'zdpuAvWT2E1Hg6cvFNLTDbmjGRLSDbMnRtrA6s17oSdBX5EWs'
     }
 
     class testVMContainer2 extends BaseContainer {
       onMessage (m) {
         t.true(m === message, 'should recive a message')
       }
+      static get typeId () {
+        return 99
+      }
     }
 
     class testVMContainer extends BaseContainer {
       onMessage (m) {
         const [portRef1, portRef2] = this.kernel.ports.createChannel()
-        this.kernel.createInstance('test2', this.kernel.createMessage({
+        this.kernel.createInstance(testVMContainer2.typeId, this.kernel.createMessage({
           ports: [portRef2]
         }))
         this.kernel.ports.bind('child', portRef1)
@@ -106,12 +112,12 @@ node.on('ready', () => {
     }
 
     const hypervisor = new Hypervisor(node.dag)
-    hypervisor.registerContainer('test', testVMContainer)
-    hypervisor.registerContainer('test2', testVMContainer2)
+    hypervisor.registerContainer(testVMContainer)
+    hypervisor.registerContainer(testVMContainer2)
 
-    const root = await hypervisor.createInstance('test')
+    const root = await hypervisor.createInstance(testVMContainer.typeId)
     const [portRef1, portRef2] = root.ports.createChannel()
-    root.createInstance('test', root.createMessage({
+    root.createInstance(testVMContainer.typeId, root.createMessage({
       ports: [portRef2]
     }))
 
@@ -129,7 +135,7 @@ node.on('ready', () => {
     t.plan(4)
     let message
     const expectedState = {
-      '/': 'zdpuAtVcH6MUnvt2RXnLsDXyLB3CBSQ7aydfh2ogSKGCejJCQ'
+      '/': 'zdpuAvWT2E1Hg6cvFNLTDbmjGRLSDbMnRtrA6s17oSdBX5EWs'
     }
     let hasResolved = false
 
@@ -144,12 +150,16 @@ node.on('ready', () => {
           }, 200)
         })
       }
+
+      static get typeId () {
+        return 99
+      }
     }
 
     class testVMContainer extends BaseContainer {
       onMessage (m) {
         const [portRef1, portRef2] = this.kernel.ports.createChannel()
-        this.kernel.createInstance('test2', this.kernel.createMessage({
+        this.kernel.createInstance(testVMContainer2.typeId, this.kernel.createMessage({
           ports: [portRef2]
         }))
         this.kernel.ports.bind('child', portRef1)
@@ -159,13 +169,13 @@ node.on('ready', () => {
     }
 
     const hypervisor = new Hypervisor(node.dag)
-    hypervisor.registerContainer('test', testVMContainer)
-    hypervisor.registerContainer('test2', testVMContainer2)
+    hypervisor.registerContainer(testVMContainer)
+    hypervisor.registerContainer(testVMContainer2)
 
-    let root = await hypervisor.createInstance('test')
+    let root = await hypervisor.createInstance(testVMContainer.typeId)
     const rootId = root.id
     const [portRef1, portRef2] = root.ports.createChannel()
-    root.createInstance('test', root.createMessage({
+    root.createInstance(testVMContainer.typeId, root.createMessage({
       ports: [portRef2]
     }))
 
@@ -186,7 +196,7 @@ node.on('ready', () => {
       }
     }
 
-    hypervisor.registerContainer('test', testVMContainer3)
+    hypervisor.registerContainer(testVMContainer3)
     root = await hypervisor.getInstance(rootId)
     const port = root.ports.get('first')
     root.send(port, message)
@@ -214,9 +224,9 @@ node.on('ready', () => {
           ports: [portRef6]
         })
 
-        this.kernel.createInstance('root', message1)
-        this.kernel.createInstance('root', message2)
-        this.kernel.createInstance('root', message3)
+        this.kernel.createInstance(Root.typeId, message1)
+        this.kernel.createInstance(Root.typeId, message2)
+        this.kernel.createInstance(Root.typeId, message3)
 
         throw new Error('it is a trap!!!')
       }
@@ -224,13 +234,13 @@ node.on('ready', () => {
 
     const hypervisor = new Hypervisor(node.dag)
 
-    hypervisor.registerContainer('root', Root)
-    const root = await hypervisor.createInstance('root')
+    hypervisor.registerContainer(Root)
+    const root = await hypervisor.createInstance(Root.typeId)
     await root.message(root.createMessage())
     const stateRoot = await hypervisor.createStateRoot()
 
     t.deepEquals(stateRoot, {
-      '/': 'zdpuAwrMmQXqFusve7zcRYxVUuji4NVzZR5GyjwyStsjteCoW'
+      '/': 'zdpuAwxK8kAM3SkxSyALurpFHTobp6sFJef9gZJ8ZDQRww1LN'
     }, 'should revert the state')
   })
 
@@ -256,8 +266,8 @@ node.on('ready', () => {
             ports: [portRef4]
           })
 
-          this.kernel.createInstance('first', message1)
-          this.kernel.createInstance('second', message2)
+          this.kernel.createInstance(First.typeId, message1)
+          this.kernel.createInstance(Second.typeId, message2)
 
           this.kernel.send(portRef1, this.kernel.createMessage())
           this.kernel.send(portRef3, this.kernel.createMessage())
@@ -277,6 +287,10 @@ node.on('ready', () => {
           data: 'first'
         }))
       }
+
+      static get typeId () {
+        return 99
+      }
     }
 
     class Second extends BaseContainer {
@@ -286,18 +300,22 @@ node.on('ready', () => {
           data: 'second'
         }))
       }
+
+      static get typeId () {
+        return 299
+      }
     }
 
     const hypervisor = new Hypervisor(node.dag)
 
-    hypervisor.registerContainer('root', Root)
-    hypervisor.registerContainer('first', First)
-    hypervisor.registerContainer('second', Second)
+    hypervisor.registerContainer(Root)
+    hypervisor.registerContainer(First)
+    hypervisor.registerContainer(Second)
 
-    const root = await hypervisor.createInstance('root')
+    const root = await hypervisor.createInstance(Root.typeId)
 
     const [portRef1, portRef2] = root.ports.createChannel()
-    root.createInstance('root', root.createMessage({
+    root.createInstance(Root.typeId, root.createMessage({
       ports: [portRef2]
     }))
 
@@ -328,8 +346,8 @@ node.on('ready', () => {
             ports: [portRef4]
           })
 
-          this.kernel.createInstance('first', message1)
-          this.kernel.createInstance('second', message2)
+          this.kernel.createInstance(First.typeId, message1)
+          this.kernel.createInstance(Second.typeId, message2)
 
           this.kernel.send(portRef1, this.kernel.createMessage())
           this.kernel.send(portRef3, this.kernel.createMessage())
@@ -340,6 +358,10 @@ node.on('ready', () => {
           t.equals(m.data, 'first', 'should recive the first message')
         }
       }
+
+      static get typeId () {
+        return 99
+      }
     }
 
     class First extends BaseContainer {
@@ -348,6 +370,10 @@ node.on('ready', () => {
         this.kernel.send(m.fromPort, this.kernel.createMessage({
           data: 'first'
         }))
+      }
+
+      static get typeId () {
+        return 299
       }
     }
 
@@ -362,14 +388,14 @@ node.on('ready', () => {
 
     const hypervisor = new Hypervisor(node.dag)
 
-    hypervisor.registerContainer('root', Root)
-    hypervisor.registerContainer('first', First)
-    hypervisor.registerContainer('second', Second)
+    hypervisor.registerContainer(Root)
+    hypervisor.registerContainer(First)
+    hypervisor.registerContainer(Second)
 
-    const root = await hypervisor.createInstance('root')
+    const root = await hypervisor.createInstance(Root.typeId)
 
     const [portRef1, portRef2] = root.ports.createChannel()
-    root.createInstance('root', root.createMessage({
+    root.createInstance(Root.typeId, root.createMessage({
       ports: [portRef2]
     }))
 
@@ -399,8 +425,8 @@ node.on('ready', () => {
             ports: [portRef4]
           })
 
-          this.kernel.createInstance('first', message1)
-          this.kernel.createInstance('second', message2)
+          this.kernel.createInstance(First.typeId, message1)
+          this.kernel.createInstance(Second.typeId, message2)
 
           this.kernel.send(portRef1, this.kernel.createMessage())
           this.kernel.send(portRef3, this.kernel.createMessage())
@@ -413,6 +439,9 @@ node.on('ready', () => {
           t.equals(m.data, 'second', 'should recived the second message')
         }
       }
+      static get typeId () {
+        return 299
+      }
     }
 
     class First extends BaseContainer {
@@ -421,6 +450,9 @@ node.on('ready', () => {
         this.kernel.send(m.fromPort, this.kernel.createMessage({
           data: 'first'
         }))
+      }
+      static get typeId () {
+        return 2
       }
     }
 
@@ -435,13 +467,13 @@ node.on('ready', () => {
 
     const hypervisor = new Hypervisor(node.dag)
 
-    hypervisor.registerContainer('root', Root)
-    hypervisor.registerContainer('first', First)
-    hypervisor.registerContainer('second', Second)
+    hypervisor.registerContainer(Root)
+    hypervisor.registerContainer(First)
+    hypervisor.registerContainer(Second)
 
-    const root = await hypervisor.createInstance('root')
+    const root = await hypervisor.createInstance(Root.typeId)
     const [portRef1, portRef2] = root.ports.createChannel()
-    root.createInstance('root', root.createMessage({
+    root.createInstance(Root.typeId, root.createMessage({
       ports: [portRef2]
     }))
 
@@ -471,8 +503,8 @@ node.on('ready', () => {
             ports: [portRef4]
           })
 
-          this.kernel.createInstance('first', message1)
-          this.kernel.createInstance('second', message2)
+          this.kernel.createInstance(First.typeId, message1)
+          this.kernel.createInstance(Second.typeId, message2)
 
           this.kernel.send(portRef1, this.kernel.createMessage())
           this.kernel.send(portRef3, this.kernel.createMessage())
@@ -486,6 +518,9 @@ node.on('ready', () => {
           t.equals(m.data, 'second', 'should recived the second message')
         }
       }
+      static get typeId () {
+        return 299
+      }
     }
 
     class First extends BaseContainer {
@@ -495,6 +530,9 @@ node.on('ready', () => {
           data: 'first'
         }))
       }
+      static get typeId () {
+        return 29
+      }
     }
 
     class Second extends BaseContainer {
@@ -503,6 +541,9 @@ node.on('ready', () => {
         this.kernel.send(m.fromPort, this.kernel.createMessage({
           data: 'second'
         }))
+      }
+      static get typeId () {
+        return 2
       }
     }
 
@@ -518,24 +559,24 @@ node.on('ready', () => {
 
     const hypervisor = new Hypervisor(node.dag)
 
-    hypervisor.registerContainer('root', Root)
-    hypervisor.registerContainer('first', First)
-    hypervisor.registerContainer('second', Second)
-    hypervisor.registerContainer('waiter', Waiter)
+    hypervisor.registerContainer(Root)
+    hypervisor.registerContainer(First)
+    hypervisor.registerContainer(Second)
+    hypervisor.registerContainer(Waiter)
 
-    const root = await hypervisor.createInstance('root')
+    const root = await hypervisor.createInstance(Root.typeId)
     const [portRef1, portRef2] = root.ports.createChannel()
 
     const message = root.createMessage()
     root.send(portRef1, message)
     root.ports.bind('first', portRef1)
-    root.createInstance('root', root.createMessage({
+    root.createInstance(Root.typeId, root.createMessage({
       ports: [portRef2]
     }))
 
     const [portRef3, portRef4] = root.ports.createChannel()
     root.ports.bind('sencond', portRef3)
-    root.createInstance('waiter', root.createMessage({
+    root.createInstance(Waiter.typeId, root.createMessage({
       ports: [portRef4]
     }))
 
@@ -566,8 +607,8 @@ node.on('ready', () => {
             ports: [portRef4]
           })
 
-          this.kernel.createInstance('first', message1)
-          this.kernel.createInstance('second', message2)
+          this.kernel.createInstance(First.typeId, message1)
+          this.kernel.createInstance(Second.typeId, message2)
 
           this.kernel.send(portRef1, this.kernel.createMessage())
           this.kernel.send(portRef3, this.kernel.createMessage())
@@ -580,6 +621,9 @@ node.on('ready', () => {
           t.equals(m.data, 'first', 'should recive the first message')
         }
       }
+      static get typeId () {
+        return 299
+      }
     }
 
     class First extends BaseContainer {
@@ -588,6 +632,9 @@ node.on('ready', () => {
         this.kernel.send(m.fromPort, this.kernel.createMessage({
           data: 'first'
         }))
+      }
+      static get typeId () {
+        return 29
       }
     }
 
@@ -598,21 +645,24 @@ node.on('ready', () => {
           data: 'second'
         }))
       }
+      static get typeId () {
+        return 2
+      }
     }
 
     const hypervisor = new Hypervisor(node.dag)
 
-    hypervisor.registerContainer('root', Root)
-    hypervisor.registerContainer('first', First)
-    hypervisor.registerContainer('second', Second)
+    hypervisor.registerContainer(Root)
+    hypervisor.registerContainer(First)
+    hypervisor.registerContainer(Second)
 
-    const root = await hypervisor.createInstance('root')
+    const root = await hypervisor.createInstance(Root.typeId)
     const [portRef1, portRef2] = root.ports.createChannel()
     const message = root.createMessage()
 
     root.send(portRef1, message)
     root.ports.bind('first', portRef1)
-    root.createInstance('root', root.createMessage({
+    root.createInstance(Root.typeId, root.createMessage({
       ports: [portRef2]
     }))
   })
@@ -639,8 +689,8 @@ node.on('ready', () => {
             ports: [portRef4]
           })
 
-          this.kernel.createInstance('first', message1)
-          this.kernel.createInstance('second', message2)
+          this.kernel.createInstance(First.typeId, message1)
+          this.kernel.createInstance(Second.typeId, message2)
 
           this.kernel.send(portRef1, this.kernel.createMessage())
           this.kernel.send(portRef3, this.kernel.createMessage())
@@ -653,6 +703,9 @@ node.on('ready', () => {
           t.equals(m.data, 'second', 'should recived the second message')
         }
       }
+      static get typeId () {
+        return 299
+      }
     }
 
     class First extends BaseContainer {
@@ -661,6 +714,9 @@ node.on('ready', () => {
         this.kernel.send(m.fromPort, this.kernel.createMessage({
           data: 'first'
         }))
+      }
+      static get typeId () {
+        return 29
       }
     }
 
@@ -675,17 +731,17 @@ node.on('ready', () => {
 
     const hypervisor = new Hypervisor(node.dag)
 
-    hypervisor.registerContainer('root', Root)
-    hypervisor.registerContainer('first', First)
-    hypervisor.registerContainer('second', Second)
+    hypervisor.registerContainer(Root)
+    hypervisor.registerContainer(First)
+    hypervisor.registerContainer(Second)
 
-    const root = await hypervisor.createInstance('root')
+    const root = await hypervisor.createInstance(Root.typeId)
     const [portRef1, portRef2] = root.ports.createChannel()
     const message = root.createMessage()
 
     root.send(portRef1, message)
     root.ports.bind('first', portRef1)
-    root.createInstance('root', root.createMessage({
+    root.createInstance(Root.typeId, root.createMessage({
       ports: [portRef2]
     }))
   })
@@ -705,11 +761,14 @@ node.on('ready', () => {
           const message1 = this.kernel.createMessage({
             ports: [portRef2]
           })
-          this.kernel.createInstance('first', message1)
+          this.kernel.createInstance(First.typeId, message1)
         } else {
           this.kernel.send(one, this.kernel.createMessage())
           this.kernel.send(one, this.kernel.createMessage())
         }
+      }
+      static get typeId () {
+        return 299
       }
     }
 
@@ -726,13 +785,13 @@ node.on('ready', () => {
 
     const hypervisor = new Hypervisor(node.dag)
 
-    hypervisor.registerContainer('root', Root)
-    hypervisor.registerContainer('first', First)
+    hypervisor.registerContainer(Root)
+    hypervisor.registerContainer(First)
 
-    const root = await hypervisor.createInstance('root')
+    const root = await hypervisor.createInstance(Root.typeId)
     const [portRef1, portRef2] = root.ports.createChannel()
     root.ports.bind('first', portRef1)
-    root.createInstance('root', root.createMessage({
+    root.createInstance(Root.typeId, root.createMessage({
       ports: [portRef2]
     }))
 
@@ -747,12 +806,12 @@ node.on('ready', () => {
   tape('checking ports', async t => {
     t.plan(4)
     const hypervisor = new Hypervisor(node.dag)
-    hypervisor.registerContainer('base', BaseContainer)
+    hypervisor.registerContainer(BaseContainer)
 
-    const root = await hypervisor.createInstance('base')
+    const root = await hypervisor.createInstance(BaseContainer.typeId)
 
     const [portRef1, portRef2] = root.ports.createChannel()
-    root.createInstance('base', root.createMessage({
+    root.createInstance(BaseContainer.typeId, root.createMessage({
       ports: [portRef2]
     }))
     root.ports.bind('test', portRef1)
@@ -787,7 +846,7 @@ node.on('ready', () => {
 
   tape('port deletion', async t => {
     const expectedSr = {
-      '/': 'zdpuB2QXxn1KQtLFfBqaritTRoe5BuKP5sNFSrPtRT6sxkY7Z'
+      '/': 'zdpuAqFMWKsATaU1gJwMTegcw18GFQ7szZix3QNgMN2sYm2vh'
     }
     class Root extends BaseContainer {
       onMessage (m) {
@@ -797,7 +856,7 @@ node.on('ready', () => {
           ports: [portRef2]
         })
 
-        this.kernel.createInstance('first', message1)
+        this.kernel.createInstance(First.typeId, message1)
         this.kernel.send(portRef1, this.kernel.createMessage())
         this.kernel.incrementTicks(6)
       }
@@ -808,17 +867,20 @@ node.on('ready', () => {
         this.kernel.incrementTicks(2)
         this.kernel.ports.delete('root')
       }
+      static get typeId () {
+        return 299
+      }
     }
 
     const hypervisor = new Hypervisor(node.dag)
 
-    hypervisor.registerContainer('root', Root)
-    hypervisor.registerContainer('first', First)
+    hypervisor.registerContainer(Root)
+    hypervisor.registerContainer(First)
 
-    const root = await hypervisor.createInstance('root')
+    const root = await hypervisor.createInstance(Root.typeId)
     const [portRef1, portRef2] = root.ports.createChannel()
     root.ports.bind('first', portRef1)
-    root.createInstance('root', root.createMessage({
+    root.createInstance(Root.typeId, root.createMessage({
       ports: [portRef2]
     }))
 
@@ -833,22 +895,22 @@ node.on('ready', () => {
 
   tape('clear unbounded ports', async t => {
     const expectedSr = {
-      '/': 'zdpuB2QXxn1KQtLFfBqaritTRoe5BuKP5sNFSrPtRT6sxkY7Z'
+      '/': 'zdpuAqFMWKsATaU1gJwMTegcw18GFQ7szZix3QNgMN2sYm2vh'
     }
     class Root extends BaseContainer {
       onMessage (m) {
-        this.kernel.createInstance('root')
+        this.kernel.createInstance(Root.typeId)
       }
     }
 
     const hypervisor = new Hypervisor(node.dag)
 
-    hypervisor.registerContainer('root', Root)
+    hypervisor.registerContainer(Root)
 
-    const root = await hypervisor.createInstance('root')
+    const root = await hypervisor.createInstance(Root.typeId)
     const [portRef1, portRef2] = root.ports.createChannel()
     root.ports.bind('first', portRef1)
-    root.createInstance('root', root.createMessage({
+    root.createInstance(Root.typeId, root.createMessage({
       ports: [portRef2]
     }))
 
@@ -862,12 +924,12 @@ node.on('ready', () => {
 
   tape('should remove subgraphs', async t => {
     const expectedSr = {
-      '/': 'zdpuB2QXxn1KQtLFfBqaritTRoe5BuKP5sNFSrPtRT6sxkY7Z'
+      '/': 'zdpuAqFMWKsATaU1gJwMTegcw18GFQ7szZix3QNgMN2sYm2vh'
     }
     class Root extends BaseContainer {
       onMessage (m) {
         const [, portRef2] = this.kernel.ports.createChannel()
-        this.kernel.createInstance('sub', this.kernel.createMessage({
+        this.kernel.createInstance(Sub.typeId, this.kernel.createMessage({
           ports: [portRef2]
         }))
       }
@@ -878,21 +940,24 @@ node.on('ready', () => {
         this.kernel.ports.bind('root', message.ports[0])
         const [portRef1, portRef2] = root.ports.createChannel()
         root.ports.bind('child', portRef1)
-        root.createInstance('root', root.createMessage({
+        root.createInstance(Root.typeId, root.createMessage({
           ports: [portRef2]
         }))
+      }
+      static get typeId () {
+        return 299
       }
     }
 
     const hypervisor = new Hypervisor(node.dag)
 
-    hypervisor.registerContainer('root', Root)
-    hypervisor.registerContainer('sub', Sub)
+    hypervisor.registerContainer(Root)
+    hypervisor.registerContainer(Sub)
 
-    const root = await hypervisor.createInstance('root')
+    const root = await hypervisor.createInstance(Root.typeId)
     const [portRef1, portRef2] = root.ports.createChannel()
     root.ports.bind('first', portRef1)
-    root.createInstance('root', root.createMessage({
+    root.createInstance(Root.typeId, root.createMessage({
       ports: [portRef2]
     }))
 
@@ -905,7 +970,7 @@ node.on('ready', () => {
 
   tape('should not remove connected nodes', async t => {
     const expectedSr = {
-      '/': 'zdpuAwsZTd5mRZBCYA1FJSHrpYDPgSZSiaTQp9xkUeajaoMHM'
+      '/': 'zdpuAppPTaXwHnfU2yjtTyT9XsY7SJAkDwQWUZnkHU7myRzaj'
     }
     class Root extends BaseContainer {
       onMessage (m) {
@@ -915,13 +980,13 @@ node.on('ready', () => {
           this.kernel.ports.unbind('test1')
         } else {
           const [portRef1, portRef2] = this.kernel.ports.createChannel()
-          this.kernel.createInstance('sub', this.kernel.createMessage({
+          this.kernel.createInstance(Sub.typeId, this.kernel.createMessage({
             ports: [portRef2]
           }))
           this.kernel.ports.bind('test1', portRef1)
 
           const [portRef3, portRef4] = this.kernel.ports.createChannel()
-          this.kernel.createInstance('sub', this.kernel.createMessage({
+          this.kernel.createInstance(Sub.typeId, this.kernel.createMessage({
             ports: [portRef4]
           }))
           this.kernel.ports.bind('test2', portRef3)
@@ -945,17 +1010,20 @@ node.on('ready', () => {
           this.kernel.ports.bind('channel', message.ports[0])
         }
       }
+      static get typeId () {
+        return 299
+      }
     }
 
     const hypervisor = new Hypervisor(node.dag)
 
-    hypervisor.registerContainer('root', Root)
-    hypervisor.registerContainer('sub', Sub)
+    hypervisor.registerContainer(Root)
+    hypervisor.registerContainer(Sub)
 
-    const root = await hypervisor.createInstance('root')
+    const root = await hypervisor.createInstance(Root.typeId)
     const [portRef1, portRef2] = root.ports.createChannel()
     root.ports.bind('first', portRef1)
-    root.createInstance('root', root.createMessage({
+    root.createInstance(Root.typeId, root.createMessage({
       ports: [portRef2]
     }))
 
@@ -969,7 +1037,7 @@ node.on('ready', () => {
 
   tape('should remove multiple subgraphs', async t => {
     const expectedSr = {
-      '/': 'zdpuAmi9tkYTpoVsZvqQgxpQFRhCgYFVv4W3fjjfVhf1j8swv'
+      '/': 'zdpuAvQqoEnojZHaw6dMDy8ACRVqfarfD2RCKTwFBYsj8suRC'
     }
     class Root extends BaseContainer {
       onMessage (m) {
@@ -980,13 +1048,13 @@ node.on('ready', () => {
           this.kernel.ports.unbind('test2')
         } else {
           const [portRef1, portRef2] = this.kernel.ports.createChannel()
-          this.kernel.createInstance('sub', this.kernel.createMessage({
+          this.kernel.createInstance(Sub.typeId, this.kernel.createMessage({
             ports: [portRef2]
           }))
           this.kernel.ports.bind('test1', portRef1)
 
           const [portRef3, portRef4] = this.kernel.ports.createChannel()
-          this.kernel.createInstance('sub', this.kernel.createMessage({
+          this.kernel.createInstance(Sub.typeId, this.kernel.createMessage({
             ports: [portRef4]
           }))
           this.kernel.ports.bind('test2', portRef3)
@@ -1010,18 +1078,21 @@ node.on('ready', () => {
           this.kernel.ports.bind('channel', message.ports[0])
         }
       }
+      static get typeId () {
+        return 299
+      }
     }
 
     const hypervisor = new Hypervisor(node.dag)
 
-    hypervisor.registerContainer('root', Root)
-    hypervisor.registerContainer('sub', Sub)
+    hypervisor.registerContainer(Root)
+    hypervisor.registerContainer(Sub)
 
-    const root = await hypervisor.createInstance('root')
+    const root = await hypervisor.createInstance(Root.typeId)
 
     const [portRef1, portRef2] = root.ports.createChannel()
     root.ports.bind('first', portRef1)
-    root.createInstance('root', root.createMessage({
+    root.createInstance(Root.typeId, root.createMessage({
       ports: [portRef2]
     }))
 
@@ -1051,16 +1122,16 @@ node.on('ready', () => {
 
     const hypervisor = new Hypervisor(node.dag)
 
-    hypervisor.registerContainer('test', testVMContainer)
+    hypervisor.registerContainer(testVMContainer)
 
-    const rootContainer = await hypervisor.createInstance('test')
+    const rootContainer = await hypervisor.createInstance(testVMContainer.typeId)
 
     const [portRef1, portRef2] = rootContainer.ports.createChannel()
     const initMessage = rootContainer.createMessage({
       ports: [portRef2]
     })
 
-    rootContainer.createInstance('test', initMessage)
+    rootContainer.createInstance(testVMContainer.typeId, initMessage)
 
     rootContainer.ports.bind('first', portRef1)
     const message = rootContainer.createMessage()
@@ -1083,8 +1154,8 @@ node.on('ready', () => {
     }
 
     const hypervisor = new Hypervisor(node.dag)
-    hypervisor.registerContainer('test', testVMContainer)
-    await hypervisor.createInstance('test')
+    hypervisor.registerContainer(testVMContainer)
+    await hypervisor.createInstance(testVMContainer.typeId)
     hypervisor.getInstance(hypervisor.ROOT_ID)
   })
 
@@ -1096,8 +1167,8 @@ node.on('ready', () => {
     }
 
     const hypervisor = new Hypervisor(node.dag)
-    hypervisor.registerContainer('test', testVMContainer)
-    await hypervisor.createInstance('test', new Message({data: content}))
+    hypervisor.registerContainer(testVMContainer)
+    await hypervisor.createInstance(testVMContainer.typeId, new Message({data: content}))
     const instance = await hypervisor.getInstance(hypervisor.ROOT_ID)
     t.equals(content.length, instance.code.length)
   })

@@ -34,6 +34,7 @@
     "bn.js": "^4.11.6",
     "chunk": "0.0.2",
     "ipld-graph-builder": "1.2.5",
+    "merkle-radix-tree": "0.0.4",
     "primea-message": "0.0.2"
   },
   "devDependencies": {

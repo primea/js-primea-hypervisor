@@ -1,9 +1,10 @@
+const Tree = require('merkle-radix-tree')
 const Graph = require('ipld-graph-builder')
+const chunk = require('chunk')
 const Message = require('primea-message')
 const Kernel = require('./kernel.js')
 const Scheduler = require('./scheduler.js')
 const DFSchecker = require('./dfsChecker.js')
-const chunk = require('chunk')
 
 module.exports = class Hypervisor {
   /**
@@ -12,8 +13,12 @@ module.exports = class Hypervisor {
    * @param {Graph} dag an instance of [ipfs.dag](https://github.com/ipfs/interface-ipfs-core/tree/master/API/dag#dag-api)
    * @param {object} state - the starting state
    */
-  constructor (dag, state = {}) {
+  constructor (dag, state = {'/': Tree.emptyTreeState}) {
     this.graph = new Graph(dag)
+    this.tree = new Tree({
+      graph: this.graph,
+      root: state
+    })
     this.scheduler = new Scheduler()
     this.state = state
     this._containerTypes = {}
@@ -36,11 +41,12 @@ module.exports = class Hypervisor {
    * @param {object} port
    * @returns {Promise}
    */
-  getDestPort (port) {
+  async getDestPort (port) {
     if (port.destPort) {
       return port.destPort
     } else {
-      return this.graph.get(this.state, `${port.destId}/ports/${port.destName}`)
+      const containerState = await this.tree.get(port.destId)
+      return this.graph.get(containerState, `ports/${port.destName}`)
     }
   }
 
@@ -57,7 +63,7 @@ module.exports = class Hypervisor {
 
   // loads an instance of a container from the state
   async _loadInstance (id) {
-    const state = await this.graph.get(this.state, id)
+    const state = await this.tree.get(id)
     const container = this._containerTypes[state.type]
     let code
 
@@ -134,7 +140,7 @@ module.exports = class Hypervisor {
     }
 
     // save the container in the state
-    await this.graph.set(this.state, idHash, state)
+    await this.tree.set(idHash, state)
     // create the container instance
     const instance = await this._loadInstance(idHash)
     resolve(instance)
@@ -160,9 +166,9 @@ module.exports = class Hypervisor {
    */
   async createStateRoot (ticks) {
     await this.scheduler.wait(ticks)
-    const unlinked = await DFSchecker(this.graph, this.state, this.ROOT_ID, this._nodesToCheck)
+    const unlinked = await DFSchecker(this.tree, this.ROOT_ID, this._nodesToCheck)
     unlinked.forEach(id => {
-      delete this.state[id]
+      this.tree.delete(id)
     })
     return this.graph.flush(this.state)
   }

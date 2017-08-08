@@ -437,7 +437,6 @@ node.on('ready', () => {
           const [portRef1, portRef2] = this.kernel.ports.createChannel()
           const [portRef3, portRef4] = this.kernel.ports.createChannel()
 
-
           const message1 = this.kernel.createMessage({
             ports: [portRef2]
           })

@@ -55,10 +55,10 @@ node.on('ready', () => {
       rootContainer.send(portRef1, message)
 
       const stateRoot = await hypervisor.createStateRoot(Infinity)
-      // await hypervisor.graph.tree(stateRoot, Infinity, true)
-      // console.log(JSON.stringify(stateRoot, null, 2))
       t.deepEquals(stateRoot, expectedState, 'expected root!')
       t.equals(hypervisor.scheduler.oldest(), 0)
+      await hypervisor.graph.tree(stateRoot, Infinity, true)
+      console.log(JSON.stringify(stateRoot, null, 2))
     } catch (e) {
       console.log(e)
     }

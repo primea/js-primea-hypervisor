@@ -7,7 +7,7 @@
  * @param {string} root - the root id
  * @param {Set} nodes - a set of nodes to start searching from
  */
-module.exports = async function DFSchecker (graph, state, root, nodes) {
+module.exports = async function DFSchecker (tree, root, nodes) {
   const checkedNodesSet = new Set()
   let hasRootSet = new Set()
   const promises = []
@@ -59,7 +59,7 @@ module.exports = async function DFSchecker (graph, state, root, nodes) {
       return
     }
 
-    const node = state[id]['/']
+    const node = await tree.get(id)
     const promises = []
     // iterate through the nodes ports and recursivly check them
     for (const name in node.ports) {

@@ -37,12 +37,12 @@ module.exports = class Kernel {
    */
   queue (portName, message) {
     this.ports.queue(portName, message)
-    return this._startMessageLoop()
+    this._startMessageLoop()
   }
 
   async create (message) {
     await this.message(message, 'onCreation')
-    return this._startMessageLoop()
+    this._startMessageLoop()
   }
 
   // waits for the next message

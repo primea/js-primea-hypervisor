@@ -109,9 +109,8 @@ module.exports = class Kernel {
           data: result
         }))
       }
+      await this.ports.clearUnboundedPorts()
     }
-
-    this.ports.clearUnboundedPorts()
   }
 
   getResponsePort (message) {

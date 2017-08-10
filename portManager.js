@@ -109,13 +109,12 @@ module.exports = class PortManager {
    * clears any unbounded ports referances
    */
   clearUnboundedPorts () {
+    const waits = []
     this._unboundPorts.forEach(port => {
-      this.kernel.send(port, new DeleteMessage())
+      waits.push(this.kernel.send(port, new DeleteMessage()))
     })
     this._unboundPorts.clear()
-    if (!Object.keys(this.ports).length) {
-      this.hypervisor.addNodeToCheck(this.id)
-    }
+    return Promise.all(waits)
   }
 
   /**

@@ -117,8 +117,11 @@ node.on('ready', () => {
           ports: [portRef2]
         }))
         this.kernel.incrementTicks(2)
-        this.kernel.send(portRef1, m)
-        return this.kernel.ports.bind('child', portRef1)
+
+        return Promise.all([
+          this.kernel.send(portRef1, m),
+          this.kernel.ports.bind('child', portRef1)
+        ])
       }
     }
 
@@ -137,7 +140,7 @@ node.on('ready', () => {
       data: 'test'
     })
 
-    root.send(portRef1, message)
+    await root.send(portRef1, message)
     const stateRoot = await hypervisor.createStateRoot(Infinity)
 
     t.deepEquals(stateRoot, expectedState, 'expected state')
@@ -176,7 +179,7 @@ node.on('ready', () => {
         await this.kernel.createInstance(testVMContainer2.typeId, this.kernel.createMessage({
           ports: [portRef2]
         }))
-        this.kernel.send(portRef1, m)
+        await this.kernel.send(portRef1, m)
         this.kernel.incrementTicks(1)
         return this.kernel.ports.bind('child', portRef1)
       }
@@ -196,7 +199,7 @@ node.on('ready', () => {
     await root.ports.bind('first', portRef1)
     message = root.createMessage()
 
-    root.send(portRef1, message)
+    await root.send(portRef1, message)
     const stateRoot = await hypervisor.createStateRoot(Infinity)
     t.true(hasResolved, 'should resolve before generating the state root')
 
@@ -287,9 +290,9 @@ node.on('ready', () => {
           await this.kernel.createInstance(First.typeId, message1)
           await this.kernel.createInstance(Second.typeId, message2)
 
-          this.kernel.send(portRef1, this.kernel.createMessage())
-          this.kernel.send(portRef3, this.kernel.createMessage())
           return Promise.all(
+            this.kernel.send(portRef1, this.kernel.createMessage()),
+            this.kernel.send(portRef3, this.kernel.createMessage()),
             this.kernel.ports.bind('two', portRef3),
             this.kernel.ports.bind('one', portRef1)
           )
@@ -305,7 +308,7 @@ node.on('ready', () => {
     class First extends BaseContainer {
       onMessage (m) {
         this.kernel.incrementTicks(2)
-        this.kernel.send(m.fromPort, this.kernel.createMessage({
+        return this.kernel.send(m.fromPort, this.kernel.createMessage({
           data: 'first'
         }))
       }
@@ -318,7 +321,7 @@ node.on('ready', () => {
     class Second extends BaseContainer {
       onMessage (m) {
         this.kernel.incrementTicks(3)
-        this.kernel.send(m.fromPort, this.kernel.createMessage({
+        return this.kernel.send(m.fromPort, this.kernel.createMessage({
           data: 'second'
         }))
       }
@@ -794,8 +797,10 @@ node.on('ready', () => {
           await this.kernel.createInstance(First.typeId, message1)
           return this.kernel.ports.bind('one', portRef1)
         } else {
-          this.kernel.send(one, this.kernel.createMessage())
-          this.kernel.send(one, this.kernel.createMessage())
+          return Promise.all([
+            this.kernel.send(one, this.kernel.createMessage()),
+            this.kernel.send(one, this.kernel.createMessage())
+          ])
         }
       }
       static get typeId () {
@@ -828,9 +833,9 @@ node.on('ready', () => {
       }))
 
       const message = root.createMessage()
-      root.send(portRef1, message)
+      await root.send(portRef1, message)
       await hypervisor.createStateRoot()
-      root.send(portRef1, root.createMessage())
+      await root.send(portRef1, root.createMessage())
       await hypervisor.createStateRoot()
       t.equals(runs, 2)
     } catch (e) {
@@ -891,7 +896,7 @@ node.on('ready', () => {
         })
 
         await this.kernel.createInstance(First.typeId, message1)
-        this.kernel.send(portRef1, this.kernel.createMessage())
+        await this.kernel.send(portRef1, this.kernel.createMessage())
         this.kernel.incrementTicks(6)
         return this.kernel.ports.bind('one', portRef1)
       }
@@ -900,7 +905,7 @@ node.on('ready', () => {
     class First extends BaseContainer {
       onMessage (m) {
         this.kernel.incrementTicks(2)
-        this.kernel.ports.delete('root')
+        return this.kernel.ports.delete('root')
       }
       static get typeId () {
         return 299
@@ -920,7 +925,7 @@ node.on('ready', () => {
     }))
 
     const message = root.createMessage()
-    root.send(portRef1, message)
+    await root.send(portRef1, message)
 
     const sr = await hypervisor.createStateRoot()
     t.deepEquals(sr, expectedSr, 'should produce the corret state root')
@@ -950,7 +955,7 @@ node.on('ready', () => {
     }))
 
     const message = root.createMessage()
-    root.send(portRef1, message)
+    await root.send(portRef1, message)
     const sr = await hypervisor.createStateRoot()
     t.deepEquals(sr, expectedSr, 'should produce the corret state root')
 
@@ -997,7 +1002,7 @@ node.on('ready', () => {
         ports: [portRef2]
       }))
 
-      root.send(portRef1, root.createMessage())
+      await root.send(portRef1, root.createMessage())
       const sr = await hypervisor.createStateRoot()
 
       t.deepEquals(sr, expectedSr, 'should produce the corret state root')
@@ -1015,7 +1020,7 @@ node.on('ready', () => {
       async onMessage (m) {
         if (m.ports.length) {
           const port = this.kernel.ports.get('test1')
-          this.kernel.send(port, m)
+          await this.kernel.send(port, m)
           return this.kernel.ports.unbind('test1')
         } else {
           const [portRef1, portRef2] = this.kernel.ports.createChannel()
@@ -1029,7 +1034,7 @@ node.on('ready', () => {
             ports: [portRef4]
           }))
           await this.kernel.ports.bind('test2', portRef3)
-          this.kernel.send(portRef3, this.kernel.createMessage({
+          await this.kernel.send(portRef3, this.kernel.createMessage({
             data: 'getChannel'
           }))
         }
@@ -1037,10 +1042,10 @@ node.on('ready', () => {
     }
 
     class Sub extends BaseContainer {
-      onMessage (message) {
+      async onMessage (message) {
         if (message.data === 'getChannel') {
           const ports = this.kernel.ports.createChannel()
-          this.kernel.send(message.fromPort, this.kernel.createMessage({
+          await this.kernel.send(message.fromPort, this.kernel.createMessage({
             data: 'bindPort',
             ports: [ports[1]]
           }))
@@ -1066,7 +1071,7 @@ node.on('ready', () => {
       ports: [portRef2]
     }))
 
-    root.send(portRef1, root.createMessage())
+    await root.send(portRef1, root.createMessage())
     const sr = await hypervisor.createStateRoot()
     t.deepEquals(sr, expectedSr, 'should produce the corret state root')
       // await hypervisor.graph.tree(sr, Infinity)
@@ -1131,18 +1136,16 @@ node.on('ready', () => {
       const root = await hypervisor.createInstance(Root.typeId)
 
       const [portRef1, portRef2] = root.ports.createChannel()
-      await root.ports.bind('first', portRef1)
-      await root.createInstance(Root.typeId, root.createMessage({
-        ports: [portRef2]
-      }))
-
-      root.send(portRef1, root.createMessage())
+      await Promise.all([
+        root.ports.bind('first', portRef1),
+        root.createInstance(Root.typeId, root.createMessage({
+          ports: [portRef2]
+        })),
+        root.send(portRef1, root.createMessage())
+      ])
 
       const sr = await hypervisor.createStateRoot()
       t.deepEquals(sr, expectedSr, 'should produce the corret state root')
-
-      // await hypervisor.graph.tree(sr, Infinity, true)
-      // console.log(JSON.stringify(sr, null, 2))
 
       t.end()
     } catch (e) {

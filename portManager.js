@@ -96,8 +96,8 @@ module.exports = class PortManager {
    */
   delete (name) {
     const port = this.ports[name]
-    this.kernel.send(port, new DeleteMessage())
     this._delete(name)
+    return this.kernel.send(port, new DeleteMessage())
   }
 
   _delete (name) {

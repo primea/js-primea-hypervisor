@@ -56,7 +56,7 @@ node.on('ready', () => {
 
       const stateRoot = await hypervisor.createStateRoot(Infinity)
       t.deepEquals(stateRoot, expectedState, 'expected root!')
-      t.equals(hypervisor.scheduler.oldest(), 0)
+      t.equals(hypervisor.scheduler.leastNumberOfTicks(), 0)
     } catch (e) {
       console.log(e)
     }
@@ -308,6 +308,7 @@ node.on('ready', () => {
     let runs = 0
 
     class Root extends BaseContainer {
+      onIdle () {}
       async onMessage (m) {
         if (!runs) {
           runs++
@@ -335,10 +336,10 @@ node.on('ready', () => {
           t.equals(m.data, 'first', 'should recive the first message')
         } else if (runs === 2) {
           runs++
-          t.equals(m.data, 'second', 'should recive the first message')
+          t.equals(m.data, 'second', 'should recive the second message')
         } else if (runs === 3) {
           runs++
-          t.equals(m.data, 'third', 'should recived the second message')
+          t.equals(m.data, 'third', 'should recived the third message')
         }
       }
       static get typeId () {
@@ -390,7 +391,7 @@ node.on('ready', () => {
       hypervisor.registerContainer(Second)
       hypervisor.registerContainer(Waiter)
 
-      const root = await hypervisor.createInstance(Root.typeId)
+      let root = await hypervisor.createInstance(Root.typeId)
       const [portRef1, portRef2] = root.ports.createChannel()
       const [portRef3, portRef4] = root.ports.createChannel()
 
@@ -407,9 +408,10 @@ node.on('ready', () => {
         }))
       ])
 
+      // root = await hypervisor.getInstance(root.id)
       root.incrementTicks(100)
       await root.send(portRef1, root.createMessage({data: 'testss'}))
-      hypervisor.scheduler.done(root.id)
+      root.shutdown()
     } catch (e) {
       console.log(e)
     }
@@ -462,10 +464,12 @@ node.on('ready', () => {
 
       const root = await hypervisor.createInstance(Root.typeId)
       const [portRef1, portRef2] = root.ports.createChannel()
-      await root.ports.bind('first', portRef1)
-      await root.createInstance(Root.typeId, root.createMessage({
-        ports: [portRef2]
-      }))
+      await Promise.all([
+        root.ports.bind('first', portRef1),
+        root.createInstance(Root.typeId, root.createMessage({
+          ports: [portRef2]
+        }))
+      ])
 
       const message = root.createMessage()
       await root.send(portRef1, message)

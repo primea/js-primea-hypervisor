@@ -178,7 +178,6 @@ module.exports = class Hypervisor {
       await this.tree.delete(id)
     }
 
-   // console.log(JSON.stringify(this.state, null, 2))
     return this.graph.flush(this.state)
   }
 

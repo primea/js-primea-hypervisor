@@ -55,16 +55,15 @@ module.exports = class PortManager {
     } else {
       this._unboundPorts.delete(port)
 
-      port.messages.forEach(message => {
-        message._fromPort = port
-        message.fromName = name
-      })
-
       // save the port instance
       this.ports[name] = port
 
       // update the dest port
       const destPort = await this.hypervisor.getDestPort(port)
+      port.messages.forEach(message => {
+        message._fromPort = port
+        message.fromName = name
+      })
       destPort.destName = name
       destPort.destId = this.id
       delete destPort.destPort
@@ -94,9 +93,9 @@ module.exports = class PortManager {
    * delete an port given the name it is bound to
    * @param {string} name
    */
-  delete (name) {
+  async delete (name) {
     const port = this.ports[name]
-    this.kernel.send(port, new DeleteMessage())
+    await this.kernel.send(port, new DeleteMessage())
     this._delete(name)
   }
 
@@ -109,13 +108,12 @@ module.exports = class PortManager {
    * clears any unbounded ports referances
    */
   clearUnboundedPorts () {
+    const waits = []
     this._unboundPorts.forEach(port => {
-      this.kernel.send(port, new DeleteMessage())
+      waits.push(this.kernel.send(port, new DeleteMessage()))
     })
     this._unboundPorts.clear()
-    if (!Object.keys(this.ports).length) {
-      this.hypervisor.addNodeToCheck(this.id)
-    }
+    return Promise.all(waits)
   }
 
   /**
@@ -201,7 +199,7 @@ module.exports = class PortManager {
   async getNextMessage () {
     let message = this._peekNextMessage()
     let saturated = this._isSaturated()
-    let oldestTime = this.hypervisor.scheduler.oldest()
+    let oldestTime = this.hypervisor.scheduler.leastNumberOfTicks()
 
     while (!saturated && // end if there are messages on all the ports
       // end if we have a message older then slowest containers
@@ -223,7 +221,7 @@ module.exports = class PortManager {
         })
       ])
 
-      oldestTime = this.hypervisor.scheduler.oldest()
+      oldestTime = this.hypervisor.scheduler.leastNumberOfTicks()
     }
 
     return message

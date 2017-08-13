@@ -54,7 +54,7 @@ module.exports = class Hypervisor {
     if (port.destId) {
       const id = port.destId
       const instance = await this.getInstance(id)
-      return instance.queue(port.destName, message)
+      instance.queue(port.destName, message)
     } else {
       // port is unbound
       port.destPort.messages.push(message)
@@ -62,8 +62,10 @@ module.exports = class Hypervisor {
   }
 
   // loads an instance of a container from the state
-  async _loadInstance (id) {
-    const state = await this.tree.get(id)
+  async _loadInstance (id, state) {
+    if (!state) {
+      state = await this.tree.get(id)
+    }
     const container = this._containerTypes[state.type]
     let code
 
@@ -126,7 +128,7 @@ module.exports = class Hypervisor {
   async createInstance (type, message = new Message(), id = {nonce: 0, parent: null}) {
     // create a lock to prevent the scheduler from reloving waits before the
     // new container is loaded
-    const resolve = this.scheduler.getLock(id)
+    // const unlock = this.scheduler.getLock(id)
     const idHash = await this._getHashFromObj(id)
     // const code = message.data.byteLength ? message.data : undefined
     const state = {
@@ -139,20 +141,24 @@ module.exports = class Hypervisor {
       state.code = message.data
     }
 
-    // save the container in the state
-    await this.tree.set(idHash, state)
     // create the container instance
-    const instance = await this._loadInstance(idHash)
-    resolve(instance)
+    const instance = await this._loadInstance(idHash, state)
+
     // send the intialization message
     await instance.create(message)
 
-    if (state.code && state.code.length > this.MAX_DATA_BYTES) {
-      state.code = chunk(state.code, this.MAX_DATA_BYTES).map(chk => {
-        return {
-          '/': chk
-        }
-      })
+    if (Object.keys(instance.ports.ports).length || instance.id === this.ROOT_ID) {
+      if (state.code && state.code.length > this.MAX_DATA_BYTES) {
+        state.code = chunk(state.code, this.MAX_DATA_BYTES).map(chk => {
+          return {
+            '/': chk
+          }
+        })
+      }
+      // save the container in the state
+      await this.tree.set(idHash, state)
+    } else {
+      this.scheduler.done(idHash)
     }
 
     return instance
@@ -166,10 +172,12 @@ module.exports = class Hypervisor {
    */
   async createStateRoot (ticks) {
     await this.scheduler.wait(ticks)
+
     const unlinked = await DFSchecker(this.tree, this.ROOT_ID, this._nodesToCheck)
-    unlinked.forEach(id => {
-      this.tree.delete(id)
-    })
+    for (const id of unlinked) {
+      await this.tree.delete(id)
+    }
+
     return this.graph.flush(this.state)
   }
 

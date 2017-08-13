@@ -35,11 +35,11 @@ module.exports = class Scheduler {
    */
   update (instance) {
     this._update(instance)
+    this._running.add(instance.id)
     this._checkWaits()
   }
 
   _update (instance) {
-    this._running.add(instance.id)
     // sorts the container instance map by tick count
     this.instances.delete(instance.id)
     const instanceArray = [...this.instances]
@@ -82,7 +82,8 @@ module.exports = class Scheduler {
     return new Promise((resolve, reject) => {
       binarySearchInsert(this._waits, comparator, {
         ticks: ticks,
-        resolve: resolve
+        resolve: resolve,
+        id: id
       })
       this._checkWaits()
     })
@@ -96,20 +97,32 @@ module.exports = class Scheduler {
    * returns the oldest container's ticks
    * @return {integer}
    */
-  oldest () {
+  leastNumberOfTicks () {
     const nextValue = this.instances.values().next().value
     return nextValue ? nextValue.ticks : 0
   }
 
   // checks outstanding waits to see if they can be resolved
   _checkWaits () {
-    if (!this._loadingInstances.size) {
-      // if there are no running containers
-      if (!this.instances.size) {
-        // clear any remanding waits
-        this._waits.forEach(wait => wait.resolve())
-        this._waits = []
-      } else if (!this._running.size) {
+    // if there are no running containers
+    if (!this.instances.size) {
+      // clear any remanding waits
+      this._waits.forEach(wait => wait.resolve())
+      this._waits = []
+    } else {
+      // find the old container and see if to can resolve any of the waits
+      const least = this.leastNumberOfTicks()
+      for (const index in this._waits) {
+        const wait = this._waits[index]
+        if (wait.ticks <= least) {
+          wait.resolve()
+          this._running.add(wait.id)
+        } else {
+          this._waits.splice(0, index)
+          break
+        }
+      }
+      if (!this._running.size) {
         // if there are no containers running find the oldest wait and update
         // the oldest containers to it ticks
         const oldest = this._waits[0].ticks
@@ -123,18 +136,6 @@ module.exports = class Scheduler {
           }
         }
         return this._checkWaits()
-      } else {
-        // find the old container and see if to can resolve any of the waits
-        const oldest = this.oldest()
-        for (const index in this._waits) {
-          const wait = this._waits[index]
-          if (wait.ticks <= oldest) {
-            wait.resolve()
-          } else {
-            this._waits.splice(0, index)
-            break
-          }
-        }
       }
     }
   }

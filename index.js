@@ -1,288 +1,206 @@
-/**
- * This implements the Ethereum Kernel
- * Kernels must implement two methods `codeHandler` and `callHandler` (and `linkHandler` for sharding)
- * The Kernel Contract handles the following
- * - Interprocess communications
- * - Intializing the VM and exposes ROM to it (codeHandler)
- * - Expose namespace which VM instance exists and Intializes the Environment (callHandler)
- * - Provides some built in contract (runTx, runBlock)
- * - Provides resource sharing and limiting via gas
- *
- *   All State should be stored in the Environment.
- *
- */
+const Tree = require('merkle-radix-tree')
+const Graph = require('ipld-graph-builder')
+const chunk = require('chunk')
+const Message = require('primea-message')
+const Kernel = require('./kernel.js')
+const Scheduler = require('./scheduler.js')
+const DFSchecker = require('./dfsChecker.js')
 
-// The Kernel Exposes this Interface to VM instances it makes
-const Interface = require('./interface.js')
+module.exports = class Hypervisor {
+  /**
+   * The Hypervisor manages the container instances by instantiating them and
+   * destorying them when possible. It also facilitates localating Containers
+   * @param {Graph} dag an instance of [ipfs.dag](https://github.com/ipfs/interface-ipfs-core/tree/master/API/dag#dag-api)
+   * @param {object} state - the starting state
+   */
+  constructor (dag, state = {'/': Tree.emptyTreeState}) {
+    this.graph = new Graph(dag)
+    this.tree = new Tree({
+      graph: this.graph,
+      root: state
+    })
+    this.scheduler = new Scheduler()
+    this.state = state
+    this._containerTypes = {}
+    this._nodesToCheck = new Set()
 
-// The Kernel Stores all of its state in the Environment. The Interface is used
-// to by the VM to retrive infromation from the Environment.
-const Environment = require('./environment.js')
-const DebugInterface = require('./debugInterface.js')
-const Address = require('./address.js')
-const U256 = require('./u256.js')
-const Utils = require('./utils.js')
-const Transaction = require('./transaction.js')
-const Precompile = require('./precompile.js')
-
-const identityContract = new Address('0x0000000000000000000000000000000000000004')
-const meteringContract = new Address('0x000000000000000000000000000000000000000A')
-const transcompilerContract = new Address('0x000000000000000000000000000000000000000B')
-
-module.exports = class Kernel {
-  // runs some code in the VM
-  constructor (environment = new Environment()) {
-    this.environment = environment
-
-    this.environment.addAccount(identityContract, {})
-    this.environment.addAccount(meteringContract, {})
-    this.environment.addAccount(transcompilerContract, {})
+    this.ROOT_ID = 'zdpuAm6aTdLVMUuiZypxkwtA7sKm7BWERy8MPbaCrFsmiyzxr'
+    this.MAX_DATA_BYTES = 65533
   }
 
-  // handles running code.
-  // NOTE: it assumes that wasm will raise an exception if something went wrong,
-  //       otherwise execution succeeded
-  codeHandler (code, ethInterface = new Interface(new Environment())) {
-    const debugInterface = new DebugInterface(ethInterface.environment)
-    const module = WebAssembly.Module(code)
-    const imports = {
-      'ethereum': ethInterface.exportTable,
-      'debug': debugInterface.exportTable,
+  /**
+   * add a potaintail node in the state graph to check for garbage collection
+   * @param {string} id
+   */
+  addNodeToCheck (id) {
+    this._nodesToCheck.add(id)
+  }
 
-      // export this for Rust
-      // FIXME: remove once Rust has proper imports, see https://github.com/ethereum/evm2.0-design/issues/15
-      'spectest': ethInterface.exportTable,
-
-      // export this for Binaryen
-      // FIXME: remove once C has proper imports, see https://github.com/ethereum/evm2.0-design/issues/16
-      'env': ethInterface.exportTable
+  /**
+   * given a port, this finds the corridsponeding endpoint port of the channel
+   * @param {object} port
+   * @returns {Promise}
+   */
+  async getDestPort (port) {
+    if (port.destPort) {
+      return port.destPort
+    } else {
+      const containerState = await this.tree.get(port.destId)
+      return this.graph.get(containerState, `ports/${port.destName}`)
     }
-    // add shims
-    imports.ethereum.useGas = ethInterface.shims.exports.useGas
-    imports.ethereum.getGasLeft = ethInterface.shims.exports.getGasLeft
-    imports.ethereum.call = ethInterface.shims.exports.call
+  }
 
-    const instance = WebAssembly.Instance(module, imports)
-
-    ethInterface.setModule(instance)
-    debugInterface.setModule(instance)
-
-    if (instance.exports.main) {
-      instance.exports.main()
+  async send (port, message) {
+    if (port.destId) {
+      const id = port.destId
+      const instance = await this.getInstance(id)
+      instance.queue(port.destName, message)
+    } else {
+      // port is unbound
+      port.destPort.messages.push(message)
     }
+  }
+
+  // loads an instance of a container from the state
+  async _loadInstance (id, state) {
+    if (!state) {
+      state = await this.tree.get(id)
+    }
+    const container = this._containerTypes[state.type]
+    let code
+
+    // checks if the code stored in the state is an array and that the elements
+    // are merkle link
+    if (state.code && state.code[0]['/']) {
+      await this.graph.tree(state.code, 1)
+      code = state.code.map(a => a['/']).reduce((a, b) => a + b)
+    } else {
+      code = state.code
+    }
+
+    // create a new kernel instance
+    const kernel = new Kernel({
+      hypervisor: this,
+      state: state,
+      code: code,
+      container: container,
+      id: id
+    })
+
+    // save the newly created instance
+    this.scheduler.update(kernel)
+    return kernel
+  }
+
+  // get a hash from a POJO
+  _getHashFromObj (obj) {
+    return this.graph.flush(obj).then(obj => obj['/'])
+  }
+
+  /**
+   * gets an existsing container instances
+   * @param {string} id - the containers ID
+   * @returns {Promise}
+   */
+  async getInstance (id) {
+    let instance = this.scheduler.getInstance(id)
+    if (instance) {
+      return instance
+    } else {
+      const resolve = this.scheduler.lock(id)
+      const instance = await this._loadInstance(id)
+      await instance.startup()
+      resolve(instance)
+      return instance
+    }
+  }
+
+  /**
+   * creates an new container instances and save it in the state
+   * @param {string} type - the type of container to create
+   * @param {*} code
+   * @param {array} entryPorts
+   * @param {object} id
+   * @param {object} id.nonce
+   * @param {object} id.parent
+   * @returns {Promise}
+   */
+  async createInstance (type, message = new Message(), id = {nonce: 0, parent: null}) {
+    const idHash = await this._getHashFromObj(id)
+    const state = {
+      nonce: [0],
+      ports: {},
+      type: type
+    }
+
+    if (message.data.length) {
+      state.code = message.data
+    }
+
+    // create the container instance
+    const instance = await this._loadInstance(idHash, state)
+
+    // send the intialization message
+    await instance.create(message)
+
+    if (Object.keys(instance.ports.ports).length || instance.id === this.ROOT_ID) {
+      if (state.code && state.code.length > this.MAX_DATA_BYTES) {
+        state.code = chunk(state.code, this.MAX_DATA_BYTES).map(chk => {
+          return {
+            '/': chk
+          }
+        })
+      }
+      // save the container in the state
+      await this.tree.set(idHash, state)
+    } else {
+      this.scheduler.done(idHash)
+    }
+
     return instance
   }
 
-  // loads code from the merkle trie and delegates the message
-  // Detects if code is EVM or WASM
-  // Detects if the code injection is needed
-  // Detects if transcompilation is needed
-  callHandler (call) {
-    // FIXME: this is here until these two contracts are compiled to WASM
-    // The two special contracts (precompiles now, but will be real ones later)
-    if (call.to.equals(meteringContract)) {
-      return Precompile.meteringInjector(call)
-    } else if (call.to.equals(transcompilerContract)) {
-      return Precompile.transcompiler(call)
-    } else if (call.to.equals(identityContract)) {
-      return Precompile.identity(call)
+  createChannel () {
+    const port1 = {
+      messages: []
     }
 
-    let account = this.environment.state.get(call.to.toString())
-    if (!account) {
-      throw new Error('Account not found: ' + call.to.toString())
+    const port2 = {
+      messages: [],
+      destPort: port1
     }
 
-    let code = Uint8Array.from(account.get('code'))
-    if (code.length === 0) {
-      throw new Error('Contract not found')
-    }
-
-    if (!Utils.isWASMCode(code)) {
-      // throw new Error('Not an eWASM contract')
-
-      // Transcompile code
-      // FIXME: decide if these are the right values here: from: 0, gasLimit: 0, value: 0
-      code = this.callHandler({ from: Address.zero(), to: transcompilerContract, gasLimit: 0, value: new U256(0), data: code }).returnValue
-
-      if (code[0] === 0) {
-        code = code.slice(1)
-      } else {
-        throw new Error('Transcompilation failed: ' + Buffer.from(code).slice(1).toString())
-      }
-    }
-
-    // creats a new Kernel
-    const environment = new Environment()
-    environment.parent = this
-
-    // copy the transaction details
-    environment.code = code
-    environment.address = call.to
-    // FIXME: make distinction between origin and caller
-    environment.origin = call.from
-    environment.caller = call.from
-    environment.callData = call.data
-    environment.callValue = call.value
-    environment.gasLeft = call.gasLimit
-
-    environment.callHandler = this.callHandler.bind(this)
-    environment.createHandler = this.createHandler.bind(this)
-
-    const kernel = new Kernel(environment)
-    kernel.codeHandler(code, new Interface(environment))
-
-    // self destructed
-    if (environment.selfDestruct) {
-      const balance = this.state.get(call.to.toString()).get('balance')
-      const beneficiary = this.state.get(environment.selfDestructAddress)
-      beneficiary.set('balance', beneficiary.get('balance').add(balance))
-      this.state.delete(call.to.toString())
-    }
-
-    // generate new stateroot
-    // this.environment.state.set(address, { stateRoot: stateRoot })
-
-    return {
-      executionOutcome: 1, // success
-      gasLeft: new U256(environment.gasLeft),
-      gasRefund: new U256(environment.gasRefund),
-      returnValue: environment.returnValue,
-      selfDestruct: environment.selfDestruct,
-      selfDestructAddress: environment.selfDestructAddress,
-      logs: environment.logs
-    }
+    port1.destPort = port2
+    return [port1, port2]
   }
 
-  createHandler (create) {
-    let code = create.data
+  /**
+   * creates a state root starting from a given container and a given number of
+   * ticks
+   * @param {Number} ticks the number of ticks at which to create the state root
+   * @returns {Promise}
+   */
+  async createStateRoot (ticks) {
+    await this.scheduler.wait(ticks)
 
-    // Inject metering
-    if (Utils.isWASMCode(code)) {
-      // FIXME: decide if these are the right values here: from: 0, gasLimit: 0, value: 0
-      code = this.callHandler({ from: Address.zero(), to: meteringContract, gasLimit: 0, value: new U256(0), data: code }).returnValue
-
-      if (code[0] === 0) {
-        code = code.slice(1)
-      } else {
-        throw new Error('Metering injection failed: ' + Buffer.from(code).slice(1).toString())
-      }
+    const unlinked = await DFSchecker(this.tree, this.ROOT_ID, this._nodesToCheck)
+    for (const id of unlinked) {
+      await this.tree.delete(id)
     }
 
-    let account = this.environment.state.get(create.from.toString())
-    if (!account) {
-      throw new Error('Account not found: ' + create.from.toString())
-    }
-
-    let address = Utils.newAccountAddress(create.from, account.get('nonce'))
-
-    this.environment.addAccount(address.toString(), {
-      balance: create.value,
-      code: code
-    })
-
-    // Run code and take return value as contract code
-    // FIXME: decide if these are the right values here: value: 0, data: ''
-    code = this.callHandler({ from: create.from, to: address, gasLimit: create.gasLimit, value: new U256(0), data: new Uint8Array() }).returnValue
-
-    // FIXME: special handling for selfdestruct
-
-    this.environment.state.get(address.toString()).set('code', code)
-
-    return {
-      executionOutcome: 1, // success
-      gasLeft: new U256(this.environment.gasLeft),
-      gasRefund: new U256(this.environment.gasRefund),
-      accountCreated: address,
-      logs: this.environment.logs
-    }
+    return this.graph.flush(this.state)
   }
 
-  // run tx; the tx message handler
-  runTx (tx, environment = new Environment()) {
-    this.environment = environment
-
-    if (Buffer.isBuffer(tx) || typeof tx === 'string') {
-      tx = new Transaction(tx)
-      if (!tx.valid) {
-        throw new Error('Invalid transaction signature')
-      }
-    }
-
-    // look up sender
-    let fromAccount = this.environment.state.get(tx.from.toString())
-    if (!fromAccount) {
-      throw new Error('Sender account not found: ' + tx.from.toString())
-    }
-
-    if (fromAccount.get('nonce').gt(tx.nonce)) {
-      throw new Error(`Invalid nonce: ${fromAccount.get('nonce')} > ${tx.nonce}`)
-    }
-
-    fromAccount.set('nonce', fromAccount.get('nonce').add(new U256(1)))
-
-    let isCreation = false
-
-    // Special case: contract deployment
-    if (tx.to.isZero() && (tx.data.length !== 0)) {
-      console.log('This is a contract deployment transaction')
-      isCreation = true
-    }
-
-    // This cost will not be refunded
-    let txCost = 21000 + (isCreation ? 32000 : 0)
-    tx.data.forEach((item) => {
-      if (item === 0) {
-        txCost += 4
-      } else {
-        txCost += 68
-      }
-    })
-
-    if (tx.gasLimit.lt(new U256(txCost))) {
-      throw new Error(`Minimum transaction gas limit not met: ${txCost}`)
-    }
-
-    if (fromAccount.get('balance').lt(tx.gasLimit.mul(tx.gasPrice))) {
-      throw new Error(`Insufficient account balance: ${fromAccount.get('balance').toString()} < ${tx.gasLimit.mul(tx.gasPrice).toString()}`)
-    }
-
-    // deduct gasLimit * gasPrice from sender
-    fromAccount.set('balance', fromAccount.get('balance').sub(tx.gasLimit.mul(tx.gasPrice)))
-
-    const handler = isCreation ? this.createHandler.bind(this) : this.callHandler.bind(this)
-    let ret = handler({
-      to: tx.to,
-      from: tx.from,
-      gasLimit: tx.gasLimit - txCost,
-      value: tx.value,
-      data: tx.data
-    })
-
-    // refund unused gas
-    if (ret.executionOutcome === 1) {
-      fromAccount.set('balance', fromAccount.get('balance').add(tx.gasPrice.mul(ret.gasLeft.add(ret.gasRefund))))
-    }
-
-    // save new state?
-
-    return {
-      executionOutcome: ret.executionOutcome,
-      accountCreated: isCreation ? ret.accountCreated : undefined,
-      returnValue: isCreation ? undefined : ret.returnValue,
-      gasLeft: ret.gasLeft,
-      logs: ret.logs
+  /**
+   * regirsters a container with the hypervisor
+   * @param {Class} Constructor - a Class for instantiating the container
+   * @param {*} args - any args that the contructor takes
+   * @param {interger} typeId - the container's type identification ID
+   */
+  registerContainer (Constructor, args, typeId = Constructor.typeId) {
+    this._containerTypes[typeId] = {
+      Constructor: Constructor,
+      args: args
     }
   }
-
-  // run block; the block message handler
-  runBlock (block, environment = new Environment()) {
-    // verify block then run each tx
-    block.tx.forEach((tx) => {
-      this.runTx(tx, environment)
-    })
-  }
-
-  // run blockchain
-  // runBlockchain () {}
 }

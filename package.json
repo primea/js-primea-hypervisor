@@ -1,44 +1,53 @@
 {
-  "name": "ewasm-kernel",
-  "version": "0.0.0",
-  "description": "This is a JS prototype of the eWASM kernal.",
+  "name": "primea-hypervisor",
+  "version": "0.1.0",
+  "description": "this is a JS implemention of the primea hypervisor",
   "scripts": {
+    "coverage": "node --harmony ./node_modules/istanbul/lib/cli.js cover ./tests/index.js",
+    "coveralls": "npm run coverage && coveralls <coverage/lcov.info",
     "lint": "standard",
-    "test": "node --expose-wasm ./tests/interfaceRunner.js"
+    "build:docs": "npm run build:docs:hypervisor && npm run build:docs:kernel && npm run build:docs:scheduler && npm run build:docs:portManager",
+    "build:docs:hypervisor": "documentation build ./index.js --github --shallow --sort-order source -f md  > ./docs/hypervisor.md",
+    "build:docs:kernel": "documentation build ./kernel.js --github --shallow --sort-order source -f md  > ./docs/kernel.md",
+    "build:docs:portManager": "documentation build ./portManager.js --github --shallow --sort-order source -f md  > ./docs/portManager.md",
+    "build:docs:scheduler": "documentation build ./scheduler.js --github --shallow --sort-order source -f md  > ./docs/scheduler.md",
+    "test": "node --harmony ./tests/index.js"
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/ewasm/ewasm-kernel.git"
+    "url": "git+https://github.com/primea/js-primea-hypervisor.git"
   },
   "bugs": {
-    "url": "https://github.com/ewasm/ewasm-kernel/issues"
+    "url": "https://github.com/primea/js-primea-hypervisor/issues"
   },
-  "homepage": "https://github.com/ewasm/ewasm-kernel",
+  "homepage": "https://github.com/primea/js-primea-hypervisor",
   "keywords": [
-    "ethereum",
-    "webassembly",
-    "wasm",
-    "ewasm"
+    "primea",
+    "hypervisor",
+    "kernel"
   ],
   "author": "mjbecze <mjbecze@gmail.com>",
   "contributors": "Alex Beregszaszi <alex@rtfs.hu>",
   "license": "MPL-2.0",
-  "devDependencies": {
-    "standard": "^8.5.0",
-    "tape": "^4.6.3"
-  },
-  "standard": {
-    "ignore": [
-      "/tools/sexpr-wasm-prototype/"
-    ],
-    "globals": [
-      "WebAssembly"
-    ]
-  },
   "dependencies": {
+    "binary-search-insert": "^1.0.3",
     "bn.js": "^4.11.6",
-    "ethereumjs-block": "^1.2.2",
-    "ethereumjs-tx": "^1.1.2",
-    "ethereumjs-util": "^5.0.0"
+    "chunk": "0.0.2",
+    "ipld-graph-builder": "1.3.0",
+    "lockmap": "0.0.0",
+    "merkle-radix-tree": "0.0.4",
+    "primea-message": "0.0.2"
+  },
+  "devDependencies": {
+    "primea-abstract-container": "0.0.4",
+    "coveralls": "^2.13.1",
+    "documentation": "^5.0.1",
+    "ipfs": "^0.25.1",
+    "istanbul": "^1.1.0-alpha.1",
+    "level-promise": "^2.1.1",
+    "levelup": "^1.3.8",
+    "memdown": "^1.2.4",
+    "standard": "10.0.3",
+    "tape": "^4.6.3"
   }
 }

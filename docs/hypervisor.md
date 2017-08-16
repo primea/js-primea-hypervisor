@@ -12,7 +12,7 @@
 
 ## constructor
 
-[index.js:16-22](https://github.com/primea/js-primea-hypervisor/blob/317d79e49cb56dd81cb9c94072cd24ad6a825757/index.js#L16-L22 "Source code on GitHub")
+[index.js:16-29](https://github.com/primea/js-primea-hypervisor/blob/add087e94722a8b77695d21eca754a562d7e79f5/index.js#L16-L29 "Source code on GitHub")
 
 The Hypervisor manages the container instances by instantiating them and
 destorying them when possible. It also facilitates localating Containers
@@ -20,11 +20,11 @@ destorying them when possible. It also facilitates localating Containers
 **Parameters**
 
 -   `dag` **Graph** an instance of [ipfs.dag](https://github.com/ipfs/interface-ipfs-core/tree/master/API/dag#dag-api)
--   `state` **[object](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Object)** the starting state (optional, default `{}`)
+-   `state` **[object](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Object)** the starting state (optional, default `{'/':Tree.emptyTreeState}`)
 
 ## addNodeToCheck
 
-[index.js:28-30](https://github.com/primea/js-primea-hypervisor/blob/317d79e49cb56dd81cb9c94072cd24ad6a825757/index.js#L28-L30 "Source code on GitHub")
+[index.js:35-37](https://github.com/primea/js-primea-hypervisor/blob/add087e94722a8b77695d21eca754a562d7e79f5/index.js#L35-L37 "Source code on GitHub")
 
 add a potaintail node in the state graph to check for garbage collection
 
@@ -34,7 +34,7 @@ add a potaintail node in the state graph to check for garbage collection
 
 ## getDestPort
 
-[index.js:37-43](https://github.com/primea/js-primea-hypervisor/blob/317d79e49cb56dd81cb9c94072cd24ad6a825757/index.js#L37-L43 "Source code on GitHub")
+[index.js:44-51](https://github.com/primea/js-primea-hypervisor/blob/add087e94722a8b77695d21eca754a562d7e79f5/index.js#L44-L51 "Source code on GitHub")
 
 given a port, this finds the corridsponeding endpoint port of the channel
 
@@ -46,7 +46,7 @@ Returns **[Promise](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Refe
 
 ## getInstance
 
-[index.js:73-83](https://github.com/primea/js-primea-hypervisor/blob/317d79e49cb56dd81cb9c94072cd24ad6a825757/index.js#L73-L83 "Source code on GitHub")
+[index.js:105-116](https://github.com/primea/js-primea-hypervisor/blob/add087e94722a8b77695d21eca754a562d7e79f5/index.js#L105-L116 "Source code on GitHub")
 
 gets an existsing container instances
 
@@ -58,24 +58,25 @@ Returns **[Promise](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Refe
 
 ## createInstance
 
-[index.js:95-119](https://github.com/primea/js-primea-hypervisor/blob/317d79e49cb56dd81cb9c94072cd24ad6a825757/index.js#L95-L119 "Source code on GitHub")
+[index.js:128-165](https://github.com/primea/js-primea-hypervisor/blob/add087e94722a8b77695d21eca754a562d7e79f5/index.js#L128-L165 "Source code on GitHub")
 
 creates an new container instances and save it in the state
 
 **Parameters**
 
 -   `type` **[string](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String)** the type of container to create
--   `code` **any** 
--   `entryPorts` **[array](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array)**  (optional, default `[]`)
+-   `message`   (optional, default `new Message()`)
 -   `id` **[object](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Object)**  (optional, default `{nonce:0,parent:null}`)
     -   `id.nonce` **[object](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Object)** 
     -   `id.parent` **[object](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Object)** 
+-   `code` **any** 
+-   `entryPorts` **[array](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array)** 
 
 Returns **[Promise](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Promise)** 
 
 ## createStateRoot
 
-[index.js:127-134](https://github.com/primea/js-primea-hypervisor/blob/317d79e49cb56dd81cb9c94072cd24ad6a825757/index.js#L127-L134 "Source code on GitHub")
+[index.js:187-196](https://github.com/primea/js-primea-hypervisor/blob/add087e94722a8b77695d21eca754a562d7e79f5/index.js#L187-L196 "Source code on GitHub")
 
 creates a state root starting from a given container and a given number of
 ticks
@@ -88,12 +89,12 @@ Returns **[Promise](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Refe
 
 ## registerContainer
 
-[index.js:142-147](https://github.com/primea/js-primea-hypervisor/blob/317d79e49cb56dd81cb9c94072cd24ad6a825757/index.js#L142-L147 "Source code on GitHub")
+[index.js:204-209](https://github.com/primea/js-primea-hypervisor/blob/add087e94722a8b77695d21eca754a562d7e79f5/index.js#L204-L209 "Source code on GitHub")
 
 regirsters a container with the hypervisor
 
 **Parameters**
 
--   `type` **[String](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String)** the name of the type
 -   `Constructor` **Class** a Class for instantiating the container
 -   `args` **any** any args that the contructor takes
+-   `typeId` **interger** the container's type identification ID (optional, default `Constructor.typeId`)

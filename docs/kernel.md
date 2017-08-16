@@ -4,14 +4,15 @@
 
 -   [constructor](#constructor)
 -   [queue](#queue)
--   [run](#run)
+-   [message](#message)
 -   [incrementTicks](#incrementticks)
 -   [createMessage](#createmessage)
+-   [createInstance](#createinstance)
 -   [send](#send)
 
 ## constructor
 
-[kernel.js:15-28](https://github.com/primea/js-primea-hypervisor/blob/317d79e49cb56dd81cb9c94072cd24ad6a825757/kernel.js#L15-L28 "Source code on GitHub")
+[kernel.js:16-31](https://github.com/primea/js-primea-hypervisor/blob/add087e94722a8b77695d21eca754a562d7e79f5/kernel.js#L16-L31 "Source code on GitHub")
 
 the Kernel manages the varous message passing functions and provides
 an interface for the containers to use
@@ -26,7 +27,7 @@ an interface for the containers to use
 
 ## queue
 
-[kernel.js:35-48](https://github.com/primea/js-primea-hypervisor/blob/317d79e49cb56dd81cb9c94072cd24ad6a825757/kernel.js#L35-L48 "Source code on GitHub")
+[kernel.js:38-41](https://github.com/primea/js-primea-hypervisor/blob/add087e94722a8b77695d21eca754a562d7e79f5/kernel.js#L38-L41 "Source code on GitHub")
 
 adds a message to this containers message queue
 
@@ -35,22 +36,23 @@ adds a message to this containers message queue
 -   `portName` **[string](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String)** 
 -   `message` **[object](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Object)** 
 
-## run
+## message
 
-[kernel.js:78-98](https://github.com/primea/js-primea-hypervisor/blob/317d79e49cb56dd81cb9c94072cd24ad6a825757/kernel.js#L78-L98 "Source code on GitHub")
+[kernel.js:89-115](https://github.com/primea/js-primea-hypervisor/blob/add087e94722a8b77695d21eca754a562d7e79f5/kernel.js#L89-L115 "Source code on GitHub")
 
 run the kernels code with a given enviroment
 
 **Parameters**
 
 -   `message` **[object](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Object)** the message to run
--   `init` **[boolean](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Boolean)** whether or not to run the intialization routine (optional, default `false`)
+-   `method`   (optional, default `'onMessage'`)
+-   `init` **[boolean](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Boolean)** whether or not to run the intialization routine
 
 Returns **[Promise](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Promise)** 
 
 ## incrementTicks
 
-[kernel.js:104-107](https://github.com/primea/js-primea-hypervisor/blob/317d79e49cb56dd81cb9c94072cd24ad6a825757/kernel.js#L104-L107 "Source code on GitHub")
+[kernel.js:132-135](https://github.com/primea/js-primea-hypervisor/blob/add087e94722a8b77695d21eca754a562d7e79f5/kernel.js#L132-L135 "Source code on GitHub")
 
 updates the number of ticks that the container has run
 
@@ -60,7 +62,7 @@ updates the number of ticks that the container has run
 
 ## createMessage
 
-[kernel.js:113-121](https://github.com/primea/js-primea-hypervisor/blob/317d79e49cb56dd81cb9c94072cd24ad6a825757/kernel.js#L113-L121 "Source code on GitHub")
+[kernel.js:141-145](https://github.com/primea/js-primea-hypervisor/blob/add087e94722a8b77695d21eca754a562d7e79f5/kernel.js#L141-L145 "Source code on GitHub")
 
 creates a new message
 
@@ -69,9 +71,23 @@ creates a new message
 -   `opts`  
 -   `data` **any** 
 
+## createInstance
+
+[kernel.js:153-168](https://github.com/primea/js-primea-hypervisor/blob/add087e94722a8b77695d21eca754a562d7e79f5/kernel.js#L153-L168 "Source code on GitHub")
+
+creates a new container. Returning a port to it.
+
+**Parameters**
+
+-   `type` **[String](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String)** 
+-   `message`  
+-   `data` **any** the data to populate the initail state with
+
+Returns **[Object](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Object)** 
+
 ## send
 
-[kernel.js:128-145](https://github.com/primea/js-primea-hypervisor/blob/317d79e49cb56dd81cb9c94072cd24ad6a825757/kernel.js#L128-L145 "Source code on GitHub")
+[kernel.js:175-184](https://github.com/primea/js-primea-hypervisor/blob/add087e94722a8b77695d21eca754a562d7e79f5/kernel.js#L175-L184 "Source code on GitHub")
 
 sends a message to a given port
 

@@ -1,6 +1,6 @@
 {
   "name": "primea-hypervisor",
-  "version": "0.0.5",
+  "version": "0.1.0",
   "description": "this is a JS implemention of the primea hypervisor",
   "scripts": {
     "coverage": "node --harmony ./node_modules/istanbul/lib/cli.js cover ./tests/index.js",

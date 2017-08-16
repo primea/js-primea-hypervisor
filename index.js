@@ -164,6 +164,20 @@ module.exports = class Hypervisor {
     return instance
   }
 
+  createChannel () {
+    const port1 = {
+      messages: []
+    }
+
+    const port2 = {
+      messages: [],
+      destPort: port1
+    }
+
+    port1.destPort = port2
+    return [port1, port2]
+  }
+
   /**
    * creates a state root starting from a given container and a given number of
    * ticks

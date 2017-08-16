@@ -57,7 +57,7 @@ module.exports = class Kernel {
 
         // dequqe message
         message.fromPort.messages.shift()
-        // if the message we recived had more ticks then we currently have the
+        // if the message we recived had more ticks then we currently have then
         // update it
         if (message._fromTicks > this.ticks) {
           this.ticks = message._fromTicks
@@ -98,6 +98,7 @@ module.exports = class Kernel {
       try {
         result = await this.container[method](message)
       } catch (e) {
+        console.log(e)
         result = {
           exception: true,
           exceptionError: e
@@ -173,7 +174,6 @@ module.exports = class Kernel {
    */
   send (port, message) {
     message._hops++
-    // set the port that the message came from
     message._fromTicks = this.ticks
     this.ports.removeSentPorts(message)
 

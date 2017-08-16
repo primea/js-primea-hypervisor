@@ -167,16 +167,7 @@ module.exports = class PortManager {
    * @returns {array}
    */
   createChannel () {
-    const port1 = {
-      messages: []
-    }
-
-    const port2 = {
-      messages: [],
-      destPort: port1
-    }
-
-    port1.destPort = port2
+    const [port1, port2] = this.hypervisor.createChannel()
     this._unboundPorts.add(port1)
     this._unboundPorts.add(port2)
     return [port1, port2]

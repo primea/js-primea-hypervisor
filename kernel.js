@@ -162,7 +162,10 @@ module.exports = class Kernel {
     nonce = new BN(nonce)
     nonce.iaddn(1)
     this.state.nonce = nonce.toArray()
-    this.ports.removeSentPorts(message)
+
+    if (message) {
+      this.ports.removeSentPorts(message)
+    }
 
     return this.hypervisor.createInstance(type, message, id)
   }

@@ -64,9 +64,12 @@ module.exports = class PortManager {
         message._fromPort = port
         message.fromName = name
       })
-      destPort.destName = name
-      destPort.destId = this.id
-      delete destPort.destPort
+
+      if (destPort) {
+        destPort.destName = name
+        destPort.destId = this.id
+        delete destPort.destPort
+      }
     }
   }
 

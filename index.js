@@ -107,7 +107,7 @@ module.exports = class Hypervisor {
     if (instance) {
       return instance
     } else {
-      const resolve = this.scheduler.getLock(id)
+      const resolve = this.scheduler.lock(id)
       const instance = await this._loadInstance(id)
       await instance.startup()
       resolve(instance)
@@ -126,11 +126,7 @@ module.exports = class Hypervisor {
    * @returns {Promise}
    */
   async createInstance (type, message = new Message(), id = {nonce: 0, parent: null}) {
-    // create a lock to prevent the scheduler from reloving waits before the
-    // new container is loaded
-    // const unlock = this.scheduler.getLock(id)
     const idHash = await this._getHashFromObj(id)
-    // const code = message.data.byteLength ? message.data : undefined
     const state = {
       nonce: [0],
       ports: {},

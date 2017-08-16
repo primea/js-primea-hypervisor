@@ -1,4 +1,5 @@
 const binarySearchInsert = require('binary-search-insert')
+const LockMap = require('lockmap')
 
 module.exports = class Scheduler {
   /**
@@ -8,7 +9,7 @@ module.exports = class Scheduler {
   constructor () {
     this._waits = []
     this._running = new Set()
-    this._loadingInstances = new Map()
+    this._loadingInstances = new LockMap()
     this.instances = new Map()
   }
 
@@ -17,16 +18,8 @@ module.exports = class Scheduler {
    * @param {string} id
    * @return {function} the resolve function to call once it to unlock
    */
-  getLock (id) {
-    let r
-    const promise = new Promise((resolve, reject) => {
-      r = resolve
-    })
-    promise.then(() => {
-      this._loadingInstances.delete(id)
-    })
-    this._loadingInstances.set(id, promise)
-    return r
+  lock (id) {
+    return this._loadingInstances.lock(id)
   }
 
   /**
@@ -57,7 +50,7 @@ module.exports = class Scheduler {
    * @return {object}
    */
   getInstance (id) {
-    return this.instances.get(id) || this._loadingInstances.get(id)
+    return this.instances.get(id) || this._loadingInstances.getLock(id)
   }
 
   /**

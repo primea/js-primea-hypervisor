@@ -186,6 +186,10 @@ module.exports = class PortManager {
     }
   }
 
+  waitOnPort (port, timeout) {
+
+  }
+
   /**
    * Waits for the the next message if any
    * @returns {Promise}

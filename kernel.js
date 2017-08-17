@@ -19,7 +19,6 @@ module.exports = class Kernel {
     this.hypervisor = opts.hypervisor
     this.id = opts.id
     this.container = new opts.container.Constructor(this, opts.container.args)
-    this.timeout = 0
 
     this.ticks = 0
     this.containerState = 'idle'
@@ -52,7 +51,7 @@ module.exports = class Kernel {
       this.containerState = 'running'
 
       while (1) {
-        const message = await this.ports.getNextMessage(this.timeout)
+        const message = await this.ports.getNextMessage()
         if (!message) break
 
         // dequqe message

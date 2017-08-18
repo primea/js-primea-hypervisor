@@ -138,15 +138,15 @@ module.exports = class PortManager {
     message._fromPort = port
     message.fromName = name
 
-    if (port.messages.push(message) === 1) {
+    const numOfMsg = port.messages.push(message)
+
+    if (numOfMsg === 1) {
       if (this._isSaturated()) {
         this._saturationResolve()
         this._saturationPromise = new Promise((resolve, reject) => {
           this._saturationResolve = resolve
         })
-      }
-
-      if (message._fromTicks < this._messageTickThreshold) {
+      } else if (message._fromTicks < this._messageTickThreshold) {
         this._oldestMessageResolve(message)
         this._oldestMessagePromise = new Promise((resolve, reject) => {
           this._oldestMessageResolve = resolve
@@ -184,10 +184,6 @@ module.exports = class PortManager {
       const port = this.ports[portName]
       return port.messages[0]
     }
-  }
-
-  waitOnPort (port, timeout) {
-
   }
 
   /**

@@ -7,7 +7,7 @@
  * @param {string} root - the root id
  * @param {Set} nodes - a set of nodes to start searching from
  */
-module.exports = async function DFSchecker (tree, root, nodes) {
+module.exports = async function DFSchecker (tree, nodes, checkFn) {
   const checkedNodesSet = new Set()
   let hasRootSet = new Set()
   const promises = []
@@ -54,7 +54,7 @@ module.exports = async function DFSchecker (tree, root, nodes) {
     checkedNodes.add(id)
 
     // check to see if we are at the root
-    if (id === root) {
+    if (checkFn(id)) {
       hasRootSet = checkedNodes
       return
     }

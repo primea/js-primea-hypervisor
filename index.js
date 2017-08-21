@@ -24,6 +24,8 @@ module.exports = class Hypervisor {
     this._nodesToCheck = new Set()
 
     this.ROOT_ID = 'zdpuAm6aTdLVMUuiZypxkwtA7sKm7BWERy8MPbaCrFsmiyzxr'
+    this.CREATION_ID = 0
+    this.ROUTING_ID = 1
     this.MAX_DATA_BYTES = 65533
   }
 
@@ -50,7 +52,16 @@ module.exports = class Hypervisor {
   }
 
   async send (port, message) {
-    if (port.destId) {
+    if (port.destID === this.ROUTING_ID) {
+      port.destID = message.data.id
+      const destPort = this.getDestPort(port.destName)
+      if (destPort.destID === this.ROUTING_ID) {
+        message._data = message.data.payload
+        this.send(port, message)
+      } else {
+        throw new Error('invalid routing port')
+      }
+    } else if (port.destId) {
       const id = port.destId
       const instance = await this.getInstance(id)
       instance.queue(port.destName, message)
@@ -173,6 +184,19 @@ module.exports = class Hypervisor {
     return [port1, port2]
   }
 
+  getCreationPort () {
+    return {
+      destID: this.CREATION_ID
+    }
+  }
+
+  getRoutingPort () {
+    return {
+      destID: this.ROUTING_ID
+    }
+  }
+
+  copyNativePort () {}
   /**
    * creates a state root starting from a given container and a given number of
    * ticks
@@ -182,7 +206,9 @@ module.exports = class Hypervisor {
   async createStateRoot (ticks) {
     await this.scheduler.wait(ticks)
 
-    const unlinked = await DFSchecker(this.tree, this.ROOT_ID, this._nodesToCheck)
+    const unlinked = await DFSchecker(this.tree, this._nodesToCheck, (id) => {
+      return this.ROOT_ID === id
+    })
     for (const id of unlinked) {
       await this.tree.delete(id)
     }

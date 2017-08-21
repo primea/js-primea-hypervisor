@@ -176,9 +176,17 @@ module.exports = class Kernel {
     message._fromTicks = this.ticks
     this.ports.removeSentPorts(message)
 
+    const copyPort = this.hypervisor.copyNativePort(port, message)
+    if (copyPort) {
+      this.queue(port.destName, new Message({ports: [copyPort]}))
+    } else if (port.destId === this.hypervisor.CREATION_ID) {
+      return this.createInstance(message)
+    } else {
+      return this.hypervisor.send(port, message)
+    }
+
     // if (this.currentMessage !== message && !message.responsePort) {
     //   this.currentMessage._addSubMessage(message)
     // }
-    return this.hypervisor.send(port, message)
   }
 }

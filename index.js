@@ -1,7 +1,6 @@
 const Tree = require('merkle-radix-tree')
 const Graph = require('ipld-graph-builder')
 const chunk = require('chunk')
-const Message = require('primea-message')
 const Kernel = require('./kernel.js')
 const Scheduler = require('./scheduler.js')
 const DFSchecker = require('./dfsChecker.js')
@@ -125,16 +124,16 @@ module.exports = class Hypervisor {
    * @param {object} id.parent
    * @returns {Promise}
    */
-  async createInstance (type, message = new Message(), id = {nonce: 0, parent: null}) {
+  async createInstance (message, id = {nonce: 0, parent: null}) {
     const idHash = await this._getHashFromObj(id)
     const state = {
       nonce: [0],
       ports: {},
-      type: type
+      type: message.data.type
     }
 
-    if (message.data.length) {
-      state.code = message.data
+    if (message.data.code && message.data.code.length) {
+      state.code = message.data.code
     }
 
     // create the container instance
@@ -187,6 +186,7 @@ module.exports = class Hypervisor {
     for (const id of unlinked) {
       await this.tree.delete(id)
     }
+    // console.log(JSON.stringify(this.state, null, 2))
 
     return this.graph.flush(this.state)
   }

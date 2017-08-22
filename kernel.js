@@ -34,8 +34,8 @@ module.exports = class Kernel {
    * @param {string} portName
    * @param {object} message
    */
-  queue (portName, message) {
-    this.ports.queue(portName, message)
+  queue (port, message) {
+    this.ports.queue(port.destName, message)
     this._startMessageLoop()
   }
 

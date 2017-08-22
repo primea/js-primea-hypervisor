@@ -54,7 +54,7 @@ module.exports = class Hypervisor {
     const id = port.destId
     if (id) {
       const instance = await this.getInstance(id)
-      instance.queue(port.destName, message)
+      instance.queue(port, message)
     } else {
       // port is unbound
       port.destPort.messages.push(message)

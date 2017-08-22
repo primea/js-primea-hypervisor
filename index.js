@@ -51,8 +51,8 @@ module.exports = class Hypervisor {
   }
 
   async send (port, message) {
-    if (port.destId) {
-      const id = port.destId
+    const id = port.destId
+    if (id) {
       const instance = await this.getInstance(id)
       instance.queue(port.destName, message)
     } else {

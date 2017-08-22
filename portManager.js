@@ -86,9 +86,11 @@ module.exports = class PortManager {
 
     // update the destination port
     const destPort = await this.hypervisor.getDestPort(port)
-    delete destPort.destName
-    delete destPort.destId
-    destPort.destPort = port
+    if (destPort) {
+      delete destPort.destName
+      delete destPort.destId
+      destPort.destPort = port
+    }
     return port
   }
 
@@ -98,7 +100,9 @@ module.exports = class PortManager {
    */
   async delete (name) {
     const port = this.ports[name]
-    await this.kernel.send(port, new DeleteMessage())
+    if (port.destID !== this.hypervisor.CREATION_ID) {
+      await this.kernel.send(port, new DeleteMessage())
+    }
     this._delete(name)
   }
 

@@ -149,7 +149,7 @@ module.exports = class Kernel {
    * @param {*} data - the data to populate the initail state with
    * @returns {Object}
    */
-  createInstance (type, message) {
+  createInstance (message) {
     let nonce = this.state.nonce
 
     const id = {
@@ -161,12 +161,9 @@ module.exports = class Kernel {
     nonce = new BN(nonce)
     nonce.iaddn(1)
     this.state.nonce = nonce.toArray()
+    this.ports.removeSentPorts(message)
 
-    if (message) {
-      this.ports.removeSentPorts(message)
-    }
-
-    return this.hypervisor.createInstance(type, message, id)
+    return this.hypervisor.createInstance(message, id)
   }
 
   /**
@@ -179,9 +176,17 @@ module.exports = class Kernel {
     message._fromTicks = this.ticks
     this.ports.removeSentPorts(message)
 
+    const copyPort = this.hypervisor.copyNativePort(port, message)
+    if (copyPort) {
+      this.queue(port.destName, new Message({ports: [copyPort]}))
+    } else if (port.destId === this.hypervisor.CREATION_ID) {
+      return this.createInstance(message)
+    } else {
+      return this.hypervisor.send(port, message)
+    }
+
     // if (this.currentMessage !== message && !message.responsePort) {
     //   this.currentMessage._addSubMessage(message)
     // }
-    return this.hypervisor.send(port, message)
   }
 }

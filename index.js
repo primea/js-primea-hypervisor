@@ -183,11 +183,12 @@ module.exports = class Hypervisor {
   async createStateRoot (ticks) {
     await this.scheduler.wait(ticks)
 
-    const unlinked = await DFSchecker(this.tree, this.ROOT_ID, this._nodesToCheck)
+    const unlinked = await DFSchecker(this.tree, this._nodesToCheck, (id) => {
+      return this.ROOT_ID === id
+    })
     for (const id of unlinked) {
       await this.tree.delete(id)
     }
-
     return this.graph.flush(this.state)
   }
 

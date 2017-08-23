@@ -10,13 +10,13 @@ const node = new IPFS({
 })
 
 class BaseContainer extends AbstractContainer {
-  onCreation (message) {
+  onCreation(message) {
     const port = message.ports[0]
     if (port) {
       return this.kernel.ports.bind('root', port)
     }
   }
-  static get typeId () {
+  static get typeId() {
     return 9
   }
 }
@@ -30,7 +30,7 @@ node.on('ready', () => {
     }
 
     class testVMContainer extends BaseContainer {
-      onMessage (m) {
+      onMessage(m) {
         t.true(m === message, 'should recive a message')
       }
     }
@@ -77,7 +77,7 @@ node.on('ready', () => {
     }
 
     class testVMContainer extends BaseContainer {
-      onCreation () {}
+      onCreation() {}
     }
 
     try {
@@ -118,7 +118,7 @@ node.on('ready', () => {
     let hasResolved = false
 
     class testVMContainer2 extends BaseContainer {
-      onMessage (m) {
+      onMessage(m) {
         t.true(m === message, 'should recive a message')
         return new Promise((resolve, reject) => {
           setTimeout(() => {
@@ -129,13 +129,13 @@ node.on('ready', () => {
         })
       }
 
-      static get typeId () {
+      static get typeId() {
         return 99
       }
     }
 
     class testVMContainer extends BaseContainer {
-      async onMessage (m) {
+      async onMessage(m) {
         const [portRef1, portRef2] = this.kernel.ports.createChannel()
         await this.kernel.createInstance(this.kernel.createMessage({
           data: {
@@ -180,7 +180,7 @@ node.on('ready', () => {
 
     // test reviving the state
     class testVMContainer3 extends BaseContainer {
-      onMessage (m) {
+      onMessage(m) {
         const port = this.kernel.ports.get('child')
         this.kernel.send(port, m)
         this.kernel.incrementTicks(1)
@@ -196,7 +196,7 @@ node.on('ready', () => {
   tape('traps', async t => {
     t.plan(1)
     class Root extends BaseContainer {
-      async onMessage (m) {
+      async onMessage(m) {
         const [portRef1, portRef2] = this.kernel.ports.createChannel()
         const [portRef3, portRef4] = this.kernel.ports.createChannel()
         const [portRef5, portRef6] = this.kernel.ports.createChannel()
@@ -257,7 +257,7 @@ node.on('ready', () => {
     let runs = 0
 
     class Root extends BaseContainer {
-      async onMessage (m) {
+      async onMessage(m) {
         if (!runs) {
           runs++
           const [portRef1, portRef2] = this.kernel.ports.createChannel()
@@ -295,25 +295,25 @@ node.on('ready', () => {
           // t.equals(m.data, 'third', 'should recived the second message')
         }
       }
-      static get typeId () {
+      static get typeId() {
         return 299
       }
     }
 
     class First extends BaseContainer {
-      onMessage (m) {
+      onMessage(m) {
         this.kernel.incrementTicks(2)
         return this.kernel.send(m.fromPort, this.kernel.createMessage({
           data: 'second'
         }))
       }
-      static get typeId () {
+      static get typeId() {
         return 29
       }
     }
 
     class Waiter extends BaseContainer {
-      onMessage (m) {
+      onMessage(m) {
         return new Promise((resolve, reject) => {
           setTimeout(() => {
             this.kernel.send(m.fromPort, this.kernel.createMessage({
@@ -359,8 +359,8 @@ node.on('ready', () => {
     let runs = 0
 
     class Root extends BaseContainer {
-      onIdle () {}
-      async onMessage (m) {
+      onIdle() {}
+      async onMessage(m) {
         if (!runs) {
           runs++
           const [portRef1, portRef2] = this.kernel.ports.createChannel()
@@ -399,37 +399,37 @@ node.on('ready', () => {
           t.equals(m.data, 'third', 'should recived the third message')
         }
       }
-      static get typeId () {
+      static get typeId() {
         return 299
       }
     }
 
     class First extends BaseContainer {
-      onMessage (m) {
+      onMessage(m) {
         this.kernel.incrementTicks(2)
         return this.kernel.send(m.fromPort, this.kernel.createMessage({
           data: 'second'
         }))
       }
-      static get typeId () {
+      static get typeId() {
         return 29
       }
     }
 
     class Second extends BaseContainer {
-      onMessage (m) {
+      onMessage(m) {
         this.kernel.incrementTicks(3)
         return this.kernel.send(m.fromPort, this.kernel.createMessage({
           data: 'third'
         }))
       }
-      static get typeId () {
+      static get typeId() {
         return 2
       }
     }
 
     class Waiter extends BaseContainer {
-      onCreation (m) {
+      onCreation(m) {
         return new Promise((resolve, reject) => {
           setTimeout(() => {
             this.kernel.send(m.ports[0], this.kernel.createMessage({
@@ -493,7 +493,7 @@ node.on('ready', () => {
     let instance
 
     class Root extends BaseContainer {
-      async onMessage (m) {
+      async onMessage(m) {
         let one = this.kernel.ports.get('one')
         if (!one) {
           const [portRef1, portRef2] = this.kernel.ports.createChannel()
@@ -512,13 +512,13 @@ node.on('ready', () => {
           ])
         }
       }
-      static get typeId () {
+      static get typeId() {
         return 299
       }
     }
 
     class First extends BaseContainer {
-      onMessage (m) {
+      onMessage(m) {
         ++runs
         if (runs === 2) {
           t.equals(instance, this, 'should have same instances')
@@ -614,7 +614,7 @@ node.on('ready', () => {
       '/': 'zdpuAxKfu5nMTfpz6uHPqXdHZFQDZdRUer8zcQ6nvC4pTQsop'
     }
     class Root extends BaseContainer {
-      async onMessage (m) {
+      async onMessage(m) {
         const [portRef1, portRef2] = this.kernel.ports.createChannel()
         const message1 = this.kernel.createMessage({
           data: {
@@ -631,11 +631,11 @@ node.on('ready', () => {
     }
 
     class First extends BaseContainer {
-      onMessage (m) {
+      onMessage(m) {
         this.kernel.incrementTicks(2)
         return this.kernel.ports.delete('root')
       }
-      static get typeId () {
+      static get typeId() {
         return 299
       }
     }
@@ -675,7 +675,7 @@ node.on('ready', () => {
     }
 
     class Root extends BaseContainer {
-      onMessage (m) {
+      onMessage(m) {
         return this.kernel.createInstance(new Message({
           data: {
             type: Root.typeId
@@ -714,7 +714,7 @@ node.on('ready', () => {
       '/': 'zdpuAxKfu5nMTfpz6uHPqXdHZFQDZdRUer8zcQ6nvC4pTQsop'
     }
     class Root extends BaseContainer {
-      onMessage (m) {
+      onMessage(m) {
         const [, portRef2] = this.kernel.ports.createChannel()
         return this.kernel.createInstance(this.kernel.createMessage({
           data: {
@@ -726,7 +726,7 @@ node.on('ready', () => {
     }
 
     class Sub extends BaseContainer {
-      async onInitailize (message) {
+      async onInitailize(message) {
         await this.kernel.ports.bind('root', message.ports[0])
         const [portRef1, portRef2] = this.kernel.ports.createChannel()
         await this.kernel.ports.bind('child', portRef1)
@@ -737,7 +737,7 @@ node.on('ready', () => {
           ports: [portRef2]
         }))
       }
-      static get typeId () {
+      static get typeId() {
         return 299
       }
     }
@@ -777,7 +777,7 @@ node.on('ready', () => {
       '/': 'zdpuAr4A3i1t6B7BkLT9C7DoxwvFnNg74gEzyqhpFj7nqVBy6'
     }
     class Root extends BaseContainer {
-      async onMessage (m) {
+      async onMessage(m) {
         if (m.ports.length) {
           const port = this.kernel.ports.get('test1')
           await this.kernel.send(port, m)
@@ -808,7 +808,7 @@ node.on('ready', () => {
     }
 
     class Sub extends BaseContainer {
-      async onMessage (message) {
+      async onMessage(message) {
         if (message.data === 'getChannel') {
           const ports = this.kernel.ports.createChannel()
           await this.kernel.send(message.fromPort, this.kernel.createMessage({
@@ -820,7 +820,7 @@ node.on('ready', () => {
           return this.kernel.ports.bind('channel', message.ports[0])
         }
       }
-      static get typeId () {
+      static get typeId() {
         return 299
       }
     }
@@ -852,12 +852,12 @@ node.on('ready', () => {
     t.end()
   })
 
-  tape.only('should remove multiple subgraphs', async t => {
+  tape('should remove multiple subgraphs', async t => {
     const expectedSr = {
       '/': 'zdpuAzYGmZeZsi5Zer7LXCTm1AsmqpUMJAXZnEeFW2UVDZj2P'
     }
     class Root extends BaseContainer {
-      onMessage (m) {
+      onMessage(m) {
         if (m.ports.length) {
           const port = this.kernel.ports.get('test1')
           return Promise.all([
@@ -892,7 +892,7 @@ node.on('ready', () => {
     }
 
     class Sub extends BaseContainer {
-      async onMessage (message) {
+      async onMessage(message) {
         if (message.data === 'getChannel') {
           const ports = this.kernel.ports.createChannel()
           await this.kernel.send(message.fromPort, this.kernel.createMessage({
@@ -904,7 +904,7 @@ node.on('ready', () => {
           return this.kernel.ports.bind('channel', message.ports[0])
         }
       }
-      static get typeId () {
+      static get typeId() {
         return 299
       }
     }
@@ -948,7 +948,7 @@ node.on('ready', () => {
     const returnValue = 'this is a test'
 
     class testVMContainer extends BaseContainer {
-      onMessage (m) {
+      onMessage(m) {
         runs++
         if (runs === 1) {
           return returnValue
@@ -992,8 +992,8 @@ node.on('ready', () => {
   tape('start up', async t => {
     t.plan(1)
     class testVMContainer extends BaseContainer {
-      onMessage () {}
-      onStartup () {
+      onMessage() {}
+      onStartup() {
         t.true(true, 'should start up')
       }
     }
@@ -1012,7 +1012,7 @@ node.on('ready', () => {
     t.plan(1)
     const content = Buffer.from(new ArrayBuffer(1000000))
     class testVMContainer extends BaseContainer {
-      onMessage () {}
+      onMessage() {}
     }
 
     const hypervisor = new Hypervisor(node.dag)
@@ -1027,7 +1027,7 @@ node.on('ready', () => {
     t.equals(content.length, instance.code.length)
   })
 
-  tape.skip('creation service messaging', async t => {
+  tape('creation service messaging', async t => {
     t.plan(1)
     class TestVMContainer extends BaseContainer {
       async onCreation (m) {
@@ -1071,8 +1071,12 @@ node.on('ready', () => {
       ports: [port]
     }))
 
-    await hypervisor.createStateRoot()
-    await hypervisor.graph.tree(hypervisor.state, Infinity, true)
-    console.log(JSON.stringify(hypervisor.state, null, 2))
+    const stateRoot = await hypervisor.createStateRoot()
+      // await hypervisor.graph.tree(hypervisor.state, Infinity, true)
+    console.log(stateRoot)
+    const expectedSR = {
+      '/': 'zdpuAonuhk7ZhdghJh4saaUCskY5mXZ6M9BcV9iAhCanAQx9i'
+    }
+    t.deepEquals(stateRoot, expectedSR)
   })
 })

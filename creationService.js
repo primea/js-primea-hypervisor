@@ -66,7 +66,4 @@ module.exports = class CreationService {
   _getHashFromObj (obj) {
     return this.hypervisor.graph.flush(obj).then(obj => obj['/'])
   }
-
-  // NOPe
-  startup () {}
 }

@@ -1,9 +1,12 @@
 const Tree = require('merkle-radix-tree')
 const Graph = require('ipld-graph-builder')
-const chunk = require('chunk')
 const Kernel = require('./kernel.js')
 const Scheduler = require('./scheduler.js')
 const DFSchecker = require('./dfsChecker.js')
+const CreationService = require('./creationService.js')
+
+const CREATION_ID = 0
+// const ROUTING_ID = 1
 
 module.exports = class Hypervisor {
   /**
@@ -23,10 +26,12 @@ module.exports = class Hypervisor {
     this._containerTypes = {}
     this._nodesToCheck = new Set()
 
+    this.creationService = new CreationService({
+      hypervisor: this
+    })
+    this.scheduler.systemServices.set(CREATION_ID, this.creationService)
+
     this.ROOT_ID = 'zdpuAm6aTdLVMUuiZypxkwtA7sKm7BWERy8MPbaCrFsmiyzxr'
-    this.CREATION_ID = 0
-    this.ROUTING_ID = 1
-    this.MAX_DATA_BYTES = 65533
   }
 
   /**
@@ -55,7 +60,7 @@ module.exports = class Hypervisor {
     const id = port.destId
     if (id) {
       const instance = await this.getInstance(id)
-      instance.queue(port, message)
+      return instance.queue(port, message)
     } else {
       // port is unbound
       port.destPort.messages.push(message)
@@ -93,11 +98,6 @@ module.exports = class Hypervisor {
     return kernel
   }
 
-  // get a hash from a POJO
-  _getHashFromObj (obj) {
-    return this.graph.flush(obj).then(obj => obj['/'])
-  }
-
   /**
    * gets an existsing container instances
    * @param {string} id - the containers ID
@@ -116,49 +116,8 @@ module.exports = class Hypervisor {
     }
   }
 
-  /**
-   * creates an new container instances and save it in the state
-   * @param {string} type - the type of container to create
-   * @param {*} code
-   * @param {array} entryPorts
-   * @param {object} id
-   * @param {object} id.nonce
-   * @param {object} id.parent
-   * @returns {Promise}
-   */
-  async createInstance (message, id = {nonce: 0, parent: null}) {
-    const idHash = await this._getHashFromObj(id)
-    const state = {
-      nonce: [0],
-      ports: {},
-      type: message.data.type
-    }
-
-    if (message.data.code && message.data.code.length) {
-      state.code = message.data.code
-    }
-
-    // create the container instance
-    const instance = await this._loadInstance(idHash, state)
-
-    // send the intialization message
-    await instance.create(message)
-
-    if (Object.keys(instance.ports.ports).length || instance.id === this.ROOT_ID) {
-      if (state.code && state.code.length > this.MAX_DATA_BYTES) {
-        state.code = chunk(state.code, this.MAX_DATA_BYTES).map(chk => {
-          return {
-            '/': chk
-          }
-        })
-      }
-      // save the container in the state
-      await this.tree.set(idHash, state)
-    } else {
-      this.scheduler.done(idHash)
-    }
-
-    return instance
+  createInstance (message, id) {
+    return this.creationService.createInstance(message, id)
   }
 
   createChannel () {

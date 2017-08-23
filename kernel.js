@@ -150,6 +150,12 @@ module.exports = class Kernel {
    * @returns {Object}
    */
   createInstance (message) {
+    this.ports.removeSentPorts(message)
+    const id = this.generateNextId()
+    return this.hypervisor.createInstance(message, id)
+  }
+
+  generateNextId () {
     let nonce = this.state.nonce
 
     const id = {
@@ -161,9 +167,7 @@ module.exports = class Kernel {
     nonce = new BN(nonce)
     nonce.iaddn(1)
     this.state.nonce = nonce.toArray()
-    this.ports.removeSentPorts(message)
-
-    return this.hypervisor.createInstance(message, id)
+    return id
   }
 
   /**

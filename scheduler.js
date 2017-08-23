@@ -11,6 +11,7 @@ module.exports = class Scheduler {
     this._running = new Set()
     this._loadingInstances = new LockMap()
     this.instances = new Map()
+    this.systemServices = new Map()
   }
 
   /**
@@ -50,7 +51,7 @@ module.exports = class Scheduler {
    * @return {object}
    */
   getInstance (id) {
-    return this.instances.get(id) || this._loadingInstances.getLock(id)
+    return this.instances.get(id) || this._loadingInstances.getLock(id) || this.systemServices.get(id)
   }
 
   /**

@@ -1,16 +1,26 @@
 const chunk = require('chunk')
 
+const MAX_DATA_BYTES = 65533
+
 module.exports = class CreationService {
   constructor (opts) {
     this.hypervisor = opts.hypervisor
     this.scheduler = this.hypervisor.scheduler
-    this.MAX_DATA_BYTES = 65533
   }
 
-  queue (message) {
-    const creator = this.scheduler.getInstance(message.fromId)
-    const id = creator.generateNextId()
-    return this.createInstance(message, id)
+  queue (port, message) {
+    if (message.data.type) {
+      const creator = this.scheduler.getInstance(message.fromId)
+      const id = creator.generateNextId()
+      return this.createInstance(message, id)
+    }
+  }
+
+  getPort () {
+    return {
+      messages: [],
+      destId: 0
+    }
   }
 
   /**
@@ -36,8 +46,8 @@ module.exports = class CreationService {
     await instance.create(message)
 
     if (Object.keys(instance.ports.ports).length || instance.id === this.hypervisor.ROOT_ID) {
-      if (state.code && state.code.length > this.MAX_DATA_BYTES) {
-        state.code = chunk(state.code, this.MAX_DATA_BYTES).map(chk => {
+      if (state.code && state.code.length > MAX_DATA_BYTES) {
+        state.code = chunk(state.code, MAX_DATA_BYTES).map(chk => {
           return {
             '/': chk
           }

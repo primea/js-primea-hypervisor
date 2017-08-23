@@ -58,6 +58,7 @@ module.exports = class PortManager {
       // save the port instance
       this.ports[name] = port
 
+      // console.log(name, port)
       // update the dest port
       const destPort = await this.hypervisor.getDestPort(port)
       port.messages.forEach(message => {

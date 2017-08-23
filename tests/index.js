@@ -852,7 +852,7 @@ node.on('ready', () => {
     t.end()
   })
 
-  tape('should remove multiple subgraphs', async t => {
+  tape.only('should remove multiple subgraphs', async t => {
     const expectedSr = {
       '/': 'zdpuAzYGmZeZsi5Zer7LXCTm1AsmqpUMJAXZnEeFW2UVDZj2P'
     }
@@ -1025,5 +1025,54 @@ node.on('ready', () => {
     }))
     const instance = await hypervisor.getInstance(hypervisor.ROOT_ID)
     t.equals(content.length, instance.code.length)
+  })
+
+  tape.skip('creation service messaging', async t => {
+    t.plan(1)
+    class TestVMContainer extends BaseContainer {
+      async onCreation (m) {
+        const creationPort = m.ports[0]
+        const [port1, port2] = this.kernel.ports.createChannel()
+        await this.kernel.ports.bind('child', port1)
+
+        const message = this.kernel.createMessage({
+          data: {
+            type: TestVMContainer2.typeId
+          },
+          ports: [port2]
+        })
+        return this.kernel.send(creationPort, message)
+      }
+      onMessage () {
+
+      }
+    }
+
+    class TestVMContainer2 extends BaseContainer {
+      onMessage () {
+
+      }
+
+      static get typeId () {
+        return 66
+      }
+    }
+
+    const hypervisor = new Hypervisor(node.dag)
+    hypervisor.registerContainer(TestVMContainer)
+    hypervisor.registerContainer(TestVMContainer2)
+
+    const port = hypervisor.creationService.getPort()
+
+    await hypervisor.createInstance(new Message({
+      data: {
+        type: TestVMContainer.typeId
+      },
+      ports: [port]
+    }))
+
+    await hypervisor.createStateRoot()
+    await hypervisor.graph.tree(hypervisor.state, Infinity, true)
+    console.log(JSON.stringify(hypervisor.state, null, 2))
   })
 })

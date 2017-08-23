@@ -51,14 +51,20 @@ module.exports = class Hypervisor {
     if (port.destPort) {
       return port.destPort
     } else {
-      const containerState = await this.tree.get(port.destId)
+      const instance = await this.scheduler.getInstance(port.destId)
+      let containerState
+      if (instance) {
+        containerState = instance.state
+      } else {
+        containerState = await this.tree.get(port.destId)
+      }
       return this.graph.get(containerState, `ports/${port.destName}`)
     }
   }
 
   async send (port, message) {
     const id = port.destId
-    if (id) {
+    if (id !== undefined) {
       const instance = await this.getInstance(id)
       return instance.queue(port, message)
     } else {

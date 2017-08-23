@@ -174,6 +174,7 @@ module.exports = class Kernel {
   send (port, message) {
     message._hops++
     message._fromTicks = this.ticks
+    message.fromId = this.id
     this.ports.removeSentPorts(message)
 
     return this.hypervisor.send(port, message)

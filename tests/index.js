@@ -45,6 +45,8 @@ node.on('ready', () => {
         }
       }))
 
+      hypervisor.pin(rootContainer)
+
       const [portRef1, portRef2] = rootContainer.ports.createChannel()
       const initMessage = rootContainer.createMessage({
         data: {
@@ -89,6 +91,8 @@ node.on('ready', () => {
           type: testVMContainer.typeId
         }
       }))
+
+      hypervisor.pin(root)
       const [portRef1, portRef2] = root.ports.createChannel()
 
       await root.ports.bind('one', portRef1)
@@ -158,6 +162,9 @@ node.on('ready', () => {
         type: testVMContainer.typeId
       }
     }))
+
+    hypervisor.pin(root)
+
     const rootId = root.id
     const [portRef1, portRef2] = root.ports.createChannel()
     await root.createInstance(root.createMessage({
@@ -244,6 +251,9 @@ node.on('ready', () => {
         type: Root.typeId
       }
     }))
+
+    hypervisor.pin(root)
+
     await root.message(root.createMessage())
     const stateRoot = await hypervisor.createStateRoot()
 
@@ -336,6 +346,8 @@ node.on('ready', () => {
           type: Root.typeId
         }
       }))
+
+      hypervisor.pin(root)
       const [portRef1, portRef2] = root.ports.createChannel()
 
       const message = root.createMessage()
@@ -453,6 +465,9 @@ node.on('ready', () => {
           type: Root.typeId
         }
       }))
+
+      hypervisor.pin(root)
+
       const [portRef1, portRef2] = root.ports.createChannel()
       const [portRef3, portRef4] = root.ports.createChannel()
 
@@ -539,6 +554,9 @@ node.on('ready', () => {
           type: Root.typeId
         }
       }))
+
+      hypervisor.pin(root)
+
       const [portRef1, portRef2] = root.ports.createChannel()
       await Promise.all([
         root.ports.bind('first', portRef1),
@@ -571,6 +589,8 @@ node.on('ready', () => {
         type: BaseContainer.typeId
       }
     }))
+
+    hypervisor.pin(root)
 
     const [portRef1, portRef2] = root.ports.createChannel()
     root.createInstance(root.createMessage({
@@ -650,6 +670,9 @@ node.on('ready', () => {
         type: Root.typeId
       }
     }))
+
+    hypervisor.pin(root)
+
     const [portRef1, portRef2] = root.ports.createChannel()
     await root.ports.bind('first', portRef1)
     await root.createInstance(root.createMessage({
@@ -692,6 +715,9 @@ node.on('ready', () => {
         type: Root.typeId
       }
     }))
+
+    hypervisor.pin(root)
+
     const [portRef1, portRef2] = root.ports.createChannel()
     await root.ports.bind('first', portRef1)
     await root.createInstance(root.createMessage({
@@ -753,6 +779,9 @@ node.on('ready', () => {
           type: Root.typeId
         }
       }))
+
+      hypervisor.pin(root)
+
       const [portRef1, portRef2] = root.ports.createChannel()
       await root.ports.bind('first', portRef1)
       await root.createInstance(root.createMessage({
@@ -835,6 +864,9 @@ node.on('ready', () => {
         type: Root.typeId
       }
     }))
+
+    hypervisor.pin(root)
+
     const [portRef1, portRef2] = root.ports.createChannel()
     await root.ports.bind('first', portRef1)
     await root.createInstance(root.createMessage({
@@ -921,6 +953,8 @@ node.on('ready', () => {
         }
       }))
 
+      hypervisor.pin(root)
+
       const [portRef1, portRef2] = root.ports.createChannel()
       await Promise.all([
         root.ports.bind('first', portRef1),
@@ -959,7 +993,6 @@ node.on('ready', () => {
     }
 
     const hypervisor = new Hypervisor(node.dag)
-
     hypervisor.registerContainer(testVMContainer)
 
     const rootContainer = await hypervisor.createInstance(new Message({
@@ -967,6 +1000,8 @@ node.on('ready', () => {
         type: testVMContainer.typeId
       }
     }))
+
+    hypervisor.pin(rootContainer)
 
     const [portRef1, portRef2] = rootContainer.ports.createChannel()
     const initMessage = rootContainer.createMessage({
@@ -1064,12 +1099,14 @@ node.on('ready', () => {
 
     const port = hypervisor.creationService.getPort()
 
-    await hypervisor.createInstance(new Message({
+    const root = await hypervisor.createInstance(new Message({
       data: {
         type: TestVMContainer.typeId
       },
       ports: [port]
     }))
+
+    hypervisor.pin(root)
 
     const stateRoot = await hypervisor.createStateRoot()
       // await hypervisor.graph.tree(hypervisor.state, Infinity, true)

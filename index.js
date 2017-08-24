@@ -30,6 +30,7 @@ module.exports = class Hypervisor {
       hypervisor: this
     })
     this.scheduler.systemServices.set(CREATION_ID, this.creationService)
+    this.pinnedIds = new Set()
 
     this.ROOT_ID = 'zdpuAm6aTdLVMUuiZypxkwtA7sKm7BWERy8MPbaCrFsmiyzxr'
   }
@@ -150,7 +151,7 @@ module.exports = class Hypervisor {
     await this.scheduler.wait(ticks)
 
     const unlinked = await DFSchecker(this.tree, this._nodesToCheck, (id) => {
-      return this.ROOT_ID === id
+      return this.pinnedIds.has(id)
     })
     for (const id of unlinked) {
       await this.tree.delete(id)
@@ -169,5 +170,9 @@ module.exports = class Hypervisor {
       Constructor: Constructor,
       args: args
     }
+  }
+
+  pin (instance) {
+    this.pinnedIds.add(instance.id)
   }
 }

@@ -45,18 +45,18 @@ module.exports = class CreationService {
     // send the intialization message
     await instance.create(message)
 
-    if (Object.keys(instance.ports.ports).length || instance.id === this.hypervisor.ROOT_ID) {
-      if (state.code && state.code.length > MAX_DATA_BYTES) {
-        state.code = chunk(state.code, MAX_DATA_BYTES).map(chk => {
-          return {
-            '/': chk
-          }
-        })
-      }
-      // save the container in the state
-      await this.hypervisor.tree.set(idHash, state)
-    } else {
-      this.scheduler.done(idHash)
+    if (state.code && state.code.length > MAX_DATA_BYTES) {
+      state.code = chunk(state.code, MAX_DATA_BYTES).map(chk => {
+        return {
+          '/': chk
+        }
+      })
+    }
+    // save the container in the state
+    await this.hypervisor.tree.set(idHash, state)
+
+    if (!Object.keys(instance.ports.ports).length) {
+      this.hypervisor.addNodeToCheck(instance.id)
     }
 
     return instance

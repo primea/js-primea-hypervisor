@@ -1035,30 +1035,30 @@ node.on('ready', () => {
 
     const hypervisor = new Hypervisor(node.dag)
     hypervisor.registerContainer(testVMContainer)
-    await hypervisor.createInstance(new Message({
+    const instance = await hypervisor.createInstance(new Message({
       data: {
         type: testVMContainer.typeId
       }
     }))
-    hypervisor.getInstance(hypervisor.ROOT_ID)
+    hypervisor.getInstance(instance.id)
   })
 
   tape('large code size', async t => {
     t.plan(1)
-    const content = Buffer.from(new ArrayBuffer(1000000))
+    const content = Buffer.from(new ArrayBuffer(1e6))
     class testVMContainer extends BaseContainer {
       onMessage () {}
     }
 
     const hypervisor = new Hypervisor(node.dag)
     hypervisor.registerContainer(testVMContainer)
-    await hypervisor.createInstance(new Message({
+    const oldInst = await hypervisor.createInstance(new Message({
       data: {
         type: testVMContainer.typeId,
         code: content
       }
     }))
-    const instance = await hypervisor.getInstance(hypervisor.ROOT_ID)
+    const instance = await hypervisor.getInstance(oldInst.id)
     t.equals(content.length, instance.code.length)
   })
 

@@ -31,8 +31,6 @@ module.exports = class Hypervisor {
     })
     this.scheduler.systemServices.set(CREATION_ID, this.creationService)
     this.pinnedIds = new Set()
-
-    this.ROOT_ID = 'zdpuAm6aTdLVMUuiZypxkwtA7sKm7BWERy8MPbaCrFsmiyzxr'
   }
 
   /**

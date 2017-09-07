@@ -121,10 +121,6 @@ module.exports = class Hypervisor {
     }
   }
 
-  createInstance (message, id) {
-    return this.creationService.createInstance(message, id)
-  }
-
   createChannel () {
     const port1 = {
       messages: []

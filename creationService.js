@@ -10,8 +10,11 @@ module.exports = class CreationService {
 
   queue (port, message) {
     if (message.data.type) {
-      const creator = this.scheduler.getInstance(message.fromId)
-      const id = creator.generateNextId()
+      let id
+      if (message.fromId) {
+        const creator = this.scheduler.getInstance(message.fromId)
+        id = creator.generateNextId()
+      }
       return this.createInstance(message, id)
     }
   }

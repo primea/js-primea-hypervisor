@@ -58,7 +58,6 @@ module.exports = class PortManager {
       // save the port instance
       this.ports[name] = port
 
-      // console.log(name, port)
       // update the dest port
       const destPort = await this.hypervisor.getDestPort(port)
       port.messages.forEach(message => {
@@ -117,6 +116,7 @@ module.exports = class PortManager {
     this._unboundPorts.forEach(port => {
       waits.push(this.kernel.send(port, new DeleteMessage()))
     })
+
     this._unboundPorts.clear()
     return Promise.all(waits)
   }

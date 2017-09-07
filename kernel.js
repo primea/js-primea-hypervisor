@@ -143,18 +143,6 @@ module.exports = class Kernel {
     return message
   }
 
-  /**
-   * creates a new container. Returning a port to it.
-   * @param {String} type
-   * @param {*} data - the data to populate the initail state with
-   * @returns {Object}
-   */
-  createInstance (message) {
-    this.ports.removeSentPorts(message)
-    const id = this.generateNextId()
-    return this.hypervisor.createInstance(message, id)
-  }
-
   generateNextId () {
     let nonce = this.state.nonce
 

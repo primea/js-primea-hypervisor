@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "description": "this is a JS implemention of the primea hypervisor",
   "scripts": {
-    "coverage": "node --harmony ./node_modules/istanbul/lib/cli.js cover ./tests/index.js",
+    "coverage": "node ./node_modules/istanbul/lib/cli.js cover ./tests/index.js",
     "coveralls": "npm run coverage && coveralls <coverage/lcov.info",
     "lint": "standard",
     "build:docs": "npm run build:docs:hypervisor && npm run build:docs:kernel && npm run build:docs:scheduler && npm run build:docs:portManager",
@@ -11,7 +11,7 @@
     "build:docs:kernel": "documentation build ./kernel.js --github --shallow --sort-order source -f md  > ./docs/kernel.md",
     "build:docs:portManager": "documentation build ./portManager.js --github --shallow --sort-order source -f md  > ./docs/portManager.md",
     "build:docs:scheduler": "documentation build ./scheduler.js --github --shallow --sort-order source -f md  > ./docs/scheduler.md",
-    "test": "node --harmony ./tests/index.js"
+    "test": "node ./tests/index.js"
   },
   "repository": {
     "type": "git",

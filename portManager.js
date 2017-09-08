@@ -1,22 +1,22 @@
 const DeleteMessage = require('./deleteMessage')
 
 // decides which message to go first
-function messageArbiter (nameA, nameB) {
-  const a = this.ports[nameA].messages[0]
-  const b = this.ports[nameB].messages[0]
+function messageArbiter (portA, portB) {
+  const a = portA.messages[0]
+  const b = portB.messages[0]
 
   if (!a) {
-    return nameB
+    return portB
   } else if (!b) {
-    return nameA
+    return portA
   }
 
   // order by number of ticks if messages have different number of ticks
   if (a._fromTicks !== b._fromTicks) {
-    return a._fromTicks < b._fromTicks ? nameA : nameB
+    return a._fromTicks < b._fromTicks ? portA : portB
   } else {
     // insertion order
-    return nameA
+    return portA
   }
 }
 
@@ -143,7 +143,7 @@ module.exports = class PortManager {
     const numOfMsg = port.messages.push(message)
 
     if (numOfMsg === 1) {
-      if (this._isSaturated()) {
+      if (this._isSaturated(this.ports)) {
         this._saturationResolve()
         this._saturationPromise = new Promise((resolve, reject) => {
           this._saturationResolve = resolve
@@ -178,12 +178,11 @@ module.exports = class PortManager {
     return [port1, port2]
   }
 
-  // find and returns the next message
-  _peekNextMessage () {
-    const names = Object.keys(this.ports)
-    if (names.length) {
-      const portName = names.reduce(messageArbiter.bind(this))
-      const port = this.ports[portName]
+  // find and returns the next message that this instance currently knows about
+  _peekNextMessage (ports) {
+    ports = Object.values(ports)
+    if (ports.length) {
+      const port = ports.reduce(messageArbiter)
       return port.messages[0]
     }
   }
@@ -192,46 +191,52 @@ module.exports = class PortManager {
    * Waits for the the next message if any
    * @returns {Promise}
    */
-  async getNextMessage () {
-    let message = this._peekNextMessage()
-    let saturated = this._isSaturated()
+  async getNextMessage (ports = this.ports, timeout = Infinity) {
+    let message = this._peekNextMessage(ports)
     let oldestTime = this.hypervisor.scheduler.leastNumberOfTicks()
 
-    while (!saturated && // end if there are messages on all the ports
-      // end if we have a message older then slowest containers
-      !((message && oldestTime >= message._fromTicks) ||
-        // end if there are no messages and this container is the oldest contaner
-        (!message && oldestTime === this.kernel.ticks))) {
-      const ticksToWait = message ? message._fromTicks : this.kernel.ticks
+    await Promise.race([
+      this._whenSaturated().then(() => {
+        message = this._peekNextMessage(ports)
+      }),
+      new Promise(async (resolve, reject) => {
+        while (// end if we have a message older then slowest containers
+          !((message && oldestTime >= message._fromTicks) ||
+            // end if there are no messages and this container is the oldest contaner
+            (!message && oldestTime === this.kernel.ticks))) {
+          let ticksToWait = message ? message._fromTicks : this.kernel.ticks
+          // ticksToWait = ticksToWait > timeout ? timeout : ticksToWait
 
-      await Promise.race([
-        this.hypervisor.scheduler.wait(ticksToWait, this.id).then(() => {
-          message = this._peekNextMessage()
-        }),
-        this._olderMessage(message).then(m => {
-          message = m
-        }),
-        this._whenSaturated().then(() => {
-          saturated = true
-          message = this._peekNextMessage()
-        })
-      ])
+          await Promise.race([
+            this.hypervisor.scheduler.wait(ticksToWait, this.id).then(() => {
+              message = this._peekNextMessage(ports)
+            }),
+            this._olderMessage(message).then(m => {
+              message = m
+            })
+          ])
 
-      oldestTime = this.hypervisor.scheduler.leastNumberOfTicks()
-    }
-
+          oldestTime = this.hypervisor.scheduler.leastNumberOfTicks()
+        }
+        resolve()
+      })
+    ])
     return message
   }
 
   // tests wether or not all the ports have a message
-  _isSaturated () {
-    const keys = Object.keys(this.ports)
-    return keys.length ? keys.every(name => this.ports[name].messages.length) : 0
+  _isSaturated (ports) {
+    const values = Object.values(ports)
+    return values.length ? values.every(port => port.messages.length) : false
   }
 
   // returns a promise that resolve when the ports are saturated
   _whenSaturated () {
-    return this._saturationPromise
+    if (this._isSaturated(this.ports)) {
+      return Promise.resolve()
+    } else {
+      return this._saturationPromise
+    }
   }
 
   // returns a promise that resolve when a message older then the given message

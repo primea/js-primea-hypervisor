@@ -26,6 +26,14 @@ module.exports = class CreationService {
     }
   }
 
+  // send (port, message) {
+  //   message._hops++
+  //   message._fromTicks = this.ticks
+  //   message.fromId = this.id
+
+  //   return this.hypervisor.send(port, message)
+  // }
+
   /**
    * creates an new container instances and save it in the state
    * @returns {Promise}

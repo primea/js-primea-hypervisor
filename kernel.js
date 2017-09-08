@@ -170,8 +170,5 @@ module.exports = class Kernel {
     this.ports.removeSentPorts(message)
 
     return this.hypervisor.send(port, message)
-    // if (this.currentMessage !== message && !message.responsePort) {
-    //   this.currentMessage._addSubMessage(message)
-    // }
   }
 }

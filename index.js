@@ -6,7 +6,6 @@ const DFSchecker = require('./dfsChecker.js')
 const CreationService = require('./creationService.js')
 
 const CREATION_ID = 0
-// const ROUTING_ID = 1
 
 module.exports = class Hypervisor {
   /**

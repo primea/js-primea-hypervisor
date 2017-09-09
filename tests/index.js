@@ -398,7 +398,7 @@ node.on('ready', () => {
           })
 
           this.kernel.incrementTicks(6)
-          return Promise.all([
+          await Promise.all([
             this.kernel.send(creationPort, message1),
             this.kernel.send(creationPort, message2),
             this.kernel.send(portRef1, this.kernel.createMessage()),
@@ -471,6 +471,7 @@ node.on('ready', () => {
       }))
 
       hypervisor.pin(root)
+      root = await hypervisor.getInstance(root.id)
 
       const [portRef1, portRef2] = root.ports.createChannel()
       const [portRef3, portRef4] = root.ports.createChannel()

@@ -28,6 +28,7 @@ module.exports = class Scheduler {
    * @param {Object} instance - a container instance
    */
   update (instance) {
+    this._waits = this._waits.filter(wait => wait.id !== instance.id)
     this._update(instance)
     this._running.add(instance.id)
     this._checkWaits()

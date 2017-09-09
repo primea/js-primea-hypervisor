@@ -194,40 +194,45 @@ module.exports = class PortManager {
   async getNextMessage (ports = this.ports, timeout = Infinity) {
     let message = this._peekNextMessage(ports)
     let oldestTime = this.hypervisor.scheduler.leastNumberOfTicks()
+    let saturated = false
+
+    const findOldestMessage = async () => {
+      while (// end if we have a message older then slowest containers
+        !((message && oldestTime >= message._fromTicks) ||
+          // end if there are no messages and this container is the oldest contaner
+          (!message && oldestTime === this.kernel.ticks))) {
+        if (saturated) {
+          break
+        }
+        let ticksToWait = message ? message._fromTicks : this.kernel.ticks
+        // ticksToWait = ticksToWait > timeout ? timeout : ticksToWait
+        await Promise.race([
+          this.hypervisor.scheduler.wait(ticksToWait, this.id).then(() => {
+            message = this._peekNextMessage(ports)
+          }),
+          this._olderMessage(message).then(m => {
+            message = m
+          })
+        ])
+        oldestTime = this.hypervisor.scheduler.leastNumberOfTicks()
+      }
+    }
 
     await Promise.race([
       this._whenSaturated().then(() => {
         message = this._peekNextMessage(ports)
+        saturated = true
       }),
-      new Promise(async (resolve, reject) => {
-        while (// end if we have a message older then slowest containers
-          !((message && oldestTime >= message._fromTicks) ||
-            // end if there are no messages and this container is the oldest contaner
-            (!message && oldestTime === this.kernel.ticks))) {
-          let ticksToWait = message ? message._fromTicks : this.kernel.ticks
-          // ticksToWait = ticksToWait > timeout ? timeout : ticksToWait
-
-          await Promise.race([
-            this.hypervisor.scheduler.wait(ticksToWait, this.id).then(() => {
-              message = this._peekNextMessage(ports)
-            }),
-            this._olderMessage(message).then(m => {
-              message = m
-            })
-          ])
-
-          oldestTime = this.hypervisor.scheduler.leastNumberOfTicks()
-        }
-        resolve()
-      })
+      findOldestMessage()
     ])
+
     return message
   }
 
   // tests wether or not all the ports have a message
   _isSaturated (ports) {
     const values = Object.values(ports)
-    return values.length ? values.every(port => port.messages.length) : false
+    return values.length === 0 ? true : values.every(port => port.messages.length !== 0)
   }
 
   // returns a promise that resolve when the ports are saturated

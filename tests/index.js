@@ -1183,4 +1183,31 @@ node.on('ready', () => {
 
     hypervisor.pin(root)
   })
+
+  tape('waiting on ports', async t => {
+    t.plan(1)
+    class TestVMContainer extends BaseContainer {
+      async onCreation (m) {
+        await this.kernel.ports.bind('test', m.ports[0])
+        this.kernel.ports.getNextMessage()
+        try {
+          await this.kernel.ports.getNextMessage()
+        } catch (e) {
+          t.pass('should throw if already trying to get a message')
+        }
+      }
+    }
+
+    const hypervisor = new Hypervisor(node.dag)
+    hypervisor.registerContainer(TestVMContainer)
+
+    const port = hypervisor.creationService.getPort()
+
+    await hypervisor.send(port, new Message({
+      data: {
+        type: TestVMContainer.typeId
+      },
+      ports: [port]
+    }))
+  })
 })

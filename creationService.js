@@ -79,6 +79,10 @@ module.exports = class CreationService {
     return instance
   }
 
+  get state () {
+    return {}
+  }
+
   // get a hash from a POJO
   _getHashFromObj (obj) {
     return this.hypervisor.graph.flush(obj).then(obj => obj['/'])

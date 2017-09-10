@@ -161,23 +161,18 @@ module.exports = class PortManager {
     return [port1, port2]
   }
 
-  // find and returns the next message that this instance currently knows about
-  _peekNextMessage (ports) {
-    ports = Object.values(ports)
-    if (ports.length) {
-      const port = ports.reduce(messageArbiter)
-      return port.messages[0]
-    }
-  }
-
   /**
    * Waits for the the next message if any
    * @returns {Promise}
    */
   async getNextMessage (ports = this.ports, timeout = Infinity) {
-    let message = this._peekNextMessage(ports)
+    let message = peekNextMessage(ports)
     let oldestTime = this.hypervisor.scheduler.leastNumberOfTicks()
     let saturated = false
+
+    if (Object.keys(this._waitingPorts).length) {
+      throw new Error('already getting next message')
+    }
 
     this._waitingPorts = ports
 
@@ -193,7 +188,7 @@ module.exports = class PortManager {
         // ticksToWait = ticksToWait > timeout ? timeout : ticksToWait
         await Promise.race([
           this.hypervisor.scheduler.wait(ticksToWait, this.id).then(() => {
-            message = this._peekNextMessage(ports)
+            message = peekNextMessage(ports)
           }),
           this._olderMessage(message).then(m => {
             message = m
@@ -205,11 +200,13 @@ module.exports = class PortManager {
 
     await Promise.race([
       this._whenSaturated(ports).then(() => {
-        message = this._peekNextMessage(ports)
+        message = peekNextMessage(ports)
         saturated = true
       }),
       findOldestMessage()
     ])
+
+    this._waitingPorts = {}
 
     return message
   }
@@ -251,6 +248,15 @@ module.exports = class PortManager {
 function isSaturated (ports) {
   const values = Object.values(ports)
   return values.length ? values.every(port => port.messages.length) : true
+}
+
+// find and returns the next message that this instance currently knows about
+function peekNextMessage (ports) {
+  ports = Object.values(ports)
+  if (ports.length) {
+    const port = ports.reduce(messageArbiter)
+    return port.messages[0]
+  }
 }
 
 // decides which message to go first

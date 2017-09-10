@@ -31,12 +31,12 @@
   "license": "MPL-2.0",
   "dependencies": {
     "binary-search-insert": "^1.0.3",
-    "bn.js": "^4.11.6",
     "chunk": "0.0.2",
     "ipld-graph-builder": "1.3.0",
     "lockmap": "0.0.0",
     "merkle-radix-tree": "0.0.4",
-    "primea-message": "0.0.2"
+    "primea-message": "0.0.2",
+    "typedarray-addition": "0.0.0"
   },
   "devDependencies": {
     "primea-abstract-container": "0.0.4",

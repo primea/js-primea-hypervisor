@@ -25,9 +25,7 @@ node.on('ready', () => {
   tape('basic', async t => {
     t.plan(3)
     let message
-    const expectedState = {
-      '/': 'zdpuAqbcQhgu2T2MBgHbYu1MtHXyZzNsCaQjTPTR6NN9s5hbk'
-    }
+    const expectedState =  { '/': 'zdpuAyCWhqq3v5DWhJCJPBgFkFbMxmD4do98TusonJmw7TyEG' }
 
     class testVMContainer extends BaseContainer {
       onMessage (m) {
@@ -80,7 +78,7 @@ node.on('ready', () => {
   tape('basic - do not store containers with no ports bound', async t => {
     t.plan(1)
     const expectedState = {
-      '/': 'zdpuAop4nt8pqzg7duciSYbZmWfDaBiz87RCtGCbb35ewUrbW'
+      '/': 'zdpuB1nzBk1RfSkZAx783Y54JiwW47WDHBxrBiUWSx1d9XraH'
     }
 
     class testVMContainer extends BaseContainer {
@@ -130,7 +128,7 @@ node.on('ready', () => {
     t.plan(4)
     let message
     const expectedState = {
-      '/': 'zdpuB2Huo3ro3Fv9mpMhnUcL3jjd37T6MJ6jEd8GvA2cpvaYR'
+      '/': 'zdpuAnJrp8fEQL8NAJ9Jci3AJw6tzUdfhFvMMgtQ6BheL5JSb'
     }
 
     let hasResolved = false
@@ -641,7 +639,7 @@ node.on('ready', () => {
 
   tape('port deletion', async t => {
     const expectedSr = {
-      '/': 'zdpuAxKfu5nMTfpz6uHPqXdHZFQDZdRUer8zcQ6nvC4pTQsop'
+      '/': 'zdpuAzmHuZeX37ohQvWheN4mS3B63A3LknRgmsG4dQFcer5Xf'
     }
 
     const hypervisor = new Hypervisor(node.dag)
@@ -711,7 +709,7 @@ node.on('ready', () => {
 
   tape('clear unbounded ports', async t => {
     const expectedSr = {
-      '/': 'zdpuAxKfu5nMTfpz6uHPqXdHZFQDZdRUer8zcQ6nvC4pTQsop'
+      '/': 'zdpuAzmHuZeX37ohQvWheN4mS3B63A3LknRgmsG4dQFcer5Xf'
     }
 
     const hypervisor = new Hypervisor(node.dag)
@@ -758,7 +756,7 @@ node.on('ready', () => {
 
   tape('should remove subgraphs', async t => {
     const expectedSr = {
-      '/': 'zdpuAxKfu5nMTfpz6uHPqXdHZFQDZdRUer8zcQ6nvC4pTQsop'
+      '/': 'zdpuAzmHuZeX37ohQvWheN4mS3B63A3LknRgmsG4dQFcer5Xf'
     }
 
     const hypervisor = new Hypervisor(node.dag)
@@ -829,7 +827,7 @@ node.on('ready', () => {
 
   tape('should not remove connected nodes', async t => {
     const expectedSr = {
-      '/': 'zdpuAr4A3i1t6B7BkLT9C7DoxwvFnNg74gEzyqhpFj7nqVBy6'
+      '/': 'zdpuAnqT3rGwbquWcGP82C9pZGM59uDCdXYBDFaUcmXr3M6fs'
     }
 
     const hypervisor = new Hypervisor(node.dag)
@@ -915,7 +913,7 @@ node.on('ready', () => {
 
   tape('should remove multiple subgraphs', async t => {
     const expectedSr = {
-      '/': 'zdpuAzYGmZeZsi5Zer7LXCTm1AsmqpUMJAXZnEeFW2UVDZj2P'
+      '/': 'zdpuAwVszhPYNCas6qfcoLZcyaV6ee1UfbkjFiFyJULeoJR5x'
     }
 
     const hypervisor = new Hypervisor(node.dag)
@@ -1144,7 +1142,7 @@ node.on('ready', () => {
     const stateRoot = await hypervisor.createStateRoot()
       // await hypervisor.graph.tree(hypervisor.state, Infinity, true)
     const expectedSR = {
-      '/': 'zdpuAonuhk7ZhdghJh4saaUCskY5mXZ6M9BcV9iAhCanAQx9i'
+      '/': 'zdpuAv2aHeZJ7Y3XB4NrrGPSKMfTLcB3Dj8VL7FUvYDVgj3jT'
     }
     t.deepEquals(stateRoot, expectedSR)
   })

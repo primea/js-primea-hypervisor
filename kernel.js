@@ -1,5 +1,4 @@
 const Message = require('primea-message')
-const BN = require('bn.js')
 const PortManager = require('./portManager.js')
 const DeleteMessage = require('./deleteMessage')
 
@@ -144,17 +143,12 @@ module.exports = class Kernel {
   }
 
   generateNextId () {
-    let nonce = this.state.nonce
-
     const id = {
-      nonce: nonce,
+      nonce: this.state.nonce,
       parent: this.id
     }
 
-    // incerment the nonce
-    nonce = new BN(nonce)
-    nonce.iaddn(1)
-    this.state.nonce = nonce.toArray()
+    this.state.nonce++
     return id
   }
 

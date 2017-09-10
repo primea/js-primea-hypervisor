@@ -1148,4 +1148,39 @@ node.on('ready', () => {
     }
     t.deepEquals(stateRoot, expectedSR)
   })
+
+  tape('creation service - port copy', async t => {
+    t.plan(2)
+    class TestVMContainer extends BaseContainer {
+      onCreation (m) {
+        const creationPort = m.ports[0]
+
+        const message = this.kernel.createMessage()
+        const responePort = this.kernel.getResponsePort(message)
+
+        return Promise.all([
+          this.kernel.ports.bind('response', responePort),
+          this.kernel.send(creationPort, message)
+        ])
+      }
+      onMessage (m) {
+        t.equal(m.fromName, 'response')
+        t.equal(m.ports.length, 1)
+      }
+    }
+
+    const hypervisor = new Hypervisor(node.dag)
+    hypervisor.registerContainer(TestVMContainer)
+
+    const port = hypervisor.creationService.getPort()
+
+    const root = await hypervisor.send(port, new Message({
+      data: {
+        type: TestVMContainer.typeId
+      },
+      ports: [port]
+    }))
+
+    hypervisor.pin(root)
+  })
 })

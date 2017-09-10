@@ -1,4 +1,6 @@
 const chunk = require('chunk')
+const Message = require('primea-message')
+const DeleteMessage = require('./deleteMessage.js')
 
 const MAX_DATA_BYTES = 65533
 
@@ -16,6 +18,10 @@ module.exports = class CreationService {
         id = creator.generateNextId()
       }
       return this.createInstance(message, id)
+    } else if (message.responsePort && !(message instanceof DeleteMessage)) {
+      this.send(message.responsePort, new Message({
+        ports: [this.getPort()]
+      }))
     }
   }
 
@@ -26,13 +32,13 @@ module.exports = class CreationService {
     }
   }
 
-  // send (port, message) {
-  //   message._hops++
-  //   message._fromTicks = this.ticks
-  //   message.fromId = this.id
+  send (port, message) {
+    message._hops++
+    message._fromTicks = this.ticks
+    message.fromId = this.id
 
-  //   return this.hypervisor.send(port, message)
-  // }
+    return this.hypervisor.send(port, message)
+  }
 
   /**
    * creates an new container instances and save it in the state

@@ -1,24 +1,5 @@
 const DeleteMessage = require('./deleteMessage')
 
-// decides which message to go first
-function messageArbiter (portA, portB) {
-  const a = portA.messages[0]
-  const b = portB.messages[0]
-
-  if (!a) {
-    return portB
-  } else if (!b) {
-    return portA
-  }
-
-  // order by number of ticks if messages have different number of ticks
-  if (a._fromTicks !== b._fromTicks) {
-    return a._fromTicks < b._fromTicks ? portA : portB
-  } else {
-    // insertion order
-    return portA
-  }
-}
 
 module.exports = class PortManager {
   /**
@@ -32,6 +13,8 @@ module.exports = class PortManager {
   constructor (opts) {
     Object.assign(this, opts)
     this.ports = this.state.ports
+
+    this._waitingPorts = {}
     // tracks unbounded ports that we have
     this._unboundPorts = new Set()
     this._saturationPromise = new Promise((resolve, reject) => {
@@ -143,7 +126,7 @@ module.exports = class PortManager {
     const numOfMsg = port.messages.push(message)
 
     if (numOfMsg === 1) {
-      if (this._isSaturated(this.ports)) {
+      if (isSaturated(this._waitingPorts)) {
         this._saturationResolve()
         this._saturationPromise = new Promise((resolve, reject) => {
           this._saturationResolve = resolve
@@ -196,6 +179,8 @@ module.exports = class PortManager {
     let oldestTime = this.hypervisor.scheduler.leastNumberOfTicks()
     let saturated = false
 
+    this._waitingPorts = ports
+
     const findOldestMessage = async () => {
       while (// end if we have a message older then slowest containers
         !((message && oldestTime >= message._fromTicks) ||
@@ -219,7 +204,7 @@ module.exports = class PortManager {
     }
 
     await Promise.race([
-      this._whenSaturated().then(() => {
+      this._whenSaturated(ports).then(() => {
         message = this._peekNextMessage(ports)
         saturated = true
       }),
@@ -229,15 +214,9 @@ module.exports = class PortManager {
     return message
   }
 
-  // tests wether or not all the ports have a message
-  _isSaturated (ports) {
-    const values = Object.values(ports)
-    return values.length === 0 ? true : values.every(port => port.messages.length !== 0)
-  }
-
   // returns a promise that resolve when the ports are saturated
-  _whenSaturated () {
-    if (this._isSaturated(this.ports)) {
+  _whenSaturated (ports) {
+    if (isSaturated(ports)) {
       return Promise.resolve()
     } else {
       return this._saturationPromise
@@ -265,5 +244,31 @@ module.exports = class PortManager {
         throw new Error('message must not contain bound ports')
       }
     }
+  }
+}
+
+// tests wether or not all the ports have a message
+function isSaturated (ports) {
+  const values = Object.values(ports)
+  return values.length ? values.every(port => port.messages.length) : true
+}
+
+// decides which message to go first
+function messageArbiter (portA, portB) {
+  const a = portA.messages[0]
+  const b = portB.messages[0]
+
+  if (!a) {
+    return portB
+  } else if (!b) {
+    return portA
+  }
+
+  // order by number of ticks if messages have different number of ticks
+  if (a._fromTicks !== b._fromTicks) {
+    return a._fromTicks < b._fromTicks ? portA : portB
+  } else {
+    // insertion order
+    return portA
   }
 }

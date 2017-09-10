@@ -1,6 +1,5 @@
 const DeleteMessage = require('./deleteMessage')
 
-
 module.exports = class PortManager {
   /**
    * The port manager manages the the ports. This inculdes creation, deletion

@@ -25,7 +25,7 @@ node.on('ready', () => {
   tape('basic', async t => {
     t.plan(3)
     let message
-    const expectedState =  { '/': 'zdpuAyCWhqq3v5DWhJCJPBgFkFbMxmD4do98TusonJmw7TyEG' }
+    const expectedState = { '/': 'zdpuAyCWhqq3v5DWhJCJPBgFkFbMxmD4do98TusonJmw7TyEG' }
 
     class testVMContainer extends BaseContainer {
       onMessage (m) {

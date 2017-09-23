@@ -25,7 +25,9 @@ node.on('ready', () => {
   tape('basic', async t => {
     t.plan(3)
     let message
-    const expectedState = { '/': 'zdpuAyCWhqq3v5DWhJCJPBgFkFbMxmD4do98TusonJmw7TyEG' }
+    const expectedState = {
+      '/': 'zdpuAyCWhqq3v5DWhJCJPBgFkFbMxmD4do98TusonJmw7TyEG'
+    }
 
     class testVMContainer extends BaseContainer {
       onMessage (m) {
@@ -33,46 +35,43 @@ node.on('ready', () => {
       }
     }
 
-    try {
-      const hypervisor = new Hypervisor(node.dag)
-      hypervisor.registerContainer(testVMContainer)
+    const hypervisor = new Hypervisor(node.dag)
+    hypervisor.registerContainer(testVMContainer)
 
-      const port = hypervisor.creationService.getPort()
+    const port = hypervisor.creationService.getPort()
 
-      let rootContainer = await hypervisor.send(port, new Message({
-        data: {
-          type: testVMContainer.typeId
-        }
-      }))
+    let rootContainer = await hypervisor.send(port, new Message({
+      data: {
+        type: testVMContainer.typeId
+      }
+    }))
 
-      rootContainer = await hypervisor.getInstance(rootContainer.id)
+    rootContainer = await hypervisor.getInstance(rootContainer.id)
 
-      hypervisor.pin(rootContainer)
+    hypervisor.pin(rootContainer)
 
-      const [portRef1, portRef2] = rootContainer.ports.createChannel()
-      const initMessage = rootContainer.createMessage({
-        data: {
-          code: Buffer.from('test code'),
-          type: testVMContainer.typeId
-        },
-        ports: [portRef2]
-      })
+    const [portRef1, portRef2] = rootContainer.ports.createChannel()
+    const initMessage = rootContainer.createMessage({
+      data: {
+        code: Buffer.from('test code'),
+        type: testVMContainer.typeId
+      },
+      ports: [portRef2]
+    })
 
-      await rootContainer.send(port, initMessage)
-      await rootContainer.ports.bind('first', portRef1)
+    message = rootContainer.createMessage()
+    await Promise.all([
+      rootContainer.send(port, initMessage),
+      rootContainer.ports.bind('first', portRef1),
+      rootContainer.send(portRef1, message)
+    ])
+    rootContainer.shutdown()
 
-      message = rootContainer.createMessage()
-      await rootContainer.send(portRef1, message)
-      rootContainer.shutdown()
+    // console.log(JSON.stringify(hypervisor.state, null, 2))
+    const stateRoot = await hypervisor.createStateRoot(Infinity)
+    t.deepEquals(stateRoot, expectedState, 'expected root!')
 
-      // console.log(JSON.stringify(hypervisor.state, null, 2))
-      const stateRoot = await hypervisor.createStateRoot(Infinity)
-      t.deepEquals(stateRoot, expectedState, 'expected root!')
-
-      t.equals(hypervisor.scheduler.leastNumberOfTicks(), 0)
-    } catch (e) {
-      console.log(e)
-    }
+    t.equals(hypervisor.scheduler.leastNumberOfTicks(), 0)
   })
 
   tape('basic - do not store containers with no ports bound', async t => {

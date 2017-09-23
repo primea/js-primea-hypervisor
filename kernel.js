@@ -48,7 +48,6 @@ module.exports = class Kernel {
     // this ensure we only every have one loop running at a time
     if (this.containerState !== 'running') {
       this.containerState = 'running'
-
       while (1) {
         const message = await this.ports.getNextMessage()
         if (!message) break

@@ -1,4 +1,5 @@
 const binarySearchInsert = require('binary-search-insert')
+const SortedMap = require('sortedmap')
 const LockMap = require('lockmap')
 
 module.exports = class Scheduler {
@@ -10,8 +11,12 @@ module.exports = class Scheduler {
     this._waits = []
     this._running = new Set()
     this._loadingInstances = new LockMap()
-    this.instances = new Map()
+    this.instances = new SortedMap(comparator)
     this.systemServices = new Map()
+
+    function comparator (a, b) {
+      return a.ticks - b.ticks
+    }
   }
 
   /**
@@ -35,15 +40,8 @@ module.exports = class Scheduler {
   }
 
   _update (instance) {
-    // sorts the container instance map by tick count
     this.instances.delete(instance.id)
-    const instanceArray = [...this.instances]
-    binarySearchInsert(instanceArray, comparator, [instance.id, instance])
-    this.instances = new Map(instanceArray)
-
-    function comparator (a, b) {
-      return a[1].ticks - b[1].ticks
-    }
+    this.instances.set(instance.id, instance)
   }
 
   /**

@@ -41,7 +41,7 @@
   },
   "devDependencies": {
     "primea-abstract-container": "0.0.4",
-    "coveralls": "^2.13.1",
+    "coveralls": "^3.0.0",
     "documentation": "^5.0.1",
     "ipfs": "^0.25.1",
     "istanbul": "^1.1.0-alpha.1",

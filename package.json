@@ -32,7 +32,7 @@
   "dependencies": {
     "binary-search-insert": "^1.0.3",
     "chunk": "0.0.2",
-    "ipld-graph-builder": "1.3.1",
+    "ipld-graph-builder": "1.3.4",
     "lockmap": "0.0.0",
     "merkle-radix-tree": "0.0.4",
     "primea-message": "0.0.2",

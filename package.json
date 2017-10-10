@@ -33,7 +33,6 @@
     "binary-search-insert": "^1.0.3",
     "dfinity-radix-tree": "0.0.2",
     "lockmap": "0.0.0",
-    "merkle-radix-tree": "0.0.4",
     "primea-message": "0.0.2",
     "sortedmap": "0.0.1",
     "typedarray-addition": "0.0.1"

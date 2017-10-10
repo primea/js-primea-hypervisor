@@ -129,102 +129,106 @@ tape('basic - do not store containers with no ports bound', async t => {
 tape('one child contract', async t => {
   t.plan(4)
 
-  const tree = new RadixTree({
-    db: db
-  })
+  try {
+    const tree = new RadixTree({
+      db: db
+    })
 
-  let message
-  const expectedState = {
-    '/': Buffer.from('c91821c303cd07adde06c0d46c40aafe4542dea1', 'hex')
-  }
-
-  let hasResolved = false
-
-  class testVMContainer2 extends BaseContainer {
-    onMessage (m) {
-      t.true(m === message, 'should recive a message')
-      return new Promise((resolve, reject) => {
-        setTimeout(() => {
-          this.kernel.incrementTicks(1)
-          hasResolved = true
-          resolve()
-        }, 200)
-      })
+    let message
+    const expectedState = {
+      '/': Buffer.from('c91821c303cd07adde06c0d46c40aafe4542dea1', 'hex')
     }
 
-    static get typeId () {
-      return 99
+    let hasResolved = false
+
+    class testVMContainer2 extends BaseContainer {
+      onMessage (m) {
+        t.true(m === message, 'should recive a message')
+        return new Promise((resolve, reject) => {
+          setTimeout(() => {
+            this.kernel.incrementTicks(1)
+            hasResolved = true
+            resolve()
+          }, 200)
+        })
+      }
+
+      static get typeId () {
+        return 99
+      }
     }
-  }
 
-  class testVMContainer extends BaseContainer {
-    async onMessage (m) {
-      const [portRef1, portRef2] = this.kernel.ports.createChannel()
-      const port = this.kernel.hypervisor.creationService.getPort()
+    class testVMContainer extends BaseContainer {
+      async onMessage (m) {
+        const [portRef1, portRef2] = this.kernel.ports.createChannel()
+        const port = this.kernel.hypervisor.creationService.getPort()
 
-      await Promise.all([
-        this.kernel.send(port, this.kernel.createMessage({
-          data: {
-            type: testVMContainer2.typeId
-          },
-          ports: [portRef2]
-        })),
-        this.kernel.send(portRef1, m)
-      ])
+        await Promise.all([
+          this.kernel.send(port, this.kernel.createMessage({
+            data: {
+              type: testVMContainer2.typeId
+            },
+            ports: [portRef2]
+          })),
+          this.kernel.send(portRef1, m)
+        ])
 
-      this.kernel.incrementTicks(1)
-      return this.kernel.ports.bind('child', portRef1)
+        this.kernel.incrementTicks(1)
+        return this.kernel.ports.bind('child', portRef1)
+      }
     }
-  }
 
-  const hypervisor = new Hypervisor(tree)
-  hypervisor.registerContainer(testVMContainer)
-  hypervisor.registerContainer(testVMContainer2)
+    const hypervisor = new Hypervisor(tree)
+    hypervisor.registerContainer(testVMContainer)
+    hypervisor.registerContainer(testVMContainer2)
 
-  let creationPort = hypervisor.creationService.getPort()
-  let root = await hypervisor.send(creationPort, new Message({
-    data: {
-      type: testVMContainer.typeId
-    }
-  }))
-
-  hypervisor.pin(root)
-
-  const rootId = root.id
-  root = await hypervisor.getInstance(rootId)
-  const [portRef1, portRef2] = root.ports.createChannel()
-
-  message = root.createMessage()
-  await Promise.all([
-    root.send(creationPort, root.createMessage({
+    let creationPort = hypervisor.creationService.getPort()
+    let root = await hypervisor.send(creationPort, new Message({
       data: {
         type: testVMContainer.typeId
-      },
-      ports: [portRef2]
-    })),
-    root.ports.bind('first', portRef1),
-    root.send(portRef1, message)
-  ])
+      }
+    }))
 
-  root.shutdown()
+    hypervisor.pin(root)
 
-  const stateRoot = await hypervisor.createStateRoot(Infinity)
-  t.true(hasResolved, 'should resolve before generating the state root')
-  t.deepEquals(stateRoot, expectedState, 'expected state')
+    const rootId = root.id
+    root = await hypervisor.getInstance(rootId)
+    const [portRef1, portRef2] = root.ports.createChannel()
 
-  // test reviving the state
-  class testVMContainer3 extends BaseContainer {
-    onMessage (m) {
-      const port = this.kernel.ports.get('child')
-      this.kernel.send(port, m)
-      this.kernel.incrementTicks(1)
+    message = root.createMessage()
+    await Promise.all([
+      root.send(creationPort, root.createMessage({
+        data: {
+          type: testVMContainer.typeId
+        },
+        ports: [portRef2]
+      })),
+      root.ports.bind('first', portRef1),
+      root.send(portRef1, message)
+    ])
+
+    root.shutdown()
+
+    const stateRoot = await hypervisor.createStateRoot(Infinity)
+    t.true(hasResolved, 'should resolve before generating the state root')
+    t.deepEquals(stateRoot, expectedState, 'expected state')
+
+    // test reviving the state
+    class testVMContainer3 extends BaseContainer {
+      onMessage (m) {
+        const port = this.kernel.ports.get('child')
+        this.kernel.send(port, m)
+        this.kernel.incrementTicks(1)
+      }
     }
-  }
 
-  hypervisor.registerContainer(testVMContainer3)
-  root = await hypervisor.getInstance(rootId)
-  const port = root.ports.get('first')
-  root.send(port, message)
+    hypervisor.registerContainer(testVMContainer3)
+    root = await hypervisor.getInstance(rootId)
+    const port = root.ports.get('first')
+    root.send(port, message)
+  } catch (e) {
+    console.log(e)
+  }
 })
 
 tape('traps', async t => {

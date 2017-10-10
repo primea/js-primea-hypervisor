@@ -16,9 +16,9 @@ matrix:
   fast_finish: true
   include:
     - os: linux
-      node_js: "7"
+      node_js: "8"
       env: TEST_SUITE=coveralls
     - os: linux
-      node_js: "7"
+      node_js: "8"
       env: TEST_SUITE=lint
 script: npm run $TEST_SUITE

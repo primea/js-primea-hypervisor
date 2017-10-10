@@ -239,11 +239,11 @@ tape('traps', async t => {
       const [portRef3] = this.kernel.ports.createChannel()
       const [portRef5] = this.kernel.ports.createChannel()
 
-      await Promise.all(
+      await Promise.all([
         this.kernel.ports.bind('one', portRef1),
         this.kernel.ports.bind('two', portRef3),
         this.kernel.ports.bind('three', portRef5)
-      )
+      ])
 
       throw new Error('it is a trap!!!')
     }
@@ -310,12 +310,9 @@ tape('recieving older messages', async t => {
       } else if (runs === 1) {
         runs++
         t.equals(m.data, 'first', 'should recive the first message')
-      } else if (runs === 2) {
+      } else {
         runs++
         t.equals(m.data, 'second', 'should recive the second message')
-      } else if (runs === 3) {
-        runs++
-        // t.equals(m.data, 'third', 'should recived the second message')
       }
     }
     static get typeId () {
@@ -424,7 +421,7 @@ tape('saturation', async t => {
       } else if (runs === 2) {
         runs++
         t.equals(m.data, 'second', 'should recive the second message')
-      } else if (runs === 3) {
+      } else {
         runs++
         t.equals(m.data, 'third', 'should recived the third message')
       }
@@ -796,17 +793,6 @@ tape('should remove subgraphs', async t => {
   }
 
   class Sub extends BaseContainer {
-    async onInitailize (message) {
-      await this.kernel.ports.bind('root', message.ports[0])
-      const [portRef1, portRef2] = this.kernel.ports.createChannel()
-      await this.kernel.ports.bind('child', portRef1)
-      await this.kernel.send(creationPort, this.kernel.createMessage({
-        data: {
-          type: Root.typeId
-        },
-        ports: [portRef2]
-      }))
-    }
     static get typeId () {
       return 299
     }
@@ -893,7 +879,7 @@ tape('should not remove connected nodes', async t => {
           ports: [ports[1]]
         }))
         return this.kernel.ports.bind('channel', ports[0])
-      } else if (message.data === 'bindPort') {
+      } else {
         return this.kernel.ports.bind('channel', message.ports[0])
       }
     }
@@ -986,7 +972,7 @@ tape('should remove multiple subgraphs', async t => {
           ports: [ports[1]]
         }))
         return this.kernel.ports.bind('channel', ports[0])
-      } else if (message.data === 'bindPort') {
+      } else {
         return this.kernel.ports.bind('channel', message.ports[0])
       }
     }
@@ -995,41 +981,37 @@ tape('should remove multiple subgraphs', async t => {
     }
   }
 
-  try {
-    hypervisor.registerContainer(Root)
-    hypervisor.registerContainer(Sub)
+  hypervisor.registerContainer(Root)
+  hypervisor.registerContainer(Sub)
 
-    let root = await hypervisor.send(creationPort, new Message({
+  let root = await hypervisor.send(creationPort, new Message({
+    data: {
+      type: Root.typeId
+    }
+  }))
+
+  root = await hypervisor.getInstance(root.id)
+  hypervisor.pin(root)
+
+  const [portRef1, portRef2] = root.ports.createChannel()
+  await Promise.all([
+    root.ports.bind('first', portRef1),
+    root.send(creationPort, root.createMessage({
       data: {
         type: Root.typeId
-      }
-    }))
+      },
+      ports: [portRef2]
+    })),
+    root.send(portRef1, root.createMessage())
+  ])
 
-    root = await hypervisor.getInstance(root.id)
-    hypervisor.pin(root)
+  root.shutdown()
 
-    const [portRef1, portRef2] = root.ports.createChannel()
-    await Promise.all([
-      root.ports.bind('first', portRef1),
-      root.send(creationPort, root.createMessage({
-        data: {
-          type: Root.typeId
-        },
-        ports: [portRef2]
-      })),
-      root.send(portRef1, root.createMessage())
-    ])
+  const sr = await hypervisor.createStateRoot()
 
-    root.shutdown()
+  t.deepEquals(sr, expectedSr, 'should produce the corret state root')
 
-    const sr = await hypervisor.createStateRoot()
-
-    t.deepEquals(sr, expectedSr, 'should produce the corret state root')
-
-    t.end()
-  } catch (e) {
-    console.log(e)
-  }
+  t.end()
 })
 
 tape('response ports', async t => {
@@ -1094,9 +1076,8 @@ tape('start up', async t => {
   })
 
   class testVMContainer extends BaseContainer {
-    onMessage () {}
     onStartup () {
-      t.true(true, 'should start up')
+      t.pass('should start up')
     }
   }
 
@@ -1117,9 +1098,7 @@ tape('large code size', async t => {
     db: db
   })
   const content = Buffer.from(new ArrayBuffer(1e6))
-  class testVMContainer extends BaseContainer {
-    onMessage () {}
-  }
+  class testVMContainer extends BaseContainer {}
 
   const hypervisor = new Hypervisor(tree)
   const creationPort = hypervisor.creationService.getPort()

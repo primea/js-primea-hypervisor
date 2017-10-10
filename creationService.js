@@ -1,8 +1,5 @@
-const chunk = require('chunk')
 const Message = require('primea-message')
 const DeleteMessage = require('./deleteMessage.js')
-
-const MAX_DATA_BYTES = 65533
 
 module.exports = class CreationService {
   constructor (opts) {
@@ -45,9 +42,10 @@ module.exports = class CreationService {
    * @returns {Promise}
    */
   async createInstance (message, id = {nonce: 0, parent: null}) {
-    const idHash = await this._getHashFromObj(id)
+    const encoded = encodedID(id)
+    const idHash = await this._getHashFromObj(encoded)
     const state = {
-      nonce: [0],
+      nonce: 0,
       ports: {},
       type: message.data.type
     }
@@ -62,13 +60,6 @@ module.exports = class CreationService {
     // send the intialization message
     await instance.create(message)
 
-    if (state.code && state.code.length > MAX_DATA_BYTES) {
-      state.code = chunk(state.code, MAX_DATA_BYTES).map(chk => {
-        return {
-          '/': chk
-        }
-      })
-    }
     // save the container in the state
     await this.hypervisor.tree.set(idHash, state)
 
@@ -85,6 +76,15 @@ module.exports = class CreationService {
 
   // get a hash from a POJO
   _getHashFromObj (obj) {
-    return this.hypervisor.graph.flush(obj).then(obj => obj['/'])
+    return this.hypervisor.tree.constructor.getMerkleLink(obj)
+  }
+}
+
+function encodedID (id) {
+  const nonce = Buffer.from([id.nonce])
+  if (id.parent) {
+    return Buffer.concat([nonce, id.parent])
+  } else {
+    return nonce
   }
 }

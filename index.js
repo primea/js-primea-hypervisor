@@ -1,5 +1,3 @@
-const Tree = require('merkle-radix-tree')
-const Graph = require('ipld-graph-builder')
 const Kernel = require('./kernel.js')
 const Scheduler = require('./scheduler.js')
 const DFSchecker = require('./dfsChecker.js')
@@ -14,14 +12,9 @@ module.exports = class Hypervisor {
    * @param {Graph} dag an instance of [ipfs.dag](https://github.com/ipfs/interface-ipfs-core/tree/master/API/dag#dag-api)
    * @param {object} state - the starting state
    */
-  constructor (dag, state = {'/': Tree.emptyTreeState}) {
-    this.graph = new Graph(dag)
-    this.tree = new Tree({
-      graph: this.graph,
-      root: state
-    })
+  constructor (tree) {
+    this.tree = tree
     this.scheduler = new Scheduler()
-    this.state = state
     this._containerTypes = {}
     this._nodesToCheck = new Set()
 
@@ -54,9 +47,9 @@ module.exports = class Hypervisor {
       if (instance) {
         containerState = instance.state
       } else {
-        containerState = await this.tree.get(port.destId)
+        containerState = await this.tree.get(port.destId, true)
       }
-      return this.graph.get(containerState, `ports/${port.destName}`)
+      return this.tree.graph.get(containerState, `ports/${port.destName}`)
     }
   }
 
@@ -74,25 +67,15 @@ module.exports = class Hypervisor {
   // loads an instance of a container from the state
   async _loadInstance (id, state) {
     if (!state) {
-      state = await this.tree.get(id)
+      state = await this.tree.get(id, true)
     }
     const container = this._containerTypes[state.type]
-    let code
-
-    // checks if the code stored in the state is an array and that the elements
-    // are merkle link
-    if (state.code && state.code[0]['/']) {
-      await this.graph.tree(state.code, 1)
-      code = state.code.map(a => a['/']).reduce((a, b) => a + b)
-    } else {
-      code = state.code
-    }
 
     // create a new kernel instance
     const kernel = new Kernel({
       hypervisor: this,
       state: state,
-      code: code,
+      code: state.code,
       container: container,
       id: id
     })
@@ -149,7 +132,7 @@ module.exports = class Hypervisor {
     for (const id of unlinked) {
       await this.tree.delete(id)
     }
-    return this.graph.flush(this.state)
+    return this.tree.flush()
   }
 
   /**

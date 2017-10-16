@@ -68,8 +68,6 @@ tape('basic', async t => {
   ])
   rootContainer.shutdown()
 
-  // await hypervisor.graph.tree(stateRoot, Infinity, true)
-  // console.log(JSON.stringify(hypervisor.tree.root, null, 2))
   const stateRoot = await hypervisor.createStateRoot(Infinity)
   t.deepEquals(stateRoot, expectedState, 'expected root!')
 
@@ -266,7 +264,7 @@ tape('traps', async t => {
 
   t.deepEquals(stateRoot, {
     '/': Buffer.from('308b10121e2c46102e2d9701cfe11032786ef955', 'hex')
-  }, ')should revert the state')
+  }, 'should revert the state')
 })
 
 tape('recieving older messages', async t => {

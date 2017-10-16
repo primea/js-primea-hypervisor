@@ -4,7 +4,7 @@ const LockMap = require('lockmap')
 
 module.exports = class Scheduler {
   /**
-   * The Sceduler manages the run cycle of the containes and figures out which
+   * The Scheduler manages the run cycle of the containers and figures out which
    * order they should run in
    */
   constructor () {

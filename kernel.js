@@ -95,7 +95,6 @@ module.exports = class Kernel {
       try {
         result = await this.container[method](message)
       } catch (e) {
-        console.log(e)
         result = {
           exception: true,
           exceptionError: e

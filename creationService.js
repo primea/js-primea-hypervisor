@@ -8,7 +8,7 @@ module.exports = class CreationService {
   }
 
   queue (port, message) {
-    if (message.data.type) {
+    if (message.data[0] === 0x00) {
       let id
       if (message.fromId) {
         const creator = this.scheduler.getInstance(message.fromId)
@@ -47,11 +47,12 @@ module.exports = class CreationService {
     const state = {
       nonce: 0,
       ports: {},
-      type: message.data.type
+      type: message.data[1]
     }
 
-    if (message.data.code && message.data.code.length) {
-      state.code = message.data.code
+    const code = message.data.slice(2)
+    if (code.length) {
+      state.code = code
     }
 
     // create the container instance

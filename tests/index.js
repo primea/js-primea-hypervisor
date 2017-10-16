@@ -7,6 +7,17 @@ const level = require('level')
 const RadixTree = require('dfinity-radix-tree')
 const db = level('./testdb')
 
+class CreationMessage extends Message {
+  constructor (params) {
+    const buf = [Buffer.from([0x0]), Buffer.from([params.data.type])]
+    if (params.data.code) {
+      buf.push(params.data.code)
+    }
+    params.data = Buffer.concat(buf)
+    super(params)
+  }
+}
+
 class BaseContainer extends AbstractContainer {
   onCreation (message) {
     const port = message.ports[0]
@@ -41,7 +52,7 @@ tape('basic', async t => {
 
   const port = hypervisor.creationService.getPort()
 
-  let rootContainer = await hypervisor.send(port, new Message({
+  let rootContainer = await hypervisor.send(port, new CreationMessage({
     data: {
       type: testVMContainer.typeId
     }
@@ -52,7 +63,7 @@ tape('basic', async t => {
   hypervisor.pin(rootContainer)
 
   const [portRef1, portRef2] = rootContainer.ports.createChannel()
-  const initMessage = rootContainer.createMessage({
+  const initMessage = new CreationMessage({
     data: {
       code: Buffer.from('test code'),
       type: testVMContainer.typeId
@@ -93,7 +104,7 @@ tape('basic - do not store containers with no ports bound', async t => {
   hypervisor.registerContainer(testVMContainer)
 
   const creationPort = hypervisor.creationService.getPort()
-  let root = await hypervisor.send(creationPort, new Message({
+  let root = await hypervisor.send(creationPort, new CreationMessage({
     data: {
       type: testVMContainer.typeId
     }
@@ -107,7 +118,7 @@ tape('basic - do not store containers with no ports bound', async t => {
 
   await Promise.all([
     root.ports.bind('one', portRef1),
-    root.send(creationPort, root.createMessage({
+    root.send(creationPort, new CreationMessage({
       data: {
         type: testVMContainer.typeId
       },
@@ -161,7 +172,7 @@ tape('one child contract', async t => {
       const port = this.kernel.hypervisor.creationService.getPort()
 
       await Promise.all([
-        this.kernel.send(port, this.kernel.createMessage({
+        this.kernel.send(port, new CreationMessage({
           data: {
             type: testVMContainer2.typeId
           },
@@ -180,7 +191,7 @@ tape('one child contract', async t => {
   hypervisor.registerContainer(testVMContainer2)
 
   let creationPort = hypervisor.creationService.getPort()
-  let root = await hypervisor.send(creationPort, new Message({
+  let root = await hypervisor.send(creationPort, new CreationMessage({
     data: {
       type: testVMContainer.typeId
     }
@@ -194,7 +205,7 @@ tape('one child contract', async t => {
 
   message = root.createMessage()
   await Promise.all([
-    root.send(creationPort, root.createMessage({
+    root.send(creationPort, new CreationMessage({
       data: {
         type: testVMContainer.typeId
       },
@@ -251,7 +262,7 @@ tape('traps', async t => {
 
   hypervisor.registerContainer(Root)
   const creationPort = hypervisor.creationService.getPort()
-  const root = await hypervisor.send(creationPort, new Message({
+  const root = await hypervisor.send(creationPort, new CreationMessage({
     data: {
       type: Root.typeId
     }
@@ -284,13 +295,13 @@ tape('recieving older messages', async t => {
         const [portRef1, portRef2] = this.kernel.ports.createChannel()
         const [portRef3, portRef4] = this.kernel.ports.createChannel()
 
-        const message1 = this.kernel.createMessage({
+        const message1 = new CreationMessage({
           data: {
             type: First.typeId
           },
           ports: [portRef2]
         })
-        const message2 = this.kernel.createMessage({
+        const message2 = new CreationMessage({
           data: {
             type: Waiter.typeId
           },
@@ -314,7 +325,7 @@ tape('recieving older messages', async t => {
       }
     }
     static get typeId () {
-      return 299
+      return 211
     }
   }
 
@@ -346,7 +357,7 @@ tape('recieving older messages', async t => {
   hypervisor.registerContainer(First)
   hypervisor.registerContainer(Waiter)
 
-  let root = await hypervisor.send(creationPort, new Message({
+  let root = await hypervisor.send(creationPort, new CreationMessage({
     data: {
       type: Root.typeId
     }
@@ -361,7 +372,7 @@ tape('recieving older messages', async t => {
   await Promise.all([
     root.send(portRef1, message),
     root.ports.bind('first', portRef1),
-    root.send(creationPort, root.createMessage({
+    root.send(creationPort, new CreationMessage({
       data: {
         type: Root.typeId
       },
@@ -390,14 +401,14 @@ tape('saturation', async t => {
         const [portRef1, portRef2] = this.kernel.ports.createChannel()
         const [portRef3, portRef4] = this.kernel.ports.createChannel()
 
-        const message1 = this.kernel.createMessage({
+        const message1 = new CreationMessage({
           data: {
             type: First.typeId
           },
           ports: [portRef2]
         })
 
-        const message2 = this.kernel.createMessage({
+        const message2 = new CreationMessage({
           data: {
             type: Second.typeId
           },
@@ -425,7 +436,7 @@ tape('saturation', async t => {
       }
     }
     static get typeId () {
-      return 299
+      return 112
     }
   }
 
@@ -470,7 +481,7 @@ tape('saturation', async t => {
   hypervisor.registerContainer(Second)
   hypervisor.registerContainer(Waiter)
 
-  let root = await hypervisor.send(creationPort, new Message({
+  let root = await hypervisor.send(creationPort, new CreationMessage({
     data: {
       type: Root.typeId
     }
@@ -486,14 +497,14 @@ tape('saturation', async t => {
   await Promise.all([
     root.send(portRef1, message),
     root.ports.bind('first', portRef1),
-    root.send(creationPort, root.createMessage({
+    root.send(creationPort, new CreationMessage({
       data: {
         type: Root.typeId
       },
       ports: [portRef2]
     })),
     root.ports.bind('sencond', portRef3),
-    root.send(creationPort, root.createMessage({
+    root.send(creationPort, new CreationMessage({
       data: {
         type: Waiter.typeId
       },
@@ -525,7 +536,7 @@ tape('send to the same container at the same time', async t => {
       let one = this.kernel.ports.get('one')
       if (!one) {
         const [portRef1, portRef2] = this.kernel.ports.createChannel()
-        const message1 = this.kernel.createMessage({
+        const message1 = new CreationMessage({
           data: {
             type: First.typeId
           },
@@ -541,7 +552,7 @@ tape('send to the same container at the same time', async t => {
       }
     }
     static get typeId () {
-      return 299
+      return 111
     }
   }
 
@@ -559,7 +570,7 @@ tape('send to the same container at the same time', async t => {
   hypervisor.registerContainer(Root)
   hypervisor.registerContainer(First)
 
-  let root = await hypervisor.send(creationPort, new Message({
+  let root = await hypervisor.send(creationPort, new CreationMessage({
     data: {
       type: Root.typeId
     }
@@ -571,7 +582,7 @@ tape('send to the same container at the same time', async t => {
   const [portRef1, portRef2] = root.ports.createChannel()
   await Promise.all([
     root.ports.bind('first', portRef1),
-    root.send(creationPort, root.createMessage({
+    root.send(creationPort, new CreationMessage({
       data: {
         type: Root.typeId
       },
@@ -599,7 +610,7 @@ tape('checking ports', async t => {
   const creationPort = hypervisor.creationService.getPort()
   hypervisor.registerContainer(BaseContainer)
 
-  let root = await hypervisor.send(creationPort, new Message({
+  let root = await hypervisor.send(creationPort, new CreationMessage({
     data: {
       type: BaseContainer.typeId
     }
@@ -609,7 +620,7 @@ tape('checking ports', async t => {
   root = await hypervisor.getInstance(root.id)
 
   const [portRef1, portRef2] = root.ports.createChannel()
-  root.send(creationPort, root.createMessage({
+  root.send(creationPort, new CreationMessage({
     data: {
       type: BaseContainer.typeId
     },
@@ -659,7 +670,7 @@ tape('port deletion', async t => {
   class Root extends BaseContainer {
     async onMessage (m) {
       const [portRef1, portRef2] = this.kernel.ports.createChannel()
-      const message1 = this.kernel.createMessage({
+      const message1 = new CreationMessage({
         data: {
           type: First.typeId
         },
@@ -681,14 +692,14 @@ tape('port deletion', async t => {
       return this.kernel.ports.delete('root')
     }
     static get typeId () {
-      return 299
+      return 111
     }
   }
 
   hypervisor.registerContainer(Root)
   hypervisor.registerContainer(First)
 
-  let root = await hypervisor.send(creationPort, new Message({
+  let root = await hypervisor.send(creationPort, new CreationMessage({
     data: {
       type: Root.typeId
     }
@@ -699,7 +710,7 @@ tape('port deletion', async t => {
 
   const [portRef1, portRef2] = root.ports.createChannel()
   await root.ports.bind('first', portRef1)
-  await root.send(creationPort, root.createMessage({
+  await root.send(creationPort, new CreationMessage({
     data: {
       type: Root.typeId
     },
@@ -730,7 +741,7 @@ tape('clear unbounded ports', async t => {
 
   class Root extends BaseContainer {
     onMessage (m) {
-      return this.kernel.send(creationPort, new Message({
+      return this.kernel.send(creationPort, new CreationMessage({
         data: {
           type: Root.typeId
         }
@@ -740,7 +751,7 @@ tape('clear unbounded ports', async t => {
 
   hypervisor.registerContainer(Root)
 
-  let root = await hypervisor.send(creationPort, new Message({
+  let root = await hypervisor.send(creationPort, new CreationMessage({
     data: {
       type: Root.typeId
     }
@@ -751,7 +762,7 @@ tape('clear unbounded ports', async t => {
 
   const [portRef1, portRef2] = root.ports.createChannel()
   await root.ports.bind('first', portRef1)
-  await root.send(creationPort, root.createMessage({
+  await root.send(creationPort, new CreationMessage({
     data: {
       type: Root.typeId
     },
@@ -781,7 +792,7 @@ tape('should remove subgraphs', async t => {
   class Root extends BaseContainer {
     onMessage (m) {
       const [, portRef2] = this.kernel.ports.createChannel()
-      return this.kernel.send(creationPort, this.kernel.createMessage({
+      return this.kernel.send(creationPort, new CreationMessage({
         data: {
           type: Sub.typeId
         },
@@ -799,7 +810,7 @@ tape('should remove subgraphs', async t => {
   hypervisor.registerContainer(Root)
   hypervisor.registerContainer(Sub)
 
-  let root = await hypervisor.send(creationPort, new Message({
+  let root = await hypervisor.send(creationPort, new CreationMessage({
     data: {
       type: Root.typeId
     }
@@ -811,7 +822,7 @@ tape('should remove subgraphs', async t => {
 
   const [portRef1, portRef2] = root.ports.createChannel()
   await root.ports.bind('first', portRef1)
-  await root.send(creationPort, root.createMessage({
+  await root.send(creationPort, new CreationMessage({
     data: {
       type: Root.typeId
     },
@@ -830,8 +841,9 @@ tape('should not remove connected nodes', async t => {
   const tree = new RadixTree({
     db: db
   })
+
   const expectedSr = {
-    '/': Buffer.from('76711d128d0be5fe86833af5ab8f48afeec3410e', 'hex')
+    '/': Buffer.from('9aeb0ce35c0ab845e7b273afe0329f826297124e', 'hex')
   }
 
   const hypervisor = new Hypervisor(tree)
@@ -845,7 +857,7 @@ tape('should not remove connected nodes', async t => {
         return this.kernel.ports.unbind('test1')
       } else {
         const [portRef1, portRef2] = this.kernel.ports.createChannel()
-        await this.kernel.send(creationPort, this.kernel.createMessage({
+        await this.kernel.send(creationPort, new CreationMessage({
           data: {
             type: Sub.typeId
           },
@@ -854,7 +866,7 @@ tape('should not remove connected nodes', async t => {
         await this.kernel.ports.bind('test1', portRef1)
 
         const [portRef3, portRef4] = this.kernel.ports.createChannel()
-        await this.kernel.send(creationPort, this.kernel.createMessage({
+        await this.kernel.send(creationPort, new CreationMessage({
           data: {
             type: Sub.typeId
           },
@@ -882,14 +894,14 @@ tape('should not remove connected nodes', async t => {
       }
     }
     static get typeId () {
-      return 299
+      return 111
     }
   }
 
   hypervisor.registerContainer(Root)
   hypervisor.registerContainer(Sub)
 
-  let root = await hypervisor.send(creationPort, new Message({
+  let root = await hypervisor.send(creationPort, new CreationMessage({
     data: {
       type: Root.typeId
     }
@@ -900,7 +912,7 @@ tape('should not remove connected nodes', async t => {
 
   const [portRef1, portRef2] = root.ports.createChannel()
   await root.ports.bind('first', portRef1)
-  await root.send(creationPort, root.createMessage({
+  await root.send(creationPort, new CreationMessage({
     data: {
       type: Root.typeId
     },
@@ -939,14 +951,14 @@ tape('should remove multiple subgraphs', async t => {
         const [portRef1, portRef2] = this.kernel.ports.createChannel()
         const [portRef3, portRef4] = this.kernel.ports.createChannel()
         return Promise.all([
-          this.kernel.send(creationPort, this.kernel.createMessage({
+          this.kernel.send(creationPort, new CreationMessage({
             data: {
               type: Sub.typeId
             },
             ports: [portRef2]
           })),
           this.kernel.ports.bind('test1', portRef1),
-          this.kernel.send(creationPort, this.kernel.createMessage({
+          this.kernel.send(creationPort, new CreationMessage({
             data: {
               type: Sub.typeId
             },
@@ -975,14 +987,14 @@ tape('should remove multiple subgraphs', async t => {
       }
     }
     static get typeId () {
-      return 299
+      return 111
     }
   }
 
   hypervisor.registerContainer(Root)
   hypervisor.registerContainer(Sub)
 
-  let root = await hypervisor.send(creationPort, new Message({
+  let root = await hypervisor.send(creationPort, new CreationMessage({
     data: {
       type: Root.typeId
     }
@@ -994,7 +1006,7 @@ tape('should remove multiple subgraphs', async t => {
   const [portRef1, portRef2] = root.ports.createChannel()
   await Promise.all([
     root.ports.bind('first', portRef1),
-    root.send(creationPort, root.createMessage({
+    root.send(creationPort, new CreationMessage({
       data: {
         type: Root.typeId
       },
@@ -1035,7 +1047,7 @@ tape('response ports', async t => {
 
   hypervisor.registerContainer(testVMContainer)
 
-  let rootContainer = await hypervisor.send(creationPort, new Message({
+  let rootContainer = await hypervisor.send(creationPort, new CreationMessage({
     data: {
       type: testVMContainer.typeId
     }
@@ -1046,7 +1058,7 @@ tape('response ports', async t => {
   hypervisor.pin(rootContainer)
 
   const [portRef1, portRef2] = rootContainer.ports.createChannel()
-  const initMessage = rootContainer.createMessage({
+  const initMessage = new CreationMessage({
     data: {
       type: testVMContainer.typeId
     },
@@ -1082,7 +1094,7 @@ tape('start up', async t => {
   const hypervisor = new Hypervisor(tree)
   const creationPort = hypervisor.creationService.getPort()
   hypervisor.registerContainer(testVMContainer)
-  const instance = await hypervisor.send(creationPort, new Message({
+  const instance = await hypervisor.send(creationPort, new CreationMessage({
     data: {
       type: testVMContainer.typeId
     }
@@ -1101,7 +1113,7 @@ tape('large code size', async t => {
   const hypervisor = new Hypervisor(tree)
   const creationPort = hypervisor.creationService.getPort()
   hypervisor.registerContainer(testVMContainer)
-  const oldInst = await hypervisor.send(creationPort, new Message({
+  const oldInst = await hypervisor.send(creationPort, new CreationMessage({
     data: {
       type: testVMContainer.typeId,
       code: content
@@ -1124,7 +1136,7 @@ tape('creation service messaging', async t => {
       const [port1, port2] = this.kernel.ports.createChannel()
       await this.kernel.ports.bind('child', port1)
 
-      const message = this.kernel.createMessage({
+      const message = new CreationMessage({
         data: {
           type: TestVMContainer2.typeId
         },
@@ -1147,7 +1159,7 @@ tape('creation service messaging', async t => {
   const port = hypervisor.creationService.getPort()
   const port2 = hypervisor.creationService.getPort()
 
-  const root = await hypervisor.send(port2, new Message({
+  const root = await hypervisor.send(port2, new CreationMessage({
     data: {
       type: TestVMContainer.typeId
     },
@@ -1194,7 +1206,7 @@ tape('creation service - port copy', async t => {
 
   const port = hypervisor.creationService.getPort()
 
-  const root = await hypervisor.send(port, new Message({
+  const root = await hypervisor.send(port, new CreationMessage({
     data: {
       type: TestVMContainer.typeId
     },
@@ -1228,7 +1240,7 @@ tape('waiting on ports', async t => {
 
   const port = hypervisor.creationService.getPort()
 
-  await hypervisor.send(port, new Message({
+  await hypervisor.send(port, new CreationMessage({
     data: {
       type: TestVMContainer.typeId
     },

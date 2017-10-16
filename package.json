@@ -42,7 +42,7 @@
     "documentation": "^5.0.1",
     "level": "^1.7.0",
     "nyc": "^11.2.1",
-    "primea-abstract-container": "0.0.4",
+    "primea-abstract-container": "0.0.5",
     "standard": "10.0.3",
     "tape": "^4.6.3"
   }

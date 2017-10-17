@@ -40,7 +40,7 @@
   "devDependencies": {
     "coveralls": "^3.0.0",
     "documentation": "^5.0.1",
-    "level": "^1.7.0",
+    "level": "^2.0.0",
     "nyc": "^11.2.1",
     "primea-abstract-container": "0.0.5",
     "standard": "10.0.3",

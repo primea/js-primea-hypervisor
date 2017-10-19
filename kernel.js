@@ -102,6 +102,7 @@ module.exports = class Kernel {
       }
 
       if (responsePort) {
+        this.ports._unboundPorts.add(responsePort)
         this.send(responsePort, new Message({
           data: result
         }))

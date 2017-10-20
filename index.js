@@ -47,7 +47,8 @@ module.exports = class Hypervisor {
       if (instance) {
         containerState = instance.state
       } else {
-        containerState = await this.tree.get(port.destId, true)
+        let {value} = await this.tree.get(port.destId, true)
+        containerState = value
       }
       return this.tree.graph.get(containerState, `ports/${port.destName}`)
     }
@@ -67,7 +68,7 @@ module.exports = class Hypervisor {
   // loads an instance of a container from the state
   async _loadInstance (id, state) {
     if (!state) {
-      state = await this.tree.get(id, true)
+      state = await this.tree.get(id, true).then(result => result.value)
     }
     const container = this._containerTypes[state.type]
 

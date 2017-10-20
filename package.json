@@ -31,13 +31,13 @@
   "license": "MPL-2.0",
   "dependencies": {
     "binary-search-insert": "^1.0.3",
-    "dfinity-radix-tree": "0.0.4",
     "lockmap": "0.0.0",
     "primea-message": "0.0.2",
     "sortedmap": "0.0.1",
     "typedarray-addition": "0.0.1"
   },
   "devDependencies": {
+    "dfinity-radix-tree": "0.0.4",
     "coveralls": "^3.0.0",
     "documentation": "^5.0.1",
     "level": "^2.0.0",

@@ -59,7 +59,6 @@ tape('basic', async t => {
   }))
 
   rootContainer = await hypervisor.getInstance(rootContainer.id)
-
   hypervisor.pin(rootContainer)
 
   const [portRef1, portRef2] = rootContainer.ports.createChannel()

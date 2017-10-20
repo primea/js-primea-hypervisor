@@ -59,7 +59,7 @@ module.exports = async function DFSchecker (tree, nodes, checkFn) {
       return
     }
 
-    const node = await tree.get(id)
+    const node = await tree.get(id).then(r => r.value)
     const promises = []
     // iterate through the nodes ports and recursivly check them
     for (const name in node.ports) {

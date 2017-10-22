@@ -802,7 +802,7 @@ tape('should remove subgraphs', async t => {
 
   class Sub extends BaseContainer {
     static get typeId () {
-      return 299
+      return 199
     }
   }
 

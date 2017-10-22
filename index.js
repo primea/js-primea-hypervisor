@@ -66,17 +66,16 @@ module.exports = class Hypervisor {
   }
 
   // loads an instance of a container from the state
-  async _loadInstance (id, state) {
-    if (!state) {
-      state = await this.tree.get(id, true).then(result => result.value)
-    }
-    const container = this._containerTypes[state.type]
+  async _loadInstance (id) {
+    const state = await this.tree.get(id, true)
+    const container = this._containerTypes[state.value.type]
 
     // create a new kernel instance
     const kernel = new Kernel({
       hypervisor: this,
-      state: state,
-      code: state.code,
+      state: state.value,
+      node: state.node,
+      code: state.value.code,
       container: container,
       id: id
     })
@@ -133,6 +132,7 @@ module.exports = class Hypervisor {
     for (const id of unlinked) {
       await this.tree.delete(id)
     }
+
     return this.tree.flush()
   }
 

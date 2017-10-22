@@ -55,14 +55,14 @@ module.exports = class CreationService {
       state.code = code
     }
 
+    // save the container in the state
+    await this.hypervisor.tree.set(idHash, state)
+
     // create the container instance
-    const instance = await this.hypervisor._loadInstance(idHash, state)
+    const instance = await this.hypervisor._loadInstance(idHash)
 
     // send the intialization message
     await instance.create(message)
-
-    // save the container in the state
-    await this.hypervisor.tree.set(idHash, state)
 
     if (!Object.keys(instance.ports.ports).length) {
       this.hypervisor.addNodeToCheck(instance.id)

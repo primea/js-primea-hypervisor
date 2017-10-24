@@ -32,7 +32,7 @@
   "dependencies": {
     "binary-search-insert": "^1.0.3",
     "lockmap": "0.0.0",
-    "primea-message": "0.0.2",
+    "primea-message": "0.0.3",
     "sortedmap": "0.0.1",
     "typedarray-addition": "0.0.1"
   },

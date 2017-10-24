@@ -113,14 +113,9 @@ module.exports = class Kernel {
   }
 
   getResponsePort (message) {
-    if (message.responsePort) {
-      return message.responsePort.destPort
-    } else {
-      const [portRef1, portRef2] = this.ports.createChannel()
-      message.responsePort = portRef2
-      this.ports._unboundPorts.delete(portRef2)
-      return portRef1
-    }
+    const portRef = this.hypervisor.getResponsePort(message)
+    this.ports._unboundPorts.add(portRef)
+    return portRef
   }
 
   /**

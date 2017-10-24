@@ -103,6 +103,16 @@ module.exports = class Hypervisor {
     }
   }
 
+  getResponsePort (message) {
+    if (message.responsePort) {
+      return message.responsePort.destPort
+    } else {
+      const [portRef1, portRef2] = this.createChannel()
+      message.responsePort = portRef2
+      return portRef1
+    }
+  }
+
   createChannel () {
     const port1 = {
       messages: []

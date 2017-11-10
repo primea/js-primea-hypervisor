@@ -1,6 +1,5 @@
 const Message = require('primea-message')
-const PortManager = require('./portManager.js')
-const DeleteMessage = require('./deleteMessage')
+const AddressBook = require('./addressBook.js')
 
 module.exports = class Kernel {
   /**
@@ -15,7 +14,7 @@ module.exports = class Kernel {
   constructor (opts) {
     this.state = opts.state
     this.code = opts.code
-    this.node = opts.node
+    this.treeNode = opts.treeNode
     this.hypervisor = opts.hypervisor
     this.id = opts.id
     this.container = new opts.container.Constructor(this, opts.container.args)
@@ -24,7 +23,7 @@ module.exports = class Kernel {
     this.containerState = 'idle'
 
     // create the port manager
-    this.ports = new PortManager(Object.assign({
+    this.addressBook = new AddressBook(Object.assign({
       kernel: this
     }, opts))
   }
@@ -85,31 +84,27 @@ module.exports = class Kernel {
    * @returns {Promise}
    */
   async message (message, method = 'onMessage') {
-    if (message.constructor === DeleteMessage) {
-      this.ports._delete(message.fromName)
-    } else {
-      const responsePort = message.responsePort
-      delete message.responsePort
+    const responsePort = message.responsePort
+    delete message.responsePort
 
-      this.ports.addReceivedPorts(message)
-      let result
-      try {
-        result = await this.container[method](message)
-      } catch (e) {
-        result = {
-          exception: true,
-          exceptionError: e
-        }
+    this.ports.addReceivedPorts(message)
+    let result
+    try {
+      result = await this.container[method](message)
+    } catch (e) {
+      result = {
+        exception: true,
+        exceptionError: e
       }
-
-      if (responsePort) {
-        this.ports._unboundPorts.add(responsePort)
-        this.send(responsePort, new Message({
-          data: result
-        }))
-      }
-      await this.ports.clearUnboundedPorts()
     }
+
+    if (responsePort) {
+      this.ports._unboundPorts.add(responsePort)
+      this.send(responsePort, new Message({
+        data: result
+      }))
+    }
+    this.ports.clearUnboundedPorts()
   }
 
   getResponsePort (message) {

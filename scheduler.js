@@ -46,8 +46,8 @@ module.exports = class Scheduler {
 
   /**
    * returns a container
-   * @param {string} id
-   * @return {object}
+   * @param {String} id
+   * @return {Object}
    */
   getInstance (id) {
     return this.instances.get(id) || this._loadingInstances.getLock(id) || this.systemServices.get(id)

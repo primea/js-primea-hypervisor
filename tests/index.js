@@ -22,7 +22,7 @@ class BaseContainer extends AbstractContainer {
   onCreation (message) {
     const port = message.ports[0]
     if (port) {
-      return this.kernel.ports.bind('root', port)
+      return this.kernel.ports.store('root', port)
     }
   }
   static get typeId () {
@@ -30,7 +30,7 @@ class BaseContainer extends AbstractContainer {
   }
 }
 
-tape('basic', async t => {
+tape.only('basic', async t => {
   t.plan(3)
   let message
   const expectedState = {
@@ -73,7 +73,7 @@ tape('basic', async t => {
   message = rootContainer.createMessage()
   await Promise.all([
     rootContainer.send(port, initMessage),
-    rootContainer.ports.bind('first', portRef1),
+    rootContainer.ports.store('first', portRef1),
     rootContainer.send(portRef1, message)
   ])
   rootContainer.shutdown()

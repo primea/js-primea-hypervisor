@@ -34,7 +34,7 @@ module.exports = class Kernel {
    * @param {object} message
    */
   queue (port, message) {
-    this.ports.queue(port.destName, message)
+    this.addressBook.queue(port.destName, message)
     this._startMessageLoop()
   }
 
@@ -49,7 +49,7 @@ module.exports = class Kernel {
     if (this.containerState !== 'running') {
       this.containerState = 'running'
       while (1) {
-        const message = await this.ports.getNextMessage()
+        const message = await this.addressBook.getNextMessage()
         if (!message) break
 
         // dequqe message
@@ -87,7 +87,7 @@ module.exports = class Kernel {
     const responsePort = message.responsePort
     delete message.responsePort
 
-    this.ports.addReceivedPorts(message)
+    this.addressBook.getAddressesFromMessage(message)
     let result
     try {
       result = await this.container[method](message)
@@ -99,17 +99,17 @@ module.exports = class Kernel {
     }
 
     if (responsePort) {
-      this.ports._unboundPorts.add(responsePort)
+      this.addressBook._unboundPorts.add(responsePort)
       this.send(responsePort, new Message({
         data: result
       }))
     }
-    this.ports.clearUnboundedPorts()
+    this.addressBook.clearUnboundedAddresses()
   }
 
   getResponsePort (message) {
     const portRef = this.hypervisor.getResponsePort(message)
-    this.ports._unboundPorts.add(portRef)
+    this.addressBook._unboundPorts.add(portRef)
     return portRef
   }
 
@@ -128,7 +128,7 @@ module.exports = class Kernel {
    */
   createMessage (opts) {
     const message = new Message(opts)
-    this.ports.checkSendingPorts(message)
+    this.addressBook.checkSendingPorts(message)
     return message
   }
 
@@ -151,7 +151,7 @@ module.exports = class Kernel {
     message._hops++
     message._fromTicks = this.ticks
     message.fromId = this.id
-    this.ports.removeSentPorts(message)
+    this.addressBook.removeSentPorts(message)
 
     return this.hypervisor.send(port, message)
   }

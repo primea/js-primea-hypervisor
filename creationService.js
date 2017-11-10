@@ -17,12 +17,12 @@ module.exports = class CreationService {
       return this.createInstance(message, id)
     } else if (message.responsePort && !(message instanceof DeleteMessage)) {
       this.send(message.responsePort, new Message({
-        ports: [this.getPort()]
+        addresses: [this.getAddress()]
       }))
     }
   }
 
-  getPort () {
+  getAddress () {
     return {
       messages: [],
       destId: 0
@@ -46,7 +46,7 @@ module.exports = class CreationService {
     const idHash = await this._getHashFromObj(encoded)
     const state = {
       nonce: 0,
-      ports: {},
+      addresses: {},
       type: message.data[1]
     }
 
@@ -64,7 +64,7 @@ module.exports = class CreationService {
     // send the intialization message
     await instance.create(message)
 
-    if (!Object.keys(instance.ports.ports).length) {
+    if (!Object.keys(instance.addressBook.addresses).length) {
       this.hypervisor.addNodeToCheck(instance.id)
     }
 

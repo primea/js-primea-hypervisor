@@ -23,11 +23,7 @@ module.exports = class Inbox {
    */
   queue (message) {
     binarySearchInsert(this._queue, messageArbiter, message)
-
-    if (this._waitingAddresses && this._waitingAddresses.has(message.fromAddress)) {
-      this._waitingAddresses.delete(message.fromAddress)
-      binarySearchInsert(this._waitingAddressesQueue, messageArbiter, message)
-    }
+    this._queueWaitingAddress(message)
 
     const oldestMessage = this._getOldestMessage()
 
@@ -52,6 +48,9 @@ module.exports = class Inbox {
 
     if (addresses) {
       this._waitingAddresses = new Set(addresses)
+      this._queue.forEach(message => {
+        this._queueWaitingAddress(message)
+      })
     }
 
     let message = this._getOldestMessage()
@@ -89,6 +88,13 @@ module.exports = class Inbox {
       return this._waitingAddressesQueue[0]
     } else {
       return this._queue[0]
+    }
+  }
+
+  _queueWaitingAddress (message) {
+    if (this._waitingAddresses && this._waitingAddresses.has(message.fromAddress)) {
+      this._waitingAddresses.delete(message.fromAddress)
+      binarySearchInsert(this._waitingAddressesQueue, messageArbiter, message)
     }
   }
 }

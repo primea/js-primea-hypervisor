@@ -1,4 +1,4 @@
-const Kernel = require('./kernel.js')
+const Kernel = require('./actor.js')
 const Scheduler = require('./scheduler.js')
 const DFSchecker = require('./dfsChecker.js')
 const CreationService = require('./creationService.js')

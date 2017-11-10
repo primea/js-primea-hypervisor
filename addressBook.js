@@ -8,6 +8,7 @@ module.exports = class AddressBook {
    * @param {Object} opts.exoInterface
    */
   constructor (opts) {
+    this.state = opts.state
     this.addresses = this.state.addresses
     this._unboundAddresses = new Set()
   }
@@ -71,5 +72,9 @@ module.exports = class AddressBook {
     this._unboundAddresses.add(address)
     delete message.ports[index]
     return address
+  }
+
+  getAddressesFromMessage (message) {
+    message.ports.forEach((port, index) => this.getAddressFromMessage(message, index))
   }
 }

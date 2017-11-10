@@ -1,4 +1,7 @@
 const tape = require('tape')
+const tapePromise = require('tape-promise').default
+const test = tapePromise(tape)
+
 const AbstractContainer = require('primea-abstract-container')
 const Message = require('primea-message')
 const Hypervisor = require('../')
@@ -30,7 +33,7 @@ class BaseContainer extends AbstractContainer {
   }
 }
 
-tape('basic', async t => {
+test('basic', async t => {
   t.plan(3)
   let message
   const expectedState = {
@@ -84,7 +87,7 @@ tape('basic', async t => {
   t.equals(hypervisor.scheduler.leastNumberOfTicks(), 0)
 })
 
-tape('basic - do not store containers with no ports bound', async t => {
+test('basic - do not store containers with no ports bound', async t => {
   t.plan(1)
 
   const tree = new RadixTree({
@@ -134,7 +137,7 @@ tape('basic - do not store containers with no ports bound', async t => {
   t.deepEquals(stateRoot, expectedState, 'expected root!')
 })
 
-tape('one child contract', async t => {
+test('one child contract', async t => {
   t.plan(4)
 
   const tree = new RadixTree({
@@ -235,7 +238,7 @@ tape('one child contract', async t => {
   root.send(port, message)
 })
 
-tape('traps', async t => {
+test('traps', async t => {
   t.plan(1)
 
   const tree = new RadixTree({
@@ -277,7 +280,7 @@ tape('traps', async t => {
   }, 'should revert the state')
 })
 
-tape('recieving older messages', async t => {
+test('recieving older messages', async t => {
   t.plan(2)
 
   const tree = new RadixTree({
@@ -381,7 +384,7 @@ tape('recieving older messages', async t => {
   root.shutdown()
 })
 
-tape('saturation', async t => {
+test('saturation', async t => {
   t.plan(3)
 
   const tree = new RadixTree({
@@ -518,7 +521,7 @@ tape('saturation', async t => {
   root.shutdown()
 })
 
-tape('send to the same container at the same time', async t => {
+test('send to the same container at the same time', async t => {
   t.plan(2)
 
   const tree = new RadixTree({
@@ -599,7 +602,7 @@ tape('send to the same container at the same time', async t => {
   t.equals(runs, 2)
 })
 
-tape('checking ports', async t => {
+test('checking ports', async t => {
   t.plan(4)
 
   const tree = new RadixTree({
@@ -655,7 +658,7 @@ tape('checking ports', async t => {
   t.equals(message.ports[0], portRef1, 'should create a message if the port is unbound')
 })
 
-tape('port deletion', async t => {
+test('port deletion', async t => {
   const expectedSr = {
     '/': Buffer.from('1f0673f23b4eeb86115992621d7edc981a6afade', 'hex')
   }
@@ -727,7 +730,7 @@ tape('port deletion', async t => {
   t.end()
 })
 
-tape('clear unbounded ports', async t => {
+test('clear unbounded ports', async t => {
   const expectedSr = {
     '/': Buffer.from('1f0673f23b4eeb86115992621d7edc981a6afade', 'hex')
   }
@@ -777,7 +780,7 @@ tape('clear unbounded ports', async t => {
   t.end()
 })
 
-tape('should remove subgraphs', async t => {
+test('should remove subgraphs', async t => {
   const expectedSr = {
     '/': Buffer.from('1f0673f23b4eeb86115992621d7edc981a6afade', 'hex')
   }
@@ -836,7 +839,7 @@ tape('should remove subgraphs', async t => {
   t.end()
 })
 
-tape('should not remove connected nodes', async t => {
+test('should not remove connected nodes', async t => {
   const tree = new RadixTree({
     db: db
   })
@@ -926,7 +929,7 @@ tape('should not remove connected nodes', async t => {
   t.end()
 })
 
-tape('should remove multiple subgraphs', async t => {
+test('should remove multiple subgraphs', async t => {
   const tree = new RadixTree({
     db: db
   })
@@ -1023,7 +1026,7 @@ tape('should remove multiple subgraphs', async t => {
   t.end()
 })
 
-tape('response ports', async t => {
+test('response ports', async t => {
   t.plan(2)
   const tree = new RadixTree({
     db: db
@@ -1077,7 +1080,7 @@ tape('response ports', async t => {
   await rootContainer.ports.bind('response', rPort)
 })
 
-tape('start up', async t => {
+test('start up', async t => {
   t.plan(1)
 
   const tree = new RadixTree({
@@ -1101,7 +1104,7 @@ tape('start up', async t => {
   hypervisor.getInstance(instance.id)
 })
 
-tape('large code size', async t => {
+test('large code size', async t => {
   t.plan(1)
   const tree = new RadixTree({
     db: db
@@ -1122,7 +1125,7 @@ tape('large code size', async t => {
   t.equals(content.length, instance.code.length)
 })
 
-tape('creation service messaging', async t => {
+test('creation service messaging', async t => {
   t.plan(1)
 
   const tree = new RadixTree({
@@ -1175,7 +1178,7 @@ tape('creation service messaging', async t => {
   t.deepEquals(stateRoot, expectedSR)
 })
 
-tape('creation service - port copy', async t => {
+test('creation service - port copy', async t => {
   t.plan(2)
 
   const tree = new RadixTree({
@@ -1215,7 +1218,7 @@ tape('creation service - port copy', async t => {
   hypervisor.pin(root)
 })
 
-tape('waiting on ports', async t => {
+test('waiting on ports', async t => {
   t.plan(1)
 
   const tree = new RadixTree({

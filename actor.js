@@ -1,5 +1,6 @@
 const Message = require('primea-message')
-const AddressBook = require('./addressBook.js')
+const CapsManager = require('./capsManager.js')
+const Inbox = require('./inbox.js')
 
 module.exports = class Kernel {
   /**
@@ -18,14 +19,22 @@ module.exports = class Kernel {
     this.hypervisor = opts.hypervisor
     this.id = opts.id
     this.container = new opts.container.Constructor(this, opts.container.args)
+    this.inbox = new Inbox(Object.assign({
+      actor: this
+    }, opts))
 
     this.ticks = 0
     this.containerState = 'idle'
 
     // create the port manager
-    this.addressBook = new AddressBook(Object.assign({
-      kernel: this
-    }, opts))
+    this.caps = new CapsManager(opts)
+  }
+
+  mintCap (tag = 0) {
+    return {
+      destId: this.id,
+      tag: tag
+    }
   }
 
   /**
@@ -33,8 +42,8 @@ module.exports = class Kernel {
    * @param {string} portName
    * @param {object} message
    */
-  queue (port, message) {
-    this.ports.queue(port.destName, message)
+  queue (message) {
+    this.inbox.queue(message)
     this._startMessageLoop()
   }
 
@@ -47,13 +56,12 @@ module.exports = class Kernel {
   async _startMessageLoop () {
     // this ensure we only every have one loop running at a time
     if (this.containerState !== 'running') {
+      this.hypervisor.scheduler.update(this)
       this.containerState = 'running'
       while (1) {
-        const message = await this.ports.getNextMessage()
+        const message = await this.inbox.getNextMessage()
         if (!message) break
 
-        // dequqe message
-        message.fromPort.messages.shift()
         // if the message we recived had more ticks then we currently have then
         // update it
         if (message._fromTicks > this.ticks) {
@@ -84,33 +92,26 @@ module.exports = class Kernel {
    * @returns {Promise}
    */
   async message (message, method = 'onMessage') {
-    const responsePort = message.responsePort
-    delete message.responsePort
+    const response = message.response
+    message.response = false
 
-    this.ports.addReceivedPorts(message)
     let result
     try {
       result = await this.container[method](message)
     } catch (e) {
+      console.log(e)
       result = {
         exception: true,
         exceptionError: e
       }
     }
 
-    if (responsePort) {
-      this.ports._unboundPorts.add(responsePort)
-      this.send(responsePort, new Message({
+    if (response) {
+      this.send(message.from, new Message({
         data: result
       }))
     }
-    this.ports.clearUnboundedPorts()
-  }
-
-  getResponsePort (message) {
-    const portRef = this.hypervisor.getResponsePort(message)
-    this.ports._unboundPorts.add(portRef)
-    return portRef
+    this.caps.clist.clear()
   }
 
   /**
@@ -120,16 +121,6 @@ module.exports = class Kernel {
   incrementTicks (count) {
     this.ticks += count
     this.hypervisor.scheduler.update(this)
-  }
-
-  /**
-   * creates a new message
-   * @param {*} data
-   */
-  createMessage (opts) {
-    const message = new Message(opts)
-    this.ports.checkSendingPorts(message)
-    return message
   }
 
   generateNextId () {
@@ -147,12 +138,10 @@ module.exports = class Kernel {
    * @param {Object} portRef - the port
    * @param {Message} message - the message
    */
-  send (port, message) {
-    message._hops++
+  send (cap, message) {
     message._fromTicks = this.ticks
-    message.fromId = this.id
-    this.ports.removeSentPorts(message)
+    message.tag = cap.tag
 
-    return this.hypervisor.send(port, message)
+    return this.hypervisor.send(cap, message)
   }
 }

@@ -10,8 +10,10 @@ module.exports = class Inbox {
    * @param {Object} opts.exoInterface
    */
   constructor (opts) {
+    this.actor = opts.actor
+    this.hypervisor = opts.hypervisor
     this._queue = []
-    this._awaitedAddresses = new Set()
+    this._awaitedTags = new Set()
     this._oldestMessagePromise = new Promise((resolve, reject) => {
       this._oldestMessageResolve = resolve
     })
@@ -23,7 +25,7 @@ module.exports = class Inbox {
    */
   queue (message) {
     binarySearchInsert(this._queue, messageArbiter, message)
-    this._queueWaitingAddress(message)
+    this._queueWaitingTags(message)
 
     const oldestMessage = this._getOldestMessage()
 
@@ -39,29 +41,27 @@ module.exports = class Inbox {
    * Waits for the the next message if any
    * @returns {Promise}
    */
-  async getNextMessage (addresses, timeout = Infinity) {
+  async getNextMessage (tags, timeout = Infinity) {
     let oldestTime = this.hypervisor.scheduler.leastNumberOfTicks()
 
-    if (Object.keys(this._waitingAdresses).length) {
+    if (this._waitingTags) {
       throw new Error('already getting next message')
     }
 
-    if (addresses) {
-      this._waitingAddresses = new Set(addresses)
+    if (tags) {
+      this._waitingTags = new Set(tags)
       this._queue.forEach(message => {
-        this._queueWaitingAddress(message)
+        this._queueWaitingTags(message)
       })
     }
 
     let message = this._getOldestMessage()
+    let timeouted = false
 
-    while (// end if we have a message older then slowest containers
-      !((message && oldestTime >= message._fromTicks) ||
-        // end if there are no messages and this container is the oldest contaner
-        (!message && oldestTime === this.kernel.ticks))) {
-      let ticksToWait = message ? message._fromTicks : this.kernel.ticks
+    while (message && oldestTime <= message._fromTicks && !timeouted) {
       await Promise.race([
-        this.hypervisor.scheduler.wait(ticksToWait, this.id).then(() => {
+        this.hypervisor.scheduler.wait(message._fromTicks, this.actor.id).then(() => {
+          timeouted = true
           message = this._getOldestMessage()
         }),
         this._olderMessage(message).then(m => {
@@ -71,8 +71,14 @@ module.exports = class Inbox {
       oldestTime = this.hypervisor.scheduler.leastNumberOfTicks()
     }
 
-    this._waitingAddressesQueue = []
-    delete this._waitingAddresses
+    if (this._waitingTags) {
+      message = this._waitingTagsQueue.shift()
+    } else {
+      message = this._queue.shift()
+    }
+
+    this._waitingTagsQueue = []
+    delete this._waitingTags
 
     return message
   }
@@ -84,16 +90,16 @@ module.exports = class Inbox {
   }
 
   _getOldestMessage () {
-    if (this._waitingAddresses) {
-      return this._waitingAddressesQueue[0]
+    if (this._waitingTags) {
+      return this._waitingTagsQueue[0]
     } else {
       return this._queue[0]
     }
   }
 
-  _queueWaitingAddress (message) {
-    if (this._waitingAddresses && this._waitingAddresses.has(message.fromAddress)) {
-      this._waitingAddresses.delete(message.fromAddress)
+  _queueWaitingTags (message) {
+    if (this._waitingTags && this._waitingTags.has(message.tag)) {
+      this._waitingAddresses.delete(message.tag)
       binarySearchInsert(this._waitingAddressesQueue, messageArbiter, message)
     }
   }

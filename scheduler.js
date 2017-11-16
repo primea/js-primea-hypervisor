@@ -90,9 +90,13 @@ module.exports = class Scheduler {
    * returns the oldest container's ticks
    * @return {integer}
    */
-  leastNumberOfTicks () {
-    const nextValue = this.instances.values().next().value
-    return nextValue ? nextValue.ticks : 0
+  leastNumberOfTicks (exculde) {
+    for (const instance of this.instances) {
+      if (instance[1].id !== exculde) {
+        return instance[1].id
+      }
+    }
+    return 0
   }
 
   // checks outstanding waits to see if they can be resolved
@@ -104,17 +108,18 @@ module.exports = class Scheduler {
       this._waits = []
     } else {
       // find the old container and see if to can resolve any of the waits
-      const least = this.leastNumberOfTicks()
-      for (const index in this._waits) {
-        const wait = this._waits[index]
+      while (this._waits[0]) {
+        const wait = this._waits[0]
+        const least = this.leastNumberOfTicks(wait.id)
         if (wait.ticks <= least) {
+          this._waits.shift()
           wait.resolve()
           this._running.add(wait.id)
         } else {
-          this._waits.splice(0, index)
           break
         }
       }
+
       if (!this._running.size) {
         // if there are no containers running find the oldest wait and update
         // the oldest containers to it ticks

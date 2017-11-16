@@ -1,5 +1,4 @@
 const Message = require('primea-message')
-const DeleteMessage = require('./deleteMessage.js')
 
 module.exports = class CreationService {
   constructor (opts) {
@@ -7,7 +6,7 @@ module.exports = class CreationService {
     this.scheduler = this.hypervisor.scheduler
   }
 
-  queue (port, message) {
+  queue (message) {
     if (message.data[0] === 0x00) {
       let id
       if (message.fromId) {
@@ -15,26 +14,25 @@ module.exports = class CreationService {
         id = creator.generateNextId()
       }
       return this.createInstance(message, id)
-    } else if (message.responsePort && !(message instanceof DeleteMessage)) {
-      this.send(message.responsePort, new Message({
-        ports: [this.getPort()]
+    } else if (message.responseCaps) {
+      this.send(message.responseCaps, new Message({
+        caps: [this.getCap()]
       }))
     }
   }
 
-  getPort () {
+  get address () {
     return {
-      messages: [],
       destId: 0
     }
   }
 
-  send (port, message) {
+  send (address, message) {
     message._hops++
     message._fromTicks = this.ticks
     message.fromId = this.id
 
-    return this.hypervisor.send(port, message)
+    return this.hypervisor.send(address, message)
   }
 
   /**
@@ -63,11 +61,6 @@ module.exports = class CreationService {
 
     // send the intialization message
     await instance.create(message)
-
-    if (!Object.keys(instance.ports.ports).length) {
-      this.hypervisor.addNodeToCheck(instance.id)
-    }
-
     return instance
   }
 

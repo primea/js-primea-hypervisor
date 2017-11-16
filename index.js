@@ -1,9 +1,5 @@
-const Kernel = require('./kernel.js')
+const Kernel = require('./actor.js')
 const Scheduler = require('./scheduler.js')
-const DFSchecker = require('./dfsChecker.js')
-const CreationService = require('./creationService.js')
-
-const CREATION_ID = 0
 
 module.exports = class Hypervisor {
   /**
@@ -16,53 +12,14 @@ module.exports = class Hypervisor {
     this.tree = tree
     this.scheduler = new Scheduler()
     this._containerTypes = {}
-    this._nodesToCheck = new Set()
-
-    this.creationService = new CreationService({
-      hypervisor: this
-    })
-    this.scheduler.systemServices.set(CREATION_ID, this.creationService)
-    this.pinnedIds = new Set()
+    this.nonce = 0
   }
 
-  /**
-   * add a potaintail node in the state graph to check for garbage collection
-   * @param {string} id
-   */
-  addNodeToCheck (id) {
-    this._nodesToCheck.add(id)
-  }
-
-  /**
-   * given a port, this finds the corridsponeding endpoint port of the channel
-   * @param {object} port
-   * @returns {Promise}
-   */
-  async getDestPort (port) {
-    if (port.destPort) {
-      return port.destPort
-    } else {
-      const instance = await this.scheduler.getInstance(port.destId)
-      let containerState
-      if (instance) {
-        containerState = instance.state
-      } else {
-        let {value} = await this.tree.get(port.destId, true)
-        containerState = value
-      }
-      return this.tree.graph.get(containerState, `ports/${port.destName}`)
-    }
-  }
-
-  async send (port, message) {
-    const id = port.destId
-    if (id !== undefined) {
-      const instance = await this.getInstance(id)
-      return instance.queue(port, message)
-    } else {
-      // port is unbound
-      port.destPort.messages.push(message)
-    }
+  async send (cap, message) {
+    cap = await Promise.resolve(cap)
+    const id = cap.destId
+    const instance = await this.getInstance(id)
+    return instance.queue(message)
   }
 
   // loads an instance of a container from the state
@@ -103,28 +60,35 @@ module.exports = class Hypervisor {
     }
   }
 
-  getResponsePort (message) {
-    if (message.responsePort) {
-      return message.responsePort.destPort
-    } else {
-      const [portRef1, portRef2] = this.createChannel()
-      message.responsePort = portRef2
-      return portRef1
+  async createInstance (type, message, id = {nonce: this.nonce, parent: null}) {
+    const encoded = encodedID(id)
+    this.nonce++
+    const idHash = await this._getHashFromObj(encoded)
+    const state = {
+      nonce: 0,
+      caps: {},
+      type: type
     }
+
+    const code = message.data
+    if (code.length) {
+      state.code = code
+    }
+
+    // save the container in the state
+    await this.tree.set(idHash, state)
+
+    // create the container instance
+    const instance = await this._loadInstance(idHash)
+
+    // send the intialization message
+    await instance.create(message)
+    return instance.mintCap()
   }
 
-  createChannel () {
-    const port1 = {
-      messages: []
-    }
-
-    const port2 = {
-      messages: [],
-      destPort: port1
-    }
-
-    port1.destPort = port2
-    return [port1, port2]
+  // get a hash from a POJO
+  _getHashFromObj (obj) {
+    return this.tree.constructor.getMerkleLink(obj)
   }
 
   /**
@@ -135,14 +99,7 @@ module.exports = class Hypervisor {
    */
   async createStateRoot (ticks) {
     await this.scheduler.wait(ticks)
-
-    const unlinked = await DFSchecker(this.tree, this._nodesToCheck, (id) => {
-      return this.pinnedIds.has(id)
-    })
-    for (const id of unlinked) {
-      await this.tree.delete(id)
-    }
-
+    // console.log(JSON.stringify(this.tree.root, null, 2))
     return this.tree.flush()
   }
 
@@ -158,8 +115,13 @@ module.exports = class Hypervisor {
       args: args
     }
   }
+}
 
-  pin (instance) {
-    this.pinnedIds.add(instance.id)
+function encodedID (id) {
+  const nonce = Buffer.from([id.nonce])
+  if (id.parent) {
+    return Buffer.concat([nonce, id.parent])
+  } else {
+    return nonce
   }
 }

@@ -99,7 +99,6 @@ module.exports = class Hypervisor {
    */
   async createStateRoot (ticks) {
     await this.scheduler.wait(ticks)
-    // console.log(JSON.stringify(this.tree.root, null, 2))
     return this.tree.flush()
   }
 

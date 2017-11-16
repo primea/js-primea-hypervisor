@@ -122,6 +122,11 @@ module.exports = class Kernel {
     this.hypervisor.scheduler.update(this)
   }
 
+  createInstance (type, message) {
+    const id = this.generateNextId()
+    return this.hypervisor.createInstance(type, message, id)
+  }
+
   generateNextId () {
     const id = {
       nonce: this.state.nonce,

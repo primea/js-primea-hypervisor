@@ -348,3 +348,4 @@ tape('actor creation', async t => {
   t.deepEquals(stateRoot, expectedState, 'expected root!')
   t.equals(hypervisor.scheduler.leastNumberOfTicks(), 0)
 })
+

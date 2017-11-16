@@ -91,12 +91,14 @@ module.exports = class Scheduler {
    * @return {integer}
    */
   leastNumberOfTicks (exculde) {
+    let ticks = 0
     for (const instance of this.instances) {
+      ticks = instance[1].ticks
       if (instance[1].id !== exculde) {
-        return instance[1].id
+        return ticks
       }
     }
-    return 0
+    return ticks
   }
 
   // checks outstanding waits to see if they can be resolved
@@ -111,6 +113,7 @@ module.exports = class Scheduler {
       while (this._waits[0]) {
         const wait = this._waits[0]
         const least = this.leastNumberOfTicks(wait.id)
+        // console.log(wait, least, this.instances)
         if (wait.ticks <= least) {
           this._waits.shift()
           wait.resolve()

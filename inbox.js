@@ -42,7 +42,7 @@ module.exports = class Inbox {
    * @returns {Promise}
    */
   async getNextMessage (tags, timeout = Infinity) {
-    let oldestTime = this.hypervisor.scheduler.leastNumberOfTicks()
+    let oldestTime = this.hypervisor.scheduler.leastNumberOfTicks(this.actor.id)
 
     if (this._waitingTags) {
       throw new Error('already getting next message')
@@ -68,7 +68,7 @@ module.exports = class Inbox {
           message = m
         })
       ])
-      oldestTime = this.hypervisor.scheduler.leastNumberOfTicks()
+      oldestTime = this.hypervisor.scheduler.leastNumberOfTicks(this.actor.id)
     }
 
     if (this._waitingTags) {

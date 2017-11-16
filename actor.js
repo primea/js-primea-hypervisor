@@ -92,22 +92,21 @@ module.exports = class Kernel {
    * @returns {Promise}
    */
   async message (message, method = 'onMessage') {
-    const response = message.response
-    message.response = false
+    const responseCap = message.responseCap
+    delete message.responseCap
 
     let result
     try {
       result = await this.container[method](message)
     } catch (e) {
-      console.log(e)
       result = {
         exception: true,
         exceptionError: e
       }
     }
 
-    if (response) {
-      this.send(message.from, new Message({
+    if (responseCap) {
+      this.send(responseCap, new Message({
         data: result
       }))
     }

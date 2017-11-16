@@ -58,9 +58,7 @@ tape('two communicating actors', async t => {
 
   class testVMContainerA extends BaseContainer {
     onCreation (m) {
-      const cap = this.kernel.mintCap()
       message = new Message()
-      message.caps.push(cap)
       return this.kernel.send(m.caps[0], message)
     }
   }
@@ -103,9 +101,7 @@ tape('three communicating actors', async t => {
 
   class testVMContainerA extends BaseContainer {
     onCreation (m) {
-      const cap = this.kernel.mintCap()
       message = new Message()
-      message.caps.push(cap)
       return this.kernel.send(m.caps[0], message)
     }
   }
@@ -183,6 +179,103 @@ tape('three communicating actors, with tick counting', async t => {
     caps: [capB]
   }))
 
+  await hypervisor.createInstance(testVMContainerA.typeId, new Message({
+    caps: [capB]
+  }))
+
+  const stateRoot = await hypervisor.createStateRoot(Infinity)
+
+  t.deepEquals(stateRoot, expectedState, 'expected root!')
+  t.equals(hypervisor.scheduler.leastNumberOfTicks(), 0)
+})
+
+tape('response caps', async t => {
+  t.plan(4)
+  let message
+  const expectedState = {
+    '/': Buffer.from('fc935489953ed357f06171dd23439d83190b3a1b', 'hex')
+  }
+
+  const tree = new RadixTree({
+    db: db
+  })
+
+  class testVMContainerA extends BaseContainer {
+    onCreation (m) {
+      message = new Message()
+      message.responseCap = this.kernel.mintCap()
+      return this.kernel.send(m.caps[0], message)
+    }
+
+    onMessage (m) {
+      t.true(m, 'should recive a response message')
+    }
+  }
+
+  class testVMContainerB extends BaseContainer {
+    onMessage (m) {
+      t.true(m === message, 'should recive a message')
+    }
+
+    static get typeId () {
+      return 8
+    }
+  }
+
+  const hypervisor = new Hypervisor(tree)
+  hypervisor.registerContainer(testVMContainerA)
+  hypervisor.registerContainer(testVMContainerB)
+
+  let capB = await hypervisor.createInstance(testVMContainerB.typeId, new Message())
+  await hypervisor.createInstance(testVMContainerA.typeId, new Message({
+    caps: [capB]
+  }))
+
+  const stateRoot = await hypervisor.createStateRoot(Infinity)
+
+  t.deepEquals(stateRoot, expectedState, 'expected root!')
+  t.equals(hypervisor.scheduler.leastNumberOfTicks(), 0)
+})
+
+tape('response caps for errors', async t => {
+  t.plan(4)
+  let message
+  const expectedState = {
+    '/': Buffer.from('fc935489953ed357f06171dd23439d83190b3a1b', 'hex')
+  }
+
+  const tree = new RadixTree({
+    db: db
+  })
+
+  class testVMContainerA extends BaseContainer {
+    onCreation (m) {
+      message = new Message()
+      message.responseCap = this.kernel.mintCap()
+      return this.kernel.send(m.caps[0], message)
+    }
+
+    onMessage (m) {
+      t.true(m.data.exceptionError instanceof Error, 'should recive a response message')
+    }
+  }
+
+  class testVMContainerB extends BaseContainer {
+    onMessage (m) {
+      t.true(m === message, 'should recive a message')
+      throw new Error('test error')
+    }
+
+    static get typeId () {
+      return 8
+    }
+  }
+
+  const hypervisor = new Hypervisor(tree)
+  hypervisor.registerContainer(testVMContainerA)
+  hypervisor.registerContainer(testVMContainerB)
+
+  let capB = await hypervisor.createInstance(testVMContainerB.typeId, new Message())
   await hypervisor.createInstance(testVMContainerA.typeId, new Message({
     caps: [capB]
   }))

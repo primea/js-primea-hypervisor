@@ -113,7 +113,6 @@ module.exports = class Scheduler {
       while (this._waits[0]) {
         const wait = this._waits[0]
         const least = this.leastNumberOfTicks(wait.id)
-        // console.log(wait, least, this.instances)
         if (wait.ticks <= least) {
           this._waits.shift()
           wait.resolve()

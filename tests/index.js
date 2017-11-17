@@ -349,3 +349,65 @@ tape('actor creation', async t => {
   t.equals(hypervisor.scheduler.leastNumberOfTicks(), 0)
 })
 
+tape('simple message arbiter test', async t => {
+  t.plan(5)
+  const expectedState = {
+    '/': Buffer.from('fc935489953ed357f06171dd23439d83190b3a1b', 'hex')
+  }
+
+  const tree = new RadixTree({
+    db: db
+  })
+
+  class testVMContainerA extends BaseContainer {
+    onCreation (m) {
+      const message1 = new Message({
+        data: 'first'
+      })
+      const message2 = new Message({
+        data: 'second'
+      })
+      const message3 = new Message({
+        data: 'third'
+      })
+      this.kernel.send(m.caps[0], message1)
+      this.kernel.incrementTicks(1)
+      this.kernel.send(m.caps[0], message2)
+      this.kernel.incrementTicks(1)
+      return this.kernel.send(m.caps[0], message3)
+    }
+  }
+
+  let recMsg = 0
+
+  class testVMContainerB extends BaseContainer {
+    onMessage (m) {
+      if (recMsg === 0) {
+        t.equal(m.data, 'first', 'should recive fist message')
+      } else if (recMsg === 1) {
+        t.equal(m.data, 'second', 'should recive second message')
+      } else if (recMsg === 2) {
+        t.equal(m.data, 'third', 'should recive third message')
+      }
+      recMsg++
+    }
+
+    static get typeId () {
+      return 8
+    }
+  }
+
+  const hypervisor = new Hypervisor(tree)
+  hypervisor.registerContainer(testVMContainerA)
+  hypervisor.registerContainer(testVMContainerB)
+
+  let capB = await hypervisor.createInstance(testVMContainerB.typeId, new Message())
+  await hypervisor.createInstance(testVMContainerA.typeId, new Message({
+    caps: [capB]
+  }))
+
+  const stateRoot = await hypervisor.createStateRoot(Infinity)
+
+  t.deepEquals(stateRoot, expectedState, 'expected root!')
+  t.equals(hypervisor.scheduler.leastNumberOfTicks(), 0)
+})

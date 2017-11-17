@@ -1,5 +1,5 @@
 const binarySearchInsert = require('binary-search-insert')
-// const Buffer = require('safe-buffer').Buffer
+const Buffer = require('safe-buffer').Buffer
 
 module.exports = class Inbox {
   /**
@@ -29,7 +29,6 @@ module.exports = class Inbox {
     this._queueWaitingTags(message)
 
     const oldestMessage = this._getOldestMessage()
-
     if (oldestMessage === message) {
       this._oldestMessageResolve(message)
       this._oldestMessagePromise = new Promise((resolve, reject) => {
@@ -108,17 +107,11 @@ module.exports = class Inbox {
 
 // decides which message to go first
 function messageArbiter (messageA, messageB) {
-  if (!messageA) {
-    return messageB
-  } else if (!messageB) {
-    return messageA
-  }
-
   // order by number of ticks if messages have different number of ticks
   if (messageA._fromTicks !== messageB._fromTicks) {
-    return messageA._fromTicks < messageB._fromTicks ? messageA : messageB
+    return messageA._fromTicks > messageB._fromTicks
   } else {
     // sender id
-    return Buffer.compare(messageA._fromId, messageB._fromId) ? messageA : messageB
+    return Buffer.compare(messageA._fromId, messageB._fromId)
   }
 }

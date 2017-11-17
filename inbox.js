@@ -1,4 +1,5 @@
 const binarySearchInsert = require('binary-search-insert')
+// const Buffer = require('safe-buffer').Buffer
 
 module.exports = class Inbox {
   /**
@@ -117,7 +118,7 @@ function messageArbiter (messageA, messageB) {
   if (messageA._fromTicks !== messageB._fromTicks) {
     return messageA._fromTicks < messageB._fromTicks ? messageA : messageB
   } else {
-    // insertion order
-    return messageA
+    // sender id
+    return Buffer.compare(messageA._fromId, messageB._fromId) ? messageA : messageB
   }
 }

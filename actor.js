@@ -144,6 +144,7 @@ module.exports = class Kernel {
    */
   send (cap, message) {
     message._fromTicks = this.ticks
+    message._fromId = this.id
     message.tag = cap.tag
 
     return this.hypervisor.send(cap, message)

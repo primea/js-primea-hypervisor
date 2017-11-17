@@ -50,7 +50,7 @@ module.exports = class Scheduler {
    * @return {Object}
    */
   getInstance (id) {
-    return this.instances.get(id) || this._loadingInstances.getLock(id) || this.systemServices.get(id)
+    return this.instances.get(id) || this._loadingInstances.get(id) || this.systemServices.get(id)
   }
 
   /**

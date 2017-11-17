@@ -478,3 +478,53 @@ tape('arbiter test for id comparision', async t => {
   t.deepEquals(stateRoot, expectedState, 'expected root!')
   t.equals(hypervisor.scheduler.leastNumberOfTicks(), 0)
 })
+
+tape.skip('basic tagged caps', async t => {
+  t.plan(4)
+  let message
+  const expectedState = {
+    '/': Buffer.from('fc935489953ed357f06171dd23439d83190b3a1b', 'hex')
+  }
+
+  const tree = new RadixTree({
+    db: db
+  })
+
+  class testVMContainerA extends BaseContainer {
+    async onMessage (m) {
+      t.true(m, 'should recive first message')
+      const rCap = this.kernel.mintCap(1)
+      const message = new Message()
+      message.responseCap = rCap
+      console.log('here')
+      this.kernel.send(m.caps[0], message)
+      const rMessage = await this.kernel.inbox.waitOnTag([1], 44)
+      t.true(rMessage, 'should recive a response message')
+    }
+  }
+
+  class testVMContainerB extends BaseContainer {
+    onMessage (m) {
+      console.log('&&&&&&&&&&&&&&&&&&&&&&&&&&')
+      t.true(m, 'should recive a message')
+    }
+
+    static get typeId () {
+      return 8
+    }
+  }
+
+  const hypervisor = new Hypervisor(tree)
+  hypervisor.registerContainer(testVMContainerA)
+  hypervisor.registerContainer(testVMContainerB)
+
+  let capA = await hypervisor.createInstance(testVMContainerA.typeId, new Message())
+  let capB = await hypervisor.createInstance(testVMContainerB.typeId, new Message())
+
+  await hypervisor.send(capA, new Message({caps: [capB]}))
+
+  const stateRoot = await hypervisor.createStateRoot(Infinity)
+
+  t.deepEquals(stateRoot, expectedState, 'expected root!')
+  t.equals(hypervisor.scheduler.leastNumberOfTicks(), 0)
+})

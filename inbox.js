@@ -14,7 +14,7 @@ module.exports = class Inbox {
     this.actor = opts.actor
     this.hypervisor = opts.hypervisor
     this._queue = []
-    this._awaitedTags = new Set()
+    this._waitingTagsQueue = []
     this._oldestMessagePromise = new Promise((resolve, reject) => {
       this._oldestMessageResolve = resolve
     })
@@ -25,8 +25,7 @@ module.exports = class Inbox {
    * @param {Message} message
    */
   queue (message) {
-    binarySearchInsert(this._queue, messageArbiter, message)
-    this._queueWaitingTags(message)
+    this._queueMessage(message)
 
     const oldestMessage = this._getOldestMessage()
     if (oldestMessage === message) {
@@ -37,31 +36,46 @@ module.exports = class Inbox {
     }
   }
 
-  /**
-   * Waits for the the next message if any
-   * @returns {Promise}
-   */
-  async getNextMessage (tags, timeout = Infinity) {
-    let oldestTime = this.hypervisor.scheduler.leastNumberOfTicks(this.actor.id)
-
+  async waitOnTag (tags, timeout) {
     if (this._waitingTags) {
       throw new Error('already getting next message')
     }
 
-    if (tags) {
-      this._waitingTags = new Set(tags)
-      this._queue.forEach(message => {
-        this._queueWaitingTags(message)
-      })
+    this._waitingTags = new Set(tags)
+    this._queue.forEach(message => this._queueWaitingTags(message))
+
+    const message = await this.getNextMessage(timeout)
+    // console.log('***', message)
+
+    delete this._waitingTags
+    return message
+  }
+
+  /**
+   * Waits for the the next message if any
+   * @returns {Promise}
+   */
+  async getNextMessage (timeout = 0) {
+    let message = this._getOldestMessage()
+    if (message === undefined && timeout === 0) {
+      return
     }
 
-    let message = this._getOldestMessage()
-    let timeouted = false
+    let oldestTime = this.hypervisor.scheduler.leastNumberOfTicks(this.actor.id)
+    timeout += this.actor.ticks
 
-    while (message && oldestTime <= message._fromTicks && !timeouted) {
+    while (true) {
+      if (message && message._fromTicks < timeout) {
+        timeout = message._fromTicks
+      }
+      // console.log(timeout, oldestTime)
+
+      if (oldestTime >= timeout) {
+        break
+      }
+
       await Promise.race([
-        this.hypervisor.scheduler.wait(message._fromTicks, this.actor.id).then(() => {
-          timeouted = true
+        this.hypervisor.scheduler.wait(timeout, this.actor.id).then(() => {
           message = this._getOldestMessage()
         }),
         this._olderMessage(message).then(m => {
@@ -70,17 +84,7 @@ module.exports = class Inbox {
       ])
       oldestTime = this.hypervisor.scheduler.leastNumberOfTicks(this.actor.id)
     }
-
-    if (this._waitingTags) {
-      message = this._waitingTagsQueue.shift()
-    } else {
-      message = this._queue.shift()
-    }
-
-    this._waitingTagsQueue = []
-    delete this._waitingTags
-
-    return message
+    return this._deQueueMessage()
   }
 
   // returns a promise that resolve when a message older then the given message
@@ -97,10 +101,27 @@ module.exports = class Inbox {
     }
   }
 
+  _deQueueMessage () {
+    if (this._waitingTags) {
+      return this._waitingTagsQueue.shift()
+    } else {
+      return this._queue.shift()
+    }
+  }
+
+  _queueMessage (message) {
+    if (this._waitingTags) {
+      this._queueWaitingTags(message)
+    }
+    binarySearchInsert(this._queue, messageArbiter, message)
+  }
+
   _queueWaitingTags (message) {
-    if (this._waitingTags && this._waitingTags.has(message.tag)) {
+    if (this._waitingTags.has(message.tag)) {
       this._waitingAddresses.delete(message.tag)
-      binarySearchInsert(this._waitingAddressesQueue, messageArbiter, message)
+      binarySearchInsert(this._waitingTagsQueue, messageArbiter, message)
+      // keep the taged waiting quueue pruned
+      this._waitingTagsQueue = [this._waitingTagsQueue[0]]
     }
   }
 }

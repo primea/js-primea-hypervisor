@@ -42,10 +42,10 @@ module.exports = class Inbox {
     }
 
     this._waitingTags = new Set(tags)
-    this._queue.forEach(message => this._queueWaitingTags(message))
+    this._queue.forEach(message => this._queueMessage(message))
 
     const message = await this.getNextMessage(timeout)
-    // console.log('***', message)
+    this._waitingTagsQueue.forEach(message => this._queueMessage(message))
 
     delete this._waitingTags
     return message
@@ -68,7 +68,6 @@ module.exports = class Inbox {
       if (message && message._fromTicks < timeout) {
         timeout = message._fromTicks
       }
-      // console.log(timeout, oldestTime)
 
       if (oldestTime >= timeout) {
         break
@@ -110,18 +109,11 @@ module.exports = class Inbox {
   }
 
   _queueMessage (message) {
-    if (this._waitingTags) {
-      this._queueWaitingTags(message)
-    }
-    binarySearchInsert(this._queue, messageArbiter, message)
-  }
-
-  _queueWaitingTags (message) {
-    if (this._waitingTags.has(message.tag)) {
-      this._waitingAddresses.delete(message.tag)
+    if (this._waitingTags && this._waitingTags.has(message.tag)) {
+      this._waitingTags.delete(message.tag)
       binarySearchInsert(this._waitingTagsQueue, messageArbiter, message)
-      // keep the taged waiting quueue pruned
-      this._waitingTagsQueue = [this._waitingTagsQueue[0]]
+    } else {
+      binarySearchInsert(this._queue, messageArbiter, message)
     }
   }
 }

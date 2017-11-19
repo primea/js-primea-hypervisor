@@ -479,11 +479,10 @@ tape('arbiter test for id comparision', async t => {
   t.equals(hypervisor.scheduler.leastNumberOfTicks(), 0)
 })
 
-tape.skip('basic tagged caps', async t => {
-  t.plan(4)
-  let message
+tape('basic tagged caps', async t => {
+  t.plan(5)
   const expectedState = {
-    '/': Buffer.from('fc935489953ed357f06171dd23439d83190b3a1b', 'hex')
+    '/': Buffer.from('ef403643f292108fe9edc1700d80a7bf2402e7a0', 'hex')
   }
 
   const tree = new RadixTree({
@@ -496,8 +495,7 @@ tape.skip('basic tagged caps', async t => {
       const rCap = this.kernel.mintCap(1)
       const message = new Message()
       message.responseCap = rCap
-      console.log('here')
-      this.kernel.send(m.caps[0], message)
+      await this.kernel.send(m.caps[0], message)
       const rMessage = await this.kernel.inbox.waitOnTag([1], 44)
       t.true(rMessage, 'should recive a response message')
     }
@@ -505,7 +503,6 @@ tape.skip('basic tagged caps', async t => {
 
   class testVMContainerB extends BaseContainer {
     onMessage (m) {
-      console.log('&&&&&&&&&&&&&&&&&&&&&&&&&&')
       t.true(m, 'should recive a message')
     }
 

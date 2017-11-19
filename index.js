@@ -19,7 +19,7 @@ module.exports = class Hypervisor {
     cap = await Promise.resolve(cap)
     const id = cap.destId
     const instance = await this.getInstance(id)
-    return instance.queue(message)
+    instance.queue(message)
   }
 
   // loads an instance of a container from the state

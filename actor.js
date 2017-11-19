@@ -56,7 +56,6 @@ module.exports = class Kernel {
   async _startMessageLoop () {
     // this ensure we only every have one loop running at a time
     if (this.containerState !== 'running') {
-      this.hypervisor.scheduler.update(this)
       this.containerState = 'running'
       while (1) {
         const message = await this.inbox.getNextMessage()
@@ -99,6 +98,7 @@ module.exports = class Kernel {
     try {
       result = await this.container[method](message)
     } catch (e) {
+      console.log(e)
       result = {
         exception: true,
         exceptionError: e

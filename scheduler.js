@@ -104,38 +104,40 @@ module.exports = class Scheduler {
   // checks outstanding waits to see if they can be resolved
   _checkWaits () {
     // if there are no running containers
-    if (!this.instances.size) {
-      // clear any remanding waits
-      this._waits.forEach(wait => wait.resolve())
-      this._waits = []
-    } else {
-      // find the old container and see if to can resolve any of the waits
-      while (this._waits[0]) {
-        const wait = this._waits[0]
-        const least = this.leastNumberOfTicks(wait.id)
-        if (wait.ticks <= least) {
-          this._waits.shift()
-          wait.resolve()
-          this._running.add(wait.id)
-        } else {
-          break
-        }
-      }
-
-      if (!this._running.size) {
-        // if there are no containers running find the oldest wait and update
-        // the oldest containers to it ticks
-        const oldest = this._waits[0].ticks
-        for (let instance of this.instances) {
-          instance = instance[1]
-          if (instance.ticks > oldest) {
-            break
+    if (!this._loadingInstances.size) {
+      if (!this.instances.size) {
+        // clear any remanding waits
+        this._waits.forEach(wait => wait.resolve())
+        this._waits = []
+      } else {
+        // find the old container and see if to can resolve any of the waits
+        while (this._waits[0]) {
+          const wait = this._waits[0]
+          const least = this.leastNumberOfTicks(wait.id)
+          if (wait.ticks <= least) {
+            this._waits.shift()
+            wait.resolve()
+            this._running.add(wait.id)
           } else {
-            instance.ticks = oldest
-            this._update(instance)
+            break
           }
         }
-        return this._checkWaits()
+
+        if (!this._running.size) {
+          // if there are no containers running find the oldest wait and update
+          // the oldest containers to it ticks
+          const oldest = this._waits[0].ticks
+          for (let instance of this.instances) {
+            instance = instance[1]
+            if (instance.ticks > oldest) {
+              break
+            } else {
+              instance.ticks = oldest
+              this._update(instance)
+            }
+          }
+          return this._checkWaits()
+        }
       }
     }
   }

@@ -122,9 +122,9 @@ module.exports = class Actor {
     this.hypervisor.scheduler.update(this)
   }
 
-  createInstance (type, message) {
+  createActor (type, message) {
     const id = this.generateNextId()
-    return this.hypervisor.createInstance(type, message, id)
+    return this.hypervisor.createActor(type, message, id)
   }
 
   generateNextId () {

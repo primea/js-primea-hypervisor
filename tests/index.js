@@ -35,7 +35,7 @@ tape('basic', async t => {
   const hypervisor = new Hypervisor(tree)
   hypervisor.registerContainer(testVMContainer)
 
-  let rootCap = await hypervisor.createInstance(testVMContainer.typeId, new Message())
+  let rootCap = await hypervisor.createActor(testVMContainer.typeId, new Message())
 
   message = new Message()
   hypervisor.send(rootCap, message)
@@ -88,8 +88,8 @@ tape('two communicating actors', async t => {
   hypervisor.registerContainer(testVMContainerA)
   hypervisor.registerContainer(testVMContainerB)
 
-  let capB = await hypervisor.createInstance(testVMContainerB.typeId, new Message())
-  await hypervisor.createInstance(testVMContainerA.typeId, new Message({
+  let capB = await hypervisor.createActor(testVMContainerB.typeId, new Message())
+  await hypervisor.createActor(testVMContainerA.typeId, new Message({
     caps: [capB]
   }))
 
@@ -130,12 +130,12 @@ tape('three communicating actors', async t => {
   hypervisor.registerContainer(testVMContainerA)
   hypervisor.registerContainer(testVMContainerB)
 
-  let capB = await hypervisor.createInstance(testVMContainerB.typeId, new Message())
-  await hypervisor.createInstance(testVMContainerA.typeId, new Message({
+  let capB = await hypervisor.createActor(testVMContainerB.typeId, new Message())
+  await hypervisor.createActor(testVMContainerA.typeId, new Message({
     caps: [capB]
   }))
 
-  await hypervisor.createInstance(testVMContainerA.typeId, new Message({
+  await hypervisor.createActor(testVMContainerA.typeId, new Message({
     caps: [capB]
   }))
 
@@ -183,12 +183,12 @@ tape('three communicating actors, with tick counting', async t => {
   hypervisor.registerContainer(testVMContainerA)
   hypervisor.registerContainer(testVMContainerB)
 
-  let capB = await hypervisor.createInstance(testVMContainerB.typeId, new Message())
-  hypervisor.createInstance(testVMContainerA.typeId, new Message({
+  let capB = await hypervisor.createActor(testVMContainerB.typeId, new Message())
+  hypervisor.createActor(testVMContainerA.typeId, new Message({
     caps: [capB]
   }))
 
-  await hypervisor.createInstance(testVMContainerA.typeId, new Message({
+  await hypervisor.createActor(testVMContainerA.typeId, new Message({
     caps: [capB]
   }))
 
@@ -234,8 +234,8 @@ tape('response caps', async t => {
   hypervisor.registerContainer(testVMContainerA)
   hypervisor.registerContainer(testVMContainerB)
 
-  let capB = await hypervisor.createInstance(testVMContainerB.typeId, new Message())
-  await hypervisor.createInstance(testVMContainerA.typeId, new Message({
+  let capB = await hypervisor.createActor(testVMContainerB.typeId, new Message())
+  await hypervisor.createActor(testVMContainerA.typeId, new Message({
     caps: [capB]
   }))
 
@@ -282,8 +282,8 @@ tape('response caps for errors', async t => {
   hypervisor.registerContainer(testVMContainerA)
   hypervisor.registerContainer(testVMContainerB)
 
-  let capB = await hypervisor.createInstance(testVMContainerB.typeId, new Message())
-  await hypervisor.createInstance(testVMContainerA.typeId, new Message({
+  let capB = await hypervisor.createActor(testVMContainerB.typeId, new Message())
+  await hypervisor.createActor(testVMContainerA.typeId, new Message({
     caps: [capB]
   }))
 
@@ -308,7 +308,7 @@ tape('actor creation', async t => {
       message = new Message()
       const cap = this.kernel.mintCap()
       message.caps.push(cap)
-      return this.kernel.createInstance(testVMContainerB.typeId, message)
+      return this.kernel.createActor(testVMContainerB.typeId, message)
     }
 
     onMessage (m) {
@@ -331,7 +331,7 @@ tape('actor creation', async t => {
   hypervisor.registerContainer(testVMContainerA)
   hypervisor.registerContainer(testVMContainerB)
 
-  await hypervisor.createInstance(testVMContainerA.typeId, new Message())
+  await hypervisor.createActor(testVMContainerA.typeId, new Message())
 
   const stateRoot = await hypervisor.createStateRoot(Infinity)
 
@@ -390,8 +390,8 @@ tape('simple message arbiter test', async t => {
   hypervisor.registerContainer(testVMContainerA)
   hypervisor.registerContainer(testVMContainerB)
 
-  let capB = await hypervisor.createInstance(testVMContainerB.typeId, new Message())
-  await hypervisor.createInstance(testVMContainerA.typeId, new Message({
+  let capB = await hypervisor.createActor(testVMContainerB.typeId, new Message())
+  await hypervisor.createActor(testVMContainerA.typeId, new Message({
     caps: [capB]
   }))
 
@@ -447,16 +447,16 @@ tape('arbiter test for id comparision', async t => {
   hypervisor.registerContainer(testVMContainerA)
   hypervisor.registerContainer(testVMContainerB)
 
-  let capB = await hypervisor.createInstance(testVMContainerB.typeId, new Message())
+  let capB = await hypervisor.createActor(testVMContainerB.typeId, new Message())
   hypervisor.send(capB, new Message({
     data: 'first'
   }))
-  await hypervisor.createInstance(testVMContainerA.typeId, new Message({
+  await hypervisor.createActor(testVMContainerA.typeId, new Message({
     caps: [capB],
     data: 'second'
   }))
 
-  await hypervisor.createInstance(testVMContainerA.typeId, new Message({
+  await hypervisor.createActor(testVMContainerA.typeId, new Message({
     caps: [capB],
     data: 'third'
   }))
@@ -502,8 +502,8 @@ tape('basic tagged caps', async t => {
   hypervisor.registerContainer(testVMContainerA)
   hypervisor.registerContainer(testVMContainerB)
 
-  let capA = await hypervisor.createInstance(testVMContainerA.typeId, new Message())
-  let capB = await hypervisor.createInstance(testVMContainerB.typeId, new Message())
+  let capA = await hypervisor.createActor(testVMContainerA.typeId, new Message())
+  let capB = await hypervisor.createActor(testVMContainerB.typeId, new Message())
 
   await hypervisor.send(capA, new Message({caps: [capB]}))
 
@@ -553,8 +553,8 @@ tape('trying to listen for caps more then once', async t => {
   hypervisor.registerContainer(testVMContainerA)
   hypervisor.registerContainer(testVMContainerB)
 
-  let capA = await hypervisor.createInstance(testVMContainerA.typeId, new Message())
-  let capB = await hypervisor.createInstance(testVMContainerB.typeId, new Message())
+  let capA = await hypervisor.createActor(testVMContainerA.typeId, new Message())
+  let capB = await hypervisor.createActor(testVMContainerB.typeId, new Message())
 
   await hypervisor.send(capA, new Message({caps: [capB]}))
 
@@ -618,9 +618,9 @@ tape('multple messages to restore on waiting for tags', async t => {
   hypervisor.registerContainer(testVMContainerA)
   hypervisor.registerContainer(testVMContainerB)
 
-  let capA = await hypervisor.createInstance(testVMContainerA.typeId, new Message())
-  let capB1 = await hypervisor.createInstance(testVMContainerB.typeId, new Message())
-  let capB2 = await hypervisor.createInstance(testVMContainerB.typeId, new Message())
+  let capA = await hypervisor.createActor(testVMContainerA.typeId, new Message())
+  let capB1 = await hypervisor.createActor(testVMContainerB.typeId, new Message())
+  let capB2 = await hypervisor.createActor(testVMContainerB.typeId, new Message())
 
   await hypervisor.send(capA, new Message({caps: [capB1, capB2]}))
 
@@ -682,9 +682,9 @@ tape('multple messages to backup on waiting for tags', async t => {
   hypervisor.registerContainer(testVMContainerA)
   hypervisor.registerContainer(testVMContainerB)
 
-  let capA = await hypervisor.createInstance(testVMContainerA.typeId, new Message())
-  let capB1 = await hypervisor.createInstance(testVMContainerB.typeId, new Message())
-  let capB2 = await hypervisor.createInstance(testVMContainerB.typeId, new Message())
+  let capA = await hypervisor.createActor(testVMContainerA.typeId, new Message())
+  let capB1 = await hypervisor.createActor(testVMContainerB.typeId, new Message())
+  let capB2 = await hypervisor.createActor(testVMContainerB.typeId, new Message())
 
   await hypervisor.send(capA, new Message({caps: [capB1, capB2]}))
 
@@ -746,9 +746,9 @@ tape('multple messages, but single tag', async t => {
   hypervisor.registerContainer(testVMContainerA)
   hypervisor.registerContainer(testVMContainerB)
 
-  let capA = await hypervisor.createInstance(testVMContainerA.typeId, new Message())
-  let capB1 = await hypervisor.createInstance(testVMContainerB.typeId, new Message())
-  let capB2 = await hypervisor.createInstance(testVMContainerB.typeId, new Message())
+  let capA = await hypervisor.createActor(testVMContainerA.typeId, new Message())
+  let capB1 = await hypervisor.createActor(testVMContainerB.typeId, new Message())
+  let capB2 = await hypervisor.createActor(testVMContainerB.typeId, new Message())
 
   await hypervisor.send(capA, new Message({caps: [capB1, capB2]}))
 
@@ -806,9 +806,9 @@ tape('deadlock test', async t => {
   hypervisor.registerContainer(testVMContainerB)
   hypervisor.registerContainer(testVMContainerC)
 
-  let capA = await hypervisor.createInstance(testVMContainerA.typeId, new Message())
-  let capB = await hypervisor.createInstance(testVMContainerB.typeId, new Message())
-  let capC = await hypervisor.createInstance(testVMContainerC.typeId, new Message())
+  let capA = await hypervisor.createActor(testVMContainerA.typeId, new Message())
+  let capB = await hypervisor.createActor(testVMContainerB.typeId, new Message())
+  let capC = await hypervisor.createActor(testVMContainerC.typeId, new Message())
 
   await Promise.all([
     hypervisor.send(capA, new Message()),

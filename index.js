@@ -1,4 +1,4 @@
-const Kernel = require('./actor.js')
+const Actor = require('./actor.js')
 const Scheduler = require('./scheduler.js')
 
 module.exports = class Hypervisor {
@@ -31,8 +31,8 @@ module.exports = class Hypervisor {
     const state = await this.tree.get(id, true)
     const container = this._containerTypes[state.value.type]
 
-    // create a new kernel instance
-    const kernel = new Kernel({
+    // create a new actor instance
+    const actor = new Actor({
       hypervisor: this,
       state: state.value,
       node: state.node,
@@ -42,8 +42,8 @@ module.exports = class Hypervisor {
     })
 
     // save the newly created instance
-    this.scheduler.update(kernel)
-    return kernel
+    this.scheduler.update(actor)
+    return actor
   }
 
   /**
@@ -65,12 +65,12 @@ module.exports = class Hypervisor {
   }
 
   /**
-   * creates an instance of a container
+   * creates an instance of an Actor
    * @param {Integer} type - the type id for the container
-   * @param {Object} message - an intial [message](https://github.com/primea/js-primea-message) to send newly created instance
-   * @param {Object} id - the id for the instance
+   * @param {Object} message - an intial [message](https://github.com/primea/js-primea-message) to send newly created actor
+   * @param {Object} id - the id for the actor
    */
-  async createInstance (type, message, id = {nonce: this.nonce, parent: null}) {
+  async createActor (type, message, id = {nonce: this.nonce, parent: null}) {
     const encoded = encodedID(id)
     this.nonce++
     const idHash = await this._getHashFromObj(encoded)

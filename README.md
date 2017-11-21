@@ -20,4 +20,6 @@ clone and run `npm install`
 [./docs](./docs/index.md)
 
 # LICENSE
-[MPL-2.0](https://tldrlegal.com/license/mozilla-public-license-2.0-(mpl-2))
+[MPL-2.0][LICENSE]
+
+[LICENSE]: https://tldrlegal.com/license/mozilla-public-license-2.0-(mpl-2)

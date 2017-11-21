@@ -55,7 +55,7 @@ module.exports = class Scheduler {
 
   /**
    * deletes an instance from the scheduler
-   * @param {string} id - the containers id
+   * @param {String} id - the containers id
    */
   done (id) {
     this._running.delete(id)

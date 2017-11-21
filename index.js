@@ -5,8 +5,7 @@ module.exports = class Hypervisor {
   /**
    * The Hypervisor manages the container instances by instantiating them and
    * destorying them when possible. It also facilitates localating Containers
-   * @param {Graph} dag an instance of [ipfs.dag](https://github.com/ipfs/interface-ipfs-core/tree/master/API/dag#dag-api)
-   * @param {object} state - the starting state
+   * @param {Tree} tree - a [radix tree](https://github.com/dfinity/js-dfinity-radix-tree) to store the state
    */
   constructor (tree) {
     this.tree = tree
@@ -15,6 +14,12 @@ module.exports = class Hypervisor {
     this.nonce = 0
   }
 
+  /**
+   * sends a message
+   * @param {Object} cap - the capabilitly used to send the message
+   * @param {Object} message - the [message](https://github.com/primea/js-primea-message) to send
+   * @returns {Promise} a promise that resolves once the receiving container is loaded
+   */
   async send (cap, message) {
     const id = cap.destId
     const instance = await this.getInstance(id)
@@ -59,6 +64,12 @@ module.exports = class Hypervisor {
     }
   }
 
+  /**
+   * creates an instance of a container
+   * @param {Integer} type - the type id for the container
+   * @param {Object} message - an intial [message](https://github.com/primea/js-primea-message) to send newly created instance
+   * @param {Object} id - the id for the instance
+   */
   async createInstance (type, message, id = {nonce: this.nonce, parent: null}) {
     const encoded = encodedID(id)
     this.nonce++
@@ -105,7 +116,7 @@ module.exports = class Hypervisor {
    * regirsters a container with the hypervisor
    * @param {Class} Constructor - a Class for instantiating the container
    * @param {*} args - any args that the contructor takes
-   * @param {interger} typeId - the container's type identification ID
+   * @param {Interger} typeId - the container's type identification ID
    */
   registerContainer (Constructor, args, typeId = Constructor.typeId) {
     this._containerTypes[typeId] = {

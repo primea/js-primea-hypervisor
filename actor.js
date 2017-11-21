@@ -25,7 +25,7 @@ module.exports = class Actor {
     })
 
     this.ticks = 0
-    this.containerState = 'idle'
+    this.running = false
 
     this.caps = new CapsManager(opts.state.caps)
   }
@@ -68,8 +68,8 @@ module.exports = class Actor {
   // waits for the next message
   async _startMessageLoop () {
     // this ensure we only every have one loop running at a time
-    if (this.containerState !== 'running') {
-      this.containerState = 'running'
+    if (!this.running) {
+      this.running = true
       while (1) {
         const message = await this.inbox.nextMessage()
         if (!message) break
@@ -84,7 +84,7 @@ module.exports = class Actor {
         await this.message(message)
       }
 
-      this.containerState = 'idle'
+      this.running = false
       this.container.onIdle()
     }
   }

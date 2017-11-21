@@ -70,7 +70,7 @@ tape('two communicating actors', async t => {
   class testVMContainerA extends BaseContainer {
     onCreation (m) {
       message = new Message()
-      return this.kernel.send(m.caps[0], message)
+      return this.actor.send(m.caps[0], message)
     }
   }
 
@@ -112,7 +112,7 @@ tape('three communicating actors', async t => {
   class testVMContainerA extends BaseContainer {
     onCreation (m) {
       message = new Message()
-      return this.kernel.send(m.caps[0], message)
+      return this.actor.send(m.caps[0], message)
     }
   }
 
@@ -159,10 +159,10 @@ tape('three communicating actors, with tick counting', async t => {
 
   class testVMContainerA extends BaseContainer {
     async onCreation (m) {
-      this.kernel.incrementTicks(ticks)
+      this.actor.incrementTicks(ticks)
       ticks++
       message = new Message()
-      await this.kernel.send(m.caps[0], message)
+      await this.actor.send(m.caps[0], message)
     }
   }
 
@@ -211,8 +211,8 @@ tape('response caps', async t => {
   class testVMContainerA extends BaseContainer {
     onCreation (m) {
       message = new Message()
-      message.responseCap = this.kernel.mintCap()
-      return this.kernel.send(m.caps[0], message)
+      message.responseCap = this.actor.mintCap()
+      return this.actor.send(m.caps[0], message)
     }
 
     onMessage (m) {
@@ -258,8 +258,8 @@ tape('response caps for errors', async t => {
   class testVMContainerA extends BaseContainer {
     onCreation (m) {
       message = new Message()
-      message.responseCap = this.kernel.mintCap()
-      return this.kernel.send(m.caps[0], message)
+      message.responseCap = this.actor.mintCap()
+      return this.actor.send(m.caps[0], message)
     }
 
     onMessage (m) {
@@ -306,9 +306,9 @@ tape('actor creation', async t => {
   class testVMContainerA extends BaseContainer {
     onCreation (m) {
       message = new Message()
-      const cap = this.kernel.mintCap()
+      const cap = this.actor.mintCap()
       message.caps.push(cap)
-      return this.kernel.createActor(testVMContainerB.typeId, message)
+      return this.actor.createActor(testVMContainerB.typeId, message)
     }
 
     onMessage (m) {
@@ -319,7 +319,7 @@ tape('actor creation', async t => {
   class testVMContainerB extends BaseContainer {
     onCreation (m) {
       const cap = m.caps[0]
-      return this.kernel.send(cap, new Message())
+      return this.actor.send(cap, new Message())
     }
 
     static get typeId () {
@@ -359,11 +359,11 @@ tape('simple message arbiter test', async t => {
       const message3 = new Message({
         data: 'third'
       })
-      this.kernel.send(m.caps[0], message1)
-      this.kernel.incrementTicks(1)
-      this.kernel.send(m.caps[0], message2)
-      this.kernel.incrementTicks(1)
-      return this.kernel.send(m.caps[0], message3)
+      this.actor.send(m.caps[0], message1)
+      this.actor.incrementTicks(1)
+      this.actor.send(m.caps[0], message2)
+      this.actor.incrementTicks(1)
+      return this.actor.send(m.caps[0], message3)
     }
   }
 
@@ -416,7 +416,7 @@ tape('arbiter test for id comparision', async t => {
       message = new Message({
         data: m.data
       })
-      this.kernel.send(m.caps[0], message)
+      this.actor.send(m.caps[0], message)
     }
   }
 
@@ -479,11 +479,11 @@ tape('basic tagged caps', async t => {
   class testVMContainerA extends BaseContainer {
     async onMessage (m) {
       t.true(m, 'should recive first message')
-      const rCap = this.kernel.mintCap(1)
+      const rCap = this.actor.mintCap(1)
       const message = new Message()
       message.responseCap = rCap
-      await this.kernel.send(m.caps[0], message)
-      const rMessage = await this.kernel.inbox.waitOnTag([1], 44)
+      await this.actor.send(m.caps[0], message)
+      const rMessage = await this.actor.inbox.waitOnTag([1], 44)
       t.true(rMessage, 'should recive a response message')
     }
   }
@@ -525,13 +525,13 @@ tape('trying to listen for caps more then once', async t => {
   class testVMContainerA extends BaseContainer {
     async onMessage (m) {
       t.true(m, 'should recive first message')
-      const rCap = this.kernel.mintCap(1)
+      const rCap = this.actor.mintCap(1)
       const message = new Message({data: 'first'})
       message.responseCap = rCap
-      await this.kernel.send(m.caps[0], message)
-      const promise = this.kernel.inbox.waitOnTag([1], 44)
+      await this.actor.send(m.caps[0], message)
+      const promise = this.actor.inbox.waitOnTag([1], 44)
       try {
-        await this.kernel.inbox.waitOnTag([1], 44)
+        await this.actor.inbox.waitOnTag([1], 44)
       } catch (e) {
         t.true(e, 'should error if waiting twice')
       }
@@ -577,8 +577,8 @@ tape('multple messages to restore on waiting for tags', async t => {
     async onMessage (m) {
       t.true(m, 'should recive first message')
       if (m.caps.length) {
-        const cap1 = this.kernel.mintCap(1)
-        const cap2 = this.kernel.mintCap(2)
+        const cap1 = this.actor.mintCap(1)
+        const cap2 = this.actor.mintCap(2)
         const message1 = new Message({
           data: 'first'
         })
@@ -588,10 +588,10 @@ tape('multple messages to restore on waiting for tags', async t => {
         message1.caps.push(cap1)
         message2.caps.push(cap2)
         await Promise.all([
-          this.kernel.send(m.caps[0], message1),
-          this.kernel.send(m.caps[1], message2)
+          this.actor.send(m.caps[0], message1),
+          this.actor.send(m.caps[1], message2)
         ])
-        const rMessage = await this.kernel.inbox.waitOnTag([1, 2], 44)
+        const rMessage = await this.actor.inbox.waitOnTag([1, 2], 44)
         t.true(rMessage, 'should recive a response message')
       }
     }
@@ -601,8 +601,8 @@ tape('multple messages to restore on waiting for tags', async t => {
     async onMessage (m) {
       t.true(m, 'should recive a message')
       const cap = m.caps[0]
-      this.kernel.incrementTicks(1)
-      await this.kernel.send(cap, new Message({data: m.data}))
+      this.actor.incrementTicks(1)
+      await this.actor.send(cap, new Message({data: m.data}))
 
       return new Promise((resolve, reject) => {
         setTimeout(resolve, 200)
@@ -643,8 +643,8 @@ tape('multple messages to backup on waiting for tags', async t => {
     async onMessage (m) {
       t.true(m, 'should recive first message')
       if (m.caps.length) {
-        const cap1 = this.kernel.mintCap(1)
-        const cap2 = this.kernel.mintCap(2)
+        const cap1 = this.actor.mintCap(1)
+        const cap2 = this.actor.mintCap(2)
         const message1 = new Message({
           data: 'first'
         })
@@ -653,9 +653,9 @@ tape('multple messages to backup on waiting for tags', async t => {
         })
         message1.caps.push(cap1)
         message2.caps.push(cap2)
-        await this.kernel.send(m.caps[0], message1)
-        await this.kernel.send(m.caps[1], message2)
-        const rMessage = await this.kernel.inbox.waitOnTag([1, 2], 44)
+        await this.actor.send(m.caps[0], message1)
+        await this.actor.send(m.caps[1], message2)
+        const rMessage = await this.actor.inbox.waitOnTag([1, 2], 44)
         t.true(rMessage, 'should recive a response message')
       }
     }
@@ -665,8 +665,8 @@ tape('multple messages to backup on waiting for tags', async t => {
     async onMessage (m) {
       t.true(m, 'should recive a message')
       const cap = m.caps[0]
-      this.kernel.incrementTicks(1)
-      await this.kernel.send(cap, new Message({data: m.data}))
+      this.actor.incrementTicks(1)
+      await this.actor.send(cap, new Message({data: m.data}))
 
       return new Promise((resolve, reject) => {
         setTimeout(resolve, 200)
@@ -707,8 +707,8 @@ tape('multple messages, but single tag', async t => {
     async onMessage (m) {
       t.true(m, 'should recive first message')
       if (m.caps.length) {
-        const cap1 = this.kernel.mintCap(1)
-        const cap2 = this.kernel.mintCap(2)
+        const cap1 = this.actor.mintCap(1)
+        const cap2 = this.actor.mintCap(2)
         const message1 = new Message({
           data: 'first'
         })
@@ -717,9 +717,9 @@ tape('multple messages, but single tag', async t => {
         })
         message1.caps.push(cap1)
         message2.caps.push(cap2)
-        await this.kernel.send(m.caps[0], message1)
-        await this.kernel.send(m.caps[1], message2)
-        const rMessage = await this.kernel.inbox.waitOnTag([2], 44)
+        await this.actor.send(m.caps[0], message1)
+        await this.actor.send(m.caps[1], message2)
+        const rMessage = await this.actor.inbox.waitOnTag([2], 44)
         t.true(rMessage, 'should recive a response message')
       }
     }
@@ -729,8 +729,8 @@ tape('multple messages, but single tag', async t => {
     async onMessage (m) {
       t.true(m, 'should recive a message')
       const cap = m.caps[0]
-      this.kernel.incrementTicks(1)
-      await this.kernel.send(cap, new Message({data: m.data}))
+      this.actor.incrementTicks(1)
+      await this.actor.send(cap, new Message({data: m.data}))
 
       return new Promise((resolve, reject) => {
         setTimeout(resolve, 200)
@@ -770,7 +770,7 @@ tape('deadlock test', async t => {
   class testVMContainerA extends BaseContainer {
     async onMessage (m) {
       t.true(m, 'should recive first message 1')
-      const rMessage = await this.kernel.inbox.waitOnTag([1], 50)
+      const rMessage = await this.actor.inbox.waitOnTag([1], 50)
       t.equals(rMessage, undefined, 'should recive a response message 1')
     }
   }
@@ -778,8 +778,8 @@ tape('deadlock test', async t => {
   class testVMContainerB extends BaseContainer {
     async onMessage (m) {
       t.true(m, 'should recive first message 2')
-      this.kernel.incrementTicks(47)
-      const rMessage = await this.kernel.inbox.waitOnTag([1], 1)
+      this.actor.incrementTicks(47)
+      const rMessage = await this.actor.inbox.waitOnTag([1], 1)
       t.equals(rMessage, undefined, 'should recive a response message 2')
     }
 
@@ -791,8 +791,8 @@ tape('deadlock test', async t => {
   class testVMContainerC extends BaseContainer {
     async onMessage (m) {
       t.true(m, 'should recive first message 3')
-      this.kernel.incrementTicks(45)
-      const rMessage = await this.kernel.inbox.waitOnTag([1], 1)
+      this.actor.incrementTicks(45)
+      const rMessage = await this.actor.inbox.waitOnTag([1], 1)
       t.equals(rMessage, undefined, 'should recive a response message 3')
     }
 

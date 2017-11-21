@@ -16,7 +16,6 @@ module.exports = class Hypervisor {
   }
 
   async send (cap, message) {
-    cap = await Promise.resolve(cap)
     const id = cap.destId
     const instance = await this.getInstance(id)
     instance.queue(message)

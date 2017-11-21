@@ -70,7 +70,7 @@ module.exports = class Scheduler {
    * @param {string} id - optional id of the container that is waiting
    * @return {Promise}
    */
-  wait (ticks = Infinity, id) {
+  wait (ticks, id) {
     this._running.delete(id)
     return new Promise((resolve, reject) => {
       binarySearchInsert(this._waits, comparator, {
@@ -90,7 +90,7 @@ module.exports = class Scheduler {
    * returns the oldest container's ticks
    * @return {integer}
    */
-  leastNumberOfTicks (exculde) {
+  syncLeastNumberOfTicks (exculde) {
     let ticks = 0
     for (const instance of this.instances) {
       ticks = instance[1].ticks
@@ -102,42 +102,50 @@ module.exports = class Scheduler {
   }
 
   // checks outstanding waits to see if they can be resolved
-  _checkWaits () {
+  async _checkWaits () {
+    if (this._checkingWaits) {
+      return
+    } else {
+      this._checkingWaits = true
+      await [...this._loadingInstances.values()]
+    }
     // if there are no running containers
-    if (!this._loadingInstances.size) {
-      if (!this.instances.size) {
-        // clear any remanding waits
-        this._waits.forEach(wait => wait.resolve())
-        this._waits = []
-      } else {
-        // find the old container and see if to can resolve any of the waits
-        while (this._waits[0]) {
-          const wait = this._waits[0]
-          const least = this.leastNumberOfTicks(wait.id)
-          if (wait.ticks <= least) {
-            this._waits.shift()
-            wait.resolve()
-            this._running.add(wait.id)
-          } else {
-            break
-          }
+    if (!this.instances.size) {
+      // clear any remanding waits
+      this._waits.forEach(wait => wait.resolve())
+      this._waits = []
+      this._checkingWaits = false
+    } else {
+      // find the old container and see if to can resolve any of the waits
+      while (this._waits[0]) {
+        const wait = this._waits[0]
+        const least = this.syncLeastNumberOfTicks(wait.id)
+        if (wait.ticks <= least) {
+          this._waits.shift()
+          wait.resolve()
+          this._running.add(wait.id)
+        } else {
+          break
         }
+      }
 
-        if (!this._running.size) {
-          // if there are no containers running find the oldest wait and update
-          // the oldest containers to it ticks
-          const oldest = this._waits[0].ticks
-          for (let instance of this.instances) {
-            instance = instance[1]
-            if (instance.ticks > oldest) {
-              break
-            } else {
-              instance.ticks = oldest
-              this._update(instance)
-            }
+      if (!this._running.size && this._waits.length) {
+        // if there are no containers running find the oldest wait and update
+        // the oldest containers to it ticks
+        const oldest = this._waits[0].ticks
+        for (let instance of this.instances) {
+          instance = instance[1]
+          if (instance.ticks > oldest) {
+            break
+          } else {
+            instance.ticks = oldest
+            this._update(instance)
           }
-          return this._checkWaits()
         }
+        this._checkingWaits = false
+        return this._checkWaits()
+      } else {
+        this._checkingWaits = false
       }
     }
   }

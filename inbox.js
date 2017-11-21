@@ -42,12 +42,14 @@ module.exports = class Inbox {
     }
 
     this._waitingTags = new Set(tags)
-    this._queue.forEach(message => this._queueMessage(message))
+    this._queue = this._queue.filter(message => !this._queueTaggedMessage(message))
 
+    // todo: add saturation test
     const message = await this.getNextMessage(timeout)
-    this._waitingTagsQueue.forEach(message => this._queueMessage(message))
-
     delete this._waitingTags
+    this._waitingTagsQueue.forEach(message => this._queueMessage(message))
+    this._waitingTagsQueue = []
+
     return message
   }
 
@@ -61,8 +63,8 @@ module.exports = class Inbox {
       return
     }
 
-    let oldestTime = this.hypervisor.scheduler.leastNumberOfTicks(this.actor.id)
     timeout += this.actor.ticks
+    let oldestTime = this.hypervisor.scheduler.syncLeastNumberOfTicks(this.actor.id)
 
     while (true) {
       if (message && message._fromTicks < timeout) {
@@ -81,7 +83,7 @@ module.exports = class Inbox {
           message = m
         })
       ])
-      oldestTime = this.hypervisor.scheduler.leastNumberOfTicks(this.actor.id)
+      oldestTime = this.hypervisor.scheduler.syncLeastNumberOfTicks(this.actor.id)
     }
     return this._deQueueMessage()
   }
@@ -109,11 +111,18 @@ module.exports = class Inbox {
   }
 
   _queueMessage (message) {
-    if (this._waitingTags && this._waitingTags.has(message.tag)) {
+    if (!(this._waitingTags && this._queueTaggedMessage(message))) {
+      binarySearchInsert(this._queue, messageArbiter, message)
+    }
+  }
+
+  _queueTaggedMessage (message) {
+    if (this._waitingTags.has(message.tag)) {
       this._waitingTags.delete(message.tag)
       binarySearchInsert(this._waitingTagsQueue, messageArbiter, message)
+      return true
     } else {
-      binarySearchInsert(this._queue, messageArbiter, message)
+      return false
     }
   }
 }

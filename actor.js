@@ -2,7 +2,7 @@ const Message = require('primea-message')
 const CapsManager = require('./capsManager.js')
 const Inbox = require('./inbox.js')
 
-module.exports = class Kernel {
+module.exports = class Actor {
   /**
    * the Kernel manages the varous message passing functions and provides
    * an interface for the containers to use

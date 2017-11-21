@@ -62,7 +62,7 @@ module.exports = class Actor {
     // will be "running" incase the actor recievse a message will running
     // creation code
     this._startMessageLoop()
-    return this.message(message, 'onCreation')
+    return this.runMessage(message, 'onCreation')
   }
 
   // waits for the next message
@@ -81,7 +81,7 @@ module.exports = class Actor {
           this.hypervisor.scheduler.update(this)
         }
         // run the next message
-        await this.message(message)
+        await this.runMessage(message)
       }
 
       this.running = false
@@ -109,7 +109,7 @@ module.exports = class Actor {
    * @param {String} method - which method to run
    * @returns {Promise}
    */
-  async message (message, method = 'onMessage') {
+  async runMessage (message, method = 'onMessage') {
     const responseCap = message.responseCap
     delete message.responseCap
 

@@ -3,7 +3,7 @@
 ### Table of Contents
 
 -   [constructor](#constructor)
--   [getLock](#getlock)
+-   [lock](#lock)
 -   [update](#update)
 -   [getInstance](#getinstance)
 -   [done](#done)
@@ -12,14 +12,14 @@
 
 ## constructor
 
-[scheduler.js:8-13](https://github.com/primea/js-primea-hypervisor/blob/add087e94722a8b77695d21eca754a562d7e79f5/scheduler.js#L8-L13 "Source code on GitHub")
+[scheduler.js:10-19](https://github.com/primea/js-primea-hypervisor/blob/1623d0570d9d2c2c1859ca73c05054596cccf553/scheduler.js#L10-L19 "Source code on GitHub")
 
-The Sceduler manages the run cycle of the containes and figures out which
+The Scheduler manages the run cycle of Actors and figures out which
 order they should run in
 
-## getLock
+## lock
 
-[scheduler.js:20-30](https://github.com/primea/js-primea-hypervisor/blob/add087e94722a8b77695d21eca754a562d7e79f5/scheduler.js#L20-L30 "Source code on GitHub")
+[scheduler.js:26-28](https://github.com/primea/js-primea-hypervisor/blob/1623d0570d9d2c2c1859ca73c05054596cccf553/scheduler.js#L26-L28 "Source code on GitHub")
 
 locks the scheduler from clearing waits untill the lock is resolved
 
@@ -31,54 +31,58 @@ Returns **[function](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Ref
 
 ## update
 
-[scheduler.js:36-40](https://github.com/primea/js-primea-hypervisor/blob/add087e94722a8b77695d21eca754a562d7e79f5/scheduler.js#L36-L40 "Source code on GitHub")
+[scheduler.js:34-39](https://github.com/primea/js-primea-hypervisor/blob/1623d0570d9d2c2c1859ca73c05054596cccf553/scheduler.js#L34-L39 "Source code on GitHub")
 
 updates an instance with a new tick count
 
 **Parameters**
 
--   `instance` **[Object](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Object)** a container instance
+-   `instance` **[Object](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Object)** an actor instance
 
 ## getInstance
 
-[scheduler.js:59-61](https://github.com/primea/js-primea-hypervisor/blob/add087e94722a8b77695d21eca754a562d7e79f5/scheduler.js#L59-L61 "Source code on GitHub")
+[scheduler.js:51-53](https://github.com/primea/js-primea-hypervisor/blob/1623d0570d9d2c2c1859ca73c05054596cccf553/scheduler.js#L51-L53 "Source code on GitHub")
 
-returns a container
+returns an Actor instance
 
 **Parameters**
 
--   `id` **[string](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String)** 
+-   `id` **[String](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String)** 
 
-Returns **[object](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Object)** 
+Returns **[Object](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Object)** 
 
 ## done
 
-[scheduler.js:67-71](https://github.com/primea/js-primea-hypervisor/blob/add087e94722a8b77695d21eca754a562d7e79f5/scheduler.js#L67-L71 "Source code on GitHub")
+[scheduler.js:59-63](https://github.com/primea/js-primea-hypervisor/blob/1623d0570d9d2c2c1859ca73c05054596cccf553/scheduler.js#L59-L63 "Source code on GitHub")
 
 deletes an instance from the scheduler
 
 **Parameters**
 
--   `id` **[string](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String)** the containers id
+-   `id` **[String](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String)** the containers id
 
 ## wait
 
-[scheduler.js:80-94](https://github.com/primea/js-primea-hypervisor/blob/add087e94722a8b77695d21eca754a562d7e79f5/scheduler.js#L80-L94 "Source code on GitHub")
+[scheduler.js:72-86](https://github.com/primea/js-primea-hypervisor/blob/1623d0570d9d2c2c1859ca73c05054596cccf553/scheduler.js#L72-L86 "Source code on GitHub")
 
 returns a promise that resolves once all containers have reached the given
 number of ticks
 
 **Parameters**
 
--   `ticks` **interger** the number of ticks to wait (optional, default `Infinity`)
+-   `ticks` **interger** the number of ticks to wait
 -   `id` **[string](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String)** optional id of the container that is waiting
 
 Returns **[Promise](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Promise)** 
 
 ## leastNumberOfTicks
 
-[scheduler.js:100-103](https://github.com/primea/js-primea-hypervisor/blob/add087e94722a8b77695d21eca754a562d7e79f5/scheduler.js#L100-L103 "Source code on GitHub")
+[scheduler.js:92-101](https://github.com/primea/js-primea-hypervisor/blob/1623d0570d9d2c2c1859ca73c05054596cccf553/scheduler.js#L92-L101 "Source code on GitHub")
 
 returns the oldest container's ticks
+
+**Parameters**
+
+-   `exculde`  
 
 Returns **integer** 

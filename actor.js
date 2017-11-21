@@ -4,10 +4,10 @@ const Inbox = require('./inbox.js')
 
 module.exports = class Actor {
   /**
-   * the Kernel manages the varous message passing functions and provides
+   * the Actor manages the varous message passing functions and provides
    * an interface for the containers to use
    * @param {Object} opts
-   * @param {Object} opts.id - the UUID of the Kernel
+   * @param {Object} opts.id - the UUID of the Actor
    * @param {Object} opts.state - the state of the container
    * @param {Object} opts.hypervisor - the instance of the hypervisor
    * @param {Object} opts.container - the container constuctor and argments

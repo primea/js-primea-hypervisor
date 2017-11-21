@@ -126,7 +126,6 @@ module.exports = class Actor {
         data: result
       }))
     }
-    this.caps.clist.clear()
   }
 
   /**

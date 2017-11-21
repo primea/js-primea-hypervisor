@@ -1,11 +1,8 @@
 module.exports = class CapsManager {
   /**
-   * The port manager manages the the ports. This inculdes creation, deletion
+   * The caps manager manages perstantly stores the capabilities
    * fetching and waiting on ports
-   * @param {Object} opts
-   * @param {Object} opts.state
-   * @param {Object} opts.hypervisor
-   * @param {Object} opts.exoInterface
+   * @param {Object} caps
    */
   constructor (caps) {
     this._storedCaps = caps
@@ -13,30 +10,29 @@ module.exports = class CapsManager {
   }
 
   /**
-   * binds a port to a name
-   * @param {Object} port - the port to bind
-   * @param {String} name - the name of the port
+   * Stores a capability persistantly
+   * @param {String} key
+   * @param {Object} cap
    */
-  store (name, cap) {
-    // save the port instance
-    this._storedCaps[name] = cap
+  store (key, cap) {
+    this._storedCaps[key] = cap
   }
 
   /**
-   * gets a port given it's name
-   * @param {String} name
+   * gets a cap given it's key
+   * @param {String} key
    * @return {Object}
    */
-  get (name) {
-    const cap = this._storedCaps[name]
+  get (key) {
+    const cap = this._storedCaps[key]
     return cap
   }
 
   /**
-   * delete an port given the name it is bound to
-   * @param {string} name
+   * delete an cap given its key
+   * @param {string} key
    */
-  delete (name) {
-    delete this._storedCaps[name]
+  delete (key) {
+    delete this._storedCaps[key]
   }
 }

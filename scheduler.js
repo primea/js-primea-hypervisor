@@ -4,7 +4,7 @@ const LockMap = require('lockmap')
 
 module.exports = class Scheduler {
   /**
-   * The Scheduler manages the run cycle of the containers and figures out which
+   * The Scheduler manages the run cycle of Actors and figures out which
    * order they should run in
    */
   constructor () {
@@ -12,7 +12,6 @@ module.exports = class Scheduler {
     this._running = new Set()
     this._loadingInstances = new LockMap()
     this.instances = new SortedMap(comparator)
-    this.systemServices = new Map()
 
     function comparator (a, b) {
       return a.ticks - b.ticks
@@ -30,7 +29,7 @@ module.exports = class Scheduler {
 
   /**
    * updates an instance with a new tick count
-   * @param {Object} instance - a container instance
+   * @param {Object} instance - an actor instance
    */
   update (instance) {
     this._waits = this._waits.filter(wait => wait.id !== instance.id)
@@ -45,12 +44,12 @@ module.exports = class Scheduler {
   }
 
   /**
-   * returns a container
+   * returns an Actor instance
    * @param {String} id
    * @return {Object}
    */
   getInstance (id) {
-    return this.instances.get(id) || this._loadingInstances.get(id) || this.systemServices.get(id)
+    return this.instances.get(id) || this._loadingInstances.get(id)
   }
 
   /**
@@ -90,7 +89,7 @@ module.exports = class Scheduler {
    * returns the oldest container's ticks
    * @return {integer}
    */
-  syncLeastNumberOfTicks (exculde) {
+  leastNumberOfTicks (exculde) {
     let ticks = 0
     for (const instance of this.instances) {
       ticks = instance[1].ticks
@@ -107,6 +106,7 @@ module.exports = class Scheduler {
       return
     } else {
       this._checkingWaits = true
+      // wait to check waits untill all the instances are done loading
       await [...this._loadingInstances.values()]
     }
     // if there are no running containers
@@ -119,7 +119,7 @@ module.exports = class Scheduler {
       // find the old container and see if to can resolve any of the waits
       while (this._waits[0]) {
         const wait = this._waits[0]
-        const least = this.syncLeastNumberOfTicks(wait.id)
+        const least = this.leastNumberOfTicks(wait.id)
         if (wait.ticks <= least) {
           this._waits.shift()
           wait.resolve()

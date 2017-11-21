@@ -22,21 +22,19 @@ module.exports = class Hypervisor {
    */
   async send (cap, message) {
     const id = cap.destId
-    const instance = await this.getInstance(id)
+    const instance = await this.getActor(id)
     instance.queue(message)
   }
 
   // loads an instance of a container from the state
-  async _loadInstance (id) {
+  async _loadActor (id) {
     const state = await this.tree.get(id, true)
     const container = this._containerTypes[state.value.type]
 
     // create a new actor instance
     const actor = new Actor({
       hypervisor: this,
-      state: state.value,
-      node: state.node,
-      code: state.value.code,
+      state: state,
       container: container,
       id: id
     })
@@ -47,20 +45,20 @@ module.exports = class Hypervisor {
   }
 
   /**
-   * gets an existsing container instances
-   * @param {string} id - the containers ID
+   * gets an existsing actor
+   * @param {string} id - the actor's ID
    * @returns {Promise}
    */
-  async getInstance (id) {
-    let instance = this.scheduler.getInstance(id)
-    if (instance) {
-      return instance
+  async getActor (id) {
+    let actor = this.scheduler.getInstance(id)
+    if (actor) {
+      return actor
     } else {
       const resolve = this.scheduler.lock(id)
-      const instance = await this._loadInstance(id)
-      await instance.startup()
-      resolve(instance)
-      return instance
+      const actor = await this._loadActor(id)
+      await actor.startup()
+      resolve(actor)
+      return actor
     }
   }
 
@@ -89,7 +87,7 @@ module.exports = class Hypervisor {
     await this.tree.set(idHash, state)
 
     // create the container instance
-    const instance = await this._loadInstance(idHash)
+    const instance = await this._loadActor(idHash)
 
     // send the intialization message
     await instance.create(message)

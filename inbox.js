@@ -3,12 +3,11 @@ const Buffer = require('safe-buffer').Buffer
 
 module.exports = class Inbox {
   /**
-   * The port manager manages the the ports. This inculdes creation, deletion
-   * fetching and waiting on ports
+   * The inbox manages and sorts incoming messages and provides functions
+   * to wait on messages
    * @param {Object} opts
    * @param {Object} opts.state
    * @param {Object} opts.hypervisor
-   * @param {Object} opts.exoInterface
    */
   constructor (opts) {
     this.actor = opts.actor
@@ -21,7 +20,7 @@ module.exports = class Inbox {
   }
 
   /**
-   * queues a message on a port
+   * queues a message
    * @param {Message} message
    */
   queue (message) {
@@ -36,6 +35,12 @@ module.exports = class Inbox {
     }
   }
 
+  /**
+   * Waits for a message sent with a capablitly that has one of the given tags
+   * @param {Array<*>} tags
+   * @param {Integer} timeout
+   * @returns {Promise}
+   */
   async waitOnTag (tags, timeout) {
     if (this._waitingTags) {
       throw new Error('already getting next message')
@@ -55,6 +60,7 @@ module.exports = class Inbox {
 
   /**
    * Waits for the the next message if any
+   * @param {Integer} timeout
    * @returns {Promise}
    */
   async getNextMessage (timeout = 0) {
@@ -64,7 +70,7 @@ module.exports = class Inbox {
     }
 
     timeout += this.actor.ticks
-    let oldestTime = this.hypervisor.scheduler.syncLeastNumberOfTicks(this.actor.id)
+    let oldestTime = this.hypervisor.scheduler.leastNumberOfTicks(this.actor.id)
 
     while (true) {
       if (message && message._fromTicks < timeout) {
@@ -83,7 +89,7 @@ module.exports = class Inbox {
           message = m
         })
       ])
-      oldestTime = this.hypervisor.scheduler.syncLeastNumberOfTicks(this.actor.id)
+      oldestTime = this.hypervisor.scheduler.leastNumberOfTicks(this.actor.id)
     }
     return this._deQueueMessage()
   }

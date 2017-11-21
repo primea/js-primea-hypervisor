@@ -9,27 +9,32 @@ module.exports = class Actor {
    * @param {Object} opts
    * @param {Object} opts.id - the UUID of the Kernel
    * @param {Object} opts.state - the state of the container
-   * @param {Object} opts.hypervisor
+   * @param {Object} opts.hypervisor - the instance of the hypervisor
    * @param {Object} opts.container - the container constuctor and argments
    */
   constructor (opts) {
-    this.state = opts.state
-    this.code = opts.code
-    this.treeNode = opts.treeNode
+    this.state = opts.state.value
+    this.code = opts.state.value.code
+    this.treeNode = opts.state.node
     this.hypervisor = opts.hypervisor
     this.id = opts.id
     this.container = new opts.container.Constructor(this, opts.container.args)
-    this.inbox = new Inbox(Object.assign({
-      actor: this
-    }, opts))
+    this.inbox = new Inbox({
+      actor: this,
+      hypervisor: opts.hypervisor
+    })
 
     this.ticks = 0
     this.containerState = 'idle'
 
-    // create the port manager
-    this.caps = new CapsManager(opts)
+    this.caps = new CapsManager(opts.state.caps)
   }
 
+  /**
+   * Mints a new capabilitly with a given tag
+   * @param {*} tag - a tag which can be used to identify caps
+   * @return {Object}
+   */
   mintCap (tag = 0) {
     return {
       destId: this.id,
@@ -47,6 +52,11 @@ module.exports = class Actor {
     this._startMessageLoop()
   }
 
+  /**
+   * runs the creation routine for the actor
+   * @param {object} message
+   * @returns {Promise}
+   */
   async create (message) {
     await this.message(message, 'onCreation')
     this._startMessageLoop()
@@ -76,18 +86,24 @@ module.exports = class Actor {
     }
   }
 
+  /**
+   * Runs the shutdown routine for the actor
+   */
   shutdown () {
     this.hypervisor.scheduler.done(this.id)
   }
 
+  /**
+   * Runs the startup routine for the actor
+   */
   startup () {
     return this.container.onStartup()
   }
 
   /**
-   * run the kernels code with a given enviroment
+   * run the Actor with a given message
    * @param {object} message - the message to run
-   * @param {boolean} init - whether or not to run the intialization routine
+   * @param {String} method - which method to run
    * @returns {Promise}
    */
   async message (message, method = 'onMessage') {
@@ -122,12 +138,17 @@ module.exports = class Actor {
     this.hypervisor.scheduler.update(this)
   }
 
+  /**
+   * creates an actor
+   * @param {Integer} type - the type id for the container
+   * @param {Object} message - an intial [message](https://github.com/primea/js-primea-message) to send newly created actor
+   */
   createActor (type, message) {
-    const id = this.generateNextId()
+    const id = this._generateNextId()
     return this.hypervisor.createActor(type, message, id)
   }
 
-  generateNextId () {
+  _generateNextId () {
     const id = {
       nonce: this.state.nonce,
       parent: this.id

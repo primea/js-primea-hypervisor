@@ -9,44 +9,49 @@
 
 ## constructor
 
-[capsManager.js:7-10](https://github.com/primea/js-primea-hypervisor/blob/1623d0570d9d2c2c1859ca73c05054596cccf553/capsManager.js#L7-L10 "Source code on GitHub")
+[capsManager.js:10-12](https://github.com/primea/js-primea-hypervisor/blob/54682dbb20afd58e4292b4d018b5724bbdf68516/capsManager.js#L10-L12 "Source code on GitHub")
 
-The caps manager manages perstantly stores the capabilities
+The port manager manages the the ports. This inculdes creation, deletion
 fetching and waiting on ports
 
 **Parameters**
 
--   `caps` **[Object](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Object)** 
+-   `caps`  
+-   `opts` **[Object](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Object)** 
+    -   `opts.state` **[Object](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Object)** 
+    -   `opts.hypervisor` **[Object](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Object)** 
+    -   `opts.exoInterface` **[Object](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Object)** 
 
 ## store
 
-[capsManager.js:17-19](https://github.com/primea/js-primea-hypervisor/blob/1623d0570d9d2c2c1859ca73c05054596cccf553/capsManager.js#L17-L19 "Source code on GitHub")
+[capsManager.js:19-22](https://github.com/primea/js-primea-hypervisor/blob/54682dbb20afd58e4292b4d018b5724bbdf68516/capsManager.js#L19-L22 "Source code on GitHub")
 
-Stores a capability persistantly
+binds a port to a name
 
 **Parameters**
 
--   `key` **[String](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String)** 
--   `cap` **[Object](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Object)** 
+-   `name` **[String](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String)** the name of the port
+-   `cap`  
+-   `port` **[Object](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Object)** the port to bind
 
 ## get
 
-[capsManager.js:26-29](https://github.com/primea/js-primea-hypervisor/blob/1623d0570d9d2c2c1859ca73c05054596cccf553/capsManager.js#L26-L29 "Source code on GitHub")
+[capsManager.js:29-32](https://github.com/primea/js-primea-hypervisor/blob/54682dbb20afd58e4292b4d018b5724bbdf68516/capsManager.js#L29-L32 "Source code on GitHub")
 
-gets a cap given it's key
+gets a port given it's name
 
 **Parameters**
 
--   `key` **[String](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String)** 
+-   `name` **[String](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String)** 
 
 Returns **[Object](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Object)** 
 
 ## delete
 
-[capsManager.js:35-37](https://github.com/primea/js-primea-hypervisor/blob/1623d0570d9d2c2c1859ca73c05054596cccf553/capsManager.js#L35-L37 "Source code on GitHub")
+[capsManager.js:38-40](https://github.com/primea/js-primea-hypervisor/blob/54682dbb20afd58e4292b4d018b5724bbdf68516/capsManager.js#L38-L40 "Source code on GitHub")
 
-delete an cap given its key
+delete an port given the name it is bound to
 
 **Parameters**
 
--   `key` **[string](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String)** 
+-   `name` **[string](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String)** 

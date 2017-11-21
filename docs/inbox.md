@@ -4,12 +4,12 @@
 
 -   [constructor](#constructor)
 -   [queue](#queue)
--   [waitOnTag](#waitontag)
--   [getNextMessage](#getnextmessage)
+-   [nextTaggedMessage](#nexttaggedmessage)
+-   [nextMessage](#nextmessage)
 
 ## constructor
 
-[inbox.js:12-20](https://github.com/primea/js-primea-hypervisor/blob/1623d0570d9d2c2c1859ca73c05054596cccf553/inbox.js#L12-L20 "Source code on GitHub")
+[inbox.js:23-31](https://github.com/primea/js-primea-hypervisor/blob/54682dbb20afd58e4292b4d018b5724bbdf68516/inbox.js#L23-L31 "Source code on GitHub")
 
 The inbox manages and sorts incoming messages and provides functions
 to wait on messages
@@ -22,7 +22,7 @@ to wait on messages
 
 ## queue
 
-[inbox.js:26-36](https://github.com/primea/js-primea-hypervisor/blob/1623d0570d9d2c2c1859ca73c05054596cccf553/inbox.js#L26-L36 "Source code on GitHub")
+[inbox.js:37-47](https://github.com/primea/js-primea-hypervisor/blob/54682dbb20afd58e4292b4d018b5724bbdf68516/inbox.js#L37-L47 "Source code on GitHub")
 
 queues a message
 
@@ -30,9 +30,9 @@ queues a message
 
 -   `message` **Message** 
 
-## waitOnTag
+## nextTaggedMessage
 
-[inbox.js:44-59](https://github.com/primea/js-primea-hypervisor/blob/1623d0570d9d2c2c1859ca73c05054596cccf553/inbox.js#L44-L59 "Source code on GitHub")
+[inbox.js:55-66](https://github.com/primea/js-primea-hypervisor/blob/54682dbb20afd58e4292b4d018b5724bbdf68516/inbox.js#L55-L66 "Source code on GitHub")
 
 Waits for a message sent with a capablitly that has one of the given tags
 
@@ -43,9 +43,9 @@ Waits for a message sent with a capablitly that has one of the given tags
 
 Returns **[Promise](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Promise)** 
 
-## getNextMessage
+## nextMessage
 
-[inbox.js:66-95](https://github.com/primea/js-primea-hypervisor/blob/1623d0570d9d2c2c1859ca73c05054596cccf553/inbox.js#L66-L95 "Source code on GitHub")
+[inbox.js:73-109](https://github.com/primea/js-primea-hypervisor/blob/54682dbb20afd58e4292b4d018b5724bbdf68516/inbox.js#L73-L109 "Source code on GitHub")
 
 Waits for the the next message if any
 

@@ -312,14 +312,14 @@ tape('actor creation', async t => {
     }
 
     onMessage (m) {
-      t.true(m, 'should recive a response message')
+      t.equals(m.data, 'test', 'should recive a response message')
     }
   }
 
   class testVMContainerB extends BaseContainer {
     onCreation (m) {
       const cap = m.caps[0]
-      return this.actor.send(cap, new Message())
+      return this.actor.send(cap, new Message({data: 'test'}))
     }
 
     static get typeId () {
@@ -483,7 +483,7 @@ tape('basic tagged caps', async t => {
       const message = new Message()
       message.responseCap = rCap
       await this.actor.send(m.caps[0], message)
-      const rMessage = await this.actor.inbox.waitOnTag([1], 44)
+      const rMessage = await this.actor.inbox.nextTaggedMessage([1], 44)
       t.true(rMessage, 'should recive a response message')
     }
   }
@@ -529,9 +529,9 @@ tape('trying to listen for caps more then once', async t => {
       const message = new Message({data: 'first'})
       message.responseCap = rCap
       await this.actor.send(m.caps[0], message)
-      const promise = this.actor.inbox.waitOnTag([1], 44)
+      const promise = this.actor.inbox.nextTaggedMessage([1], 44)
       try {
-        await this.actor.inbox.waitOnTag([1], 44)
+        await this.actor.inbox.nextTaggedMessage([1], 44)
       } catch (e) {
         t.true(e, 'should error if waiting twice')
       }
@@ -591,7 +591,7 @@ tape('multple messages to restore on waiting for tags', async t => {
           this.actor.send(m.caps[0], message1),
           this.actor.send(m.caps[1], message2)
         ])
-        const rMessage = await this.actor.inbox.waitOnTag([1, 2], 44)
+        const rMessage = await this.actor.inbox.nextTaggedMessage([1, 2], 44)
         t.true(rMessage, 'should recive a response message')
       }
     }
@@ -655,7 +655,7 @@ tape('multple messages to backup on waiting for tags', async t => {
         message2.caps.push(cap2)
         await this.actor.send(m.caps[0], message1)
         await this.actor.send(m.caps[1], message2)
-        const rMessage = await this.actor.inbox.waitOnTag([1, 2], 44)
+        const rMessage = await this.actor.inbox.nextTaggedMessage([1, 2], 44)
         t.true(rMessage, 'should recive a response message')
       }
     }
@@ -719,7 +719,7 @@ tape('multple messages, but single tag', async t => {
         message2.caps.push(cap2)
         await this.actor.send(m.caps[0], message1)
         await this.actor.send(m.caps[1], message2)
-        const rMessage = await this.actor.inbox.waitOnTag([2], 44)
+        const rMessage = await this.actor.inbox.nextTaggedMessage([2], 44)
         t.true(rMessage, 'should recive a response message')
       }
     }
@@ -770,7 +770,7 @@ tape('deadlock test', async t => {
   class testVMContainerA extends BaseContainer {
     async onMessage (m) {
       t.true(m, 'should recive first message 1')
-      const rMessage = await this.actor.inbox.waitOnTag([1], 50)
+      const rMessage = await this.actor.inbox.nextTaggedMessage([1], 50)
       t.equals(rMessage, undefined, 'should recive a response message 1')
     }
   }
@@ -779,7 +779,7 @@ tape('deadlock test', async t => {
     async onMessage (m) {
       t.true(m, 'should recive first message 2')
       this.actor.incrementTicks(47)
-      const rMessage = await this.actor.inbox.waitOnTag([1], 1)
+      const rMessage = await this.actor.inbox.nextTaggedMessage([1], 1)
       t.equals(rMessage, undefined, 'should recive a response message 2')
     }
 
@@ -792,7 +792,7 @@ tape('deadlock test', async t => {
     async onMessage (m) {
       t.true(m, 'should recive first message 3')
       this.actor.incrementTicks(45)
-      const rMessage = await this.actor.inbox.waitOnTag([1], 1)
+      const rMessage = await this.actor.inbox.nextTaggedMessage([1], 1)
       t.equals(rMessage, undefined, 'should recive a response message 3')
     }
 

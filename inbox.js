@@ -52,16 +52,12 @@ module.exports = class Inbox {
    * @param {Integer} timeout
    * @returns {Promise}
    */
-  async waitOnTag (tags, timeout) {
-    if (this._waitingTags) {
-      throw new Error('already getting next message')
-    }
-
+  async nextTaggedMessage (tags, timeout) {
     this._waitingTags = new Set(tags)
     this._queue = this._queue.filter(message => !this._queueTaggedMessage(message))
 
     // todo: add saturation test
-    const message = await this.getNextMessage(timeout)
+    const message = await this.nextMessage(timeout)
     delete this._waitingTags
     this._waitingTagsQueue.forEach(message => this._queueMessage(message))
     this._waitingTagsQueue = []
@@ -74,7 +70,13 @@ module.exports = class Inbox {
    * @param {Integer} timeout
    * @returns {Promise}
    */
-  async getNextMessage (timeout = 0) {
+  async nextMessage (timeout = 0) {
+    if (this._gettingNextMessage) {
+      throw new Error('already getting next message')
+    } else {
+      this._gettingNextMessage = true
+    }
+
     let message = this._getOldestMessage()
     if (message === undefined && timeout === 0) {
       return
@@ -102,6 +104,7 @@ module.exports = class Inbox {
       ])
       oldestTime = this.hypervisor.scheduler.leastNumberOfTicks(this.actor.id)
     }
+    this._gettingNextMessage = false
     return this._deQueueMessage()
   }
 

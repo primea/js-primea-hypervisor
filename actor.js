@@ -57,9 +57,12 @@ module.exports = class Actor {
    * @param {object} message
    * @returns {Promise}
    */
-  async create (message) {
-    await this.message(message, 'onCreation')
+  create (message) {
+    // start loop before running intializtion message so the the container state
+    // will be "running" incase the actor recievse a message will running
+    // creation code
     this._startMessageLoop()
+    return this.message(message, 'onCreation')
   }
 
   // waits for the next message
@@ -68,7 +71,7 @@ module.exports = class Actor {
     if (this.containerState !== 'running') {
       this.containerState = 'running'
       while (1) {
-        const message = await this.inbox.getNextMessage()
+        const message = await this.inbox.nextMessage()
         if (!message) break
 
         // if the message we recived had more ticks then we currently have then

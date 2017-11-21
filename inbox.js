@@ -1,6 +1,17 @@
 const binarySearchInsert = require('binary-search-insert')
 const Buffer = require('safe-buffer').Buffer
 
+// decides which message to go first
+function messageArbiter (messageA, messageB) {
+  // order by number of ticks if messages have different number of ticks
+  if (messageA._fromTicks !== messageB._fromTicks) {
+    return messageA._fromTicks > messageB._fromTicks
+  } else {
+    // sender id
+    return Buffer.compare(messageA._fromId, messageB._fromId)
+  }
+}
+
 module.exports = class Inbox {
   /**
    * The inbox manages and sorts incoming messages and provides functions
@@ -130,16 +141,5 @@ module.exports = class Inbox {
     } else {
       return false
     }
-  }
-}
-
-// decides which message to go first
-function messageArbiter (messageA, messageB) {
-  // order by number of ticks if messages have different number of ticks
-  if (messageA._fromTicks !== messageB._fromTicks) {
-    return messageA._fromTicks > messageB._fromTicks
-  } else {
-    // sender id
-    return Buffer.compare(messageA._fromId, messageB._fromId)
   }
 }

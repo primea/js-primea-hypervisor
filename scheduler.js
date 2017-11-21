@@ -2,6 +2,10 @@ const binarySearchInsert = require('binary-search-insert')
 const SortedMap = require('sortedmap')
 const LockMap = require('lockmap')
 
+function comparator (a, b) {
+  return a.ticks - b.ticks
+}
+
 module.exports = class Scheduler {
   /**
    * The Scheduler manages the run cycle of Actors and figures out which
@@ -11,11 +15,8 @@ module.exports = class Scheduler {
     this._waits = []
     this._running = new Set()
     this._loadingInstances = new LockMap()
+    this._checkingWaits = false
     this.instances = new SortedMap(comparator)
-
-    function comparator (a, b) {
-      return a.ticks - b.ticks
-    }
   }
 
   /**
@@ -79,10 +80,6 @@ module.exports = class Scheduler {
       })
       this._checkWaits()
     })
-
-    function comparator (a, b) {
-      return a.ticks - b.ticks
-    }
   }
 
   /**

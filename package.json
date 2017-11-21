@@ -6,11 +6,12 @@
     "coveralls": "npm run coverage && nyc report --reporter=text-lcov | coveralls",
     "coverage": "nyc npm test",
     "lint": "standard",
-    "build:docs": "npm run build:docs:hypervisor && npm run build:docs:kernel && npm run build:docs:scheduler && npm run build:docs:portManager",
+    "build:docs": "npm run build:docs:hypervisor && npm run build:docs:actor && npm run build:docs:scheduler && npm run build:docs:capsManager && npm run build:docs:inbox",
     "build:docs:hypervisor": "documentation build ./index.js --github --shallow --sort-order source -f md  > ./docs/hypervisor.md",
-    "build:docs:kernel": "documentation build ./kernel.js --github --shallow --sort-order source -f md  > ./docs/kernel.md",
-    "build:docs:portManager": "documentation build ./portManager.js --github --shallow --sort-order source -f md  > ./docs/portManager.md",
+    "build:docs:actor": "documentation build ./actor.js --github --shallow --sort-order source -f md  > ./docs/actor.md",
+    "build:docs:capsManager": "documentation build ./capsManager.js --github --shallow --sort-order source -f md  > ./docs/capsManager.md",
     "build:docs:scheduler": "documentation build ./scheduler.js --github --shallow --sort-order source -f md  > ./docs/scheduler.md",
+    "build:docs:inbox": "documentation build ./inbox.js --github --shallow --sort-order source -f md  > ./docs/inbox.md",
     "test": "node ./tests/index.js"
   },
   "repository": {
@@ -31,18 +32,19 @@
   "license": "MPL-2.0",
   "dependencies": {
     "binary-search-insert": "^1.0.3",
-    "lockmap": "0.0.0",
-    "primea-message": "0.0.3",
+    "lockmap": "^0.1.0",
+    "primea-message": "0.0.4",
+    "safe-buffer": "^5.1.1",
     "sortedmap": "0.0.1",
     "typedarray-addition": "0.0.1"
   },
   "devDependencies": {
-    "dfinity-radix-tree": "0.0.4",
     "coveralls": "^3.0.0",
-    "documentation": "^5.0.1",
-    "level": "^2.0.0",
-    "nyc": "^11.2.1",
-    "primea-abstract-container": "0.0.5",
+    "dfinity-radix-tree": "0.0.4",
+    "documentation": "^5.3.3",
+    "level-browserify": "^1.1.1",
+    "nyc": "^11.3.0",
+    "primea-abstract-container": "0.0.6",
     "standard": "10.0.3",
     "tape": "^4.6.3"
   }

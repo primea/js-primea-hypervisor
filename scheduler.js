@@ -2,21 +2,21 @@ const binarySearchInsert = require('binary-search-insert')
 const SortedMap = require('sortedmap')
 const LockMap = require('lockmap')
 
+function comparator (a, b) {
+  return a.ticks - b.ticks
+}
+
 module.exports = class Scheduler {
   /**
-   * The Scheduler manages the run cycle of the containers and figures out which
+   * The Scheduler manages the run cycle of Actors and figures out which
    * order they should run in
    */
   constructor () {
     this._waits = []
     this._running = new Set()
     this._loadingInstances = new LockMap()
+    this._checkingWaits = false
     this.instances = new SortedMap(comparator)
-    this.systemServices = new Map()
-
-    function comparator (a, b) {
-      return a.ticks - b.ticks
-    }
   }
 
   /**
@@ -30,7 +30,7 @@ module.exports = class Scheduler {
 
   /**
    * updates an instance with a new tick count
-   * @param {Object} instance - a container instance
+   * @param {Object} instance - an actor instance
    */
   update (instance) {
     this._waits = this._waits.filter(wait => wait.id !== instance.id)
@@ -45,17 +45,17 @@ module.exports = class Scheduler {
   }
 
   /**
-   * returns a container
-   * @param {string} id
-   * @return {object}
+   * returns an Actor instance
+   * @param {String} id
+   * @return {Object}
    */
   getInstance (id) {
-    return this.instances.get(id) || this._loadingInstances.getLock(id) || this.systemServices.get(id)
+    return this.instances.get(id) || this._loadingInstances.get(id)
   }
 
   /**
    * deletes an instance from the scheduler
-   * @param {string} id - the containers id
+   * @param {String} id - the containers id
    */
   done (id) {
     this._running.delete(id)
@@ -70,7 +70,7 @@ module.exports = class Scheduler {
    * @param {string} id - optional id of the container that is waiting
    * @return {Promise}
    */
-  wait (ticks = Infinity, id) {
+  wait (ticks, id) {
     this._running.delete(id)
     return new Promise((resolve, reject) => {
       binarySearchInsert(this._waits, comparator, {
@@ -80,42 +80,53 @@ module.exports = class Scheduler {
       })
       this._checkWaits()
     })
-
-    function comparator (a, b) {
-      return a.ticks - b.ticks
-    }
   }
 
   /**
    * returns the oldest container's ticks
    * @return {integer}
    */
-  leastNumberOfTicks () {
-    const nextValue = this.instances.values().next().value
-    return nextValue ? nextValue.ticks : 0
+  leastNumberOfTicks (exculde) {
+    let ticks = 0
+    for (const instance of this.instances) {
+      ticks = instance[1].ticks
+      if (instance[1].id !== exculde) {
+        return ticks
+      }
+    }
+    return ticks
   }
 
   // checks outstanding waits to see if they can be resolved
-  _checkWaits () {
+  async _checkWaits () {
+    if (this._checkingWaits) {
+      return
+    } else {
+      this._checkingWaits = true
+      // wait to check waits untill all the instances are done loading
+      await [...this._loadingInstances.values()]
+    }
     // if there are no running containers
     if (!this.instances.size) {
       // clear any remanding waits
       this._waits.forEach(wait => wait.resolve())
       this._waits = []
+      this._checkingWaits = false
     } else {
       // find the old container and see if to can resolve any of the waits
-      const least = this.leastNumberOfTicks()
-      for (const index in this._waits) {
-        const wait = this._waits[index]
+      while (this._waits[0]) {
+        const wait = this._waits[0]
+        const least = this.leastNumberOfTicks(wait.id)
         if (wait.ticks <= least) {
+          this._waits.shift()
           wait.resolve()
           this._running.add(wait.id)
         } else {
-          this._waits.splice(0, index)
           break
         }
       }
-      if (!this._running.size) {
+
+      if (!this._running.size && this._waits.length) {
         // if there are no containers running find the oldest wait and update
         // the oldest containers to it ticks
         const oldest = this._waits[0].ticks
@@ -128,7 +139,10 @@ module.exports = class Scheduler {
             this._update(instance)
           }
         }
+        this._checkingWaits = false
         return this._checkWaits()
+      } else {
+        this._checkingWaits = false
       }
     }
   }

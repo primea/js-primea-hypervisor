@@ -1,130 +1,102 @@
-const Kernel = require('./kernel.js')
+const Actor = require('./actor.js')
 const Scheduler = require('./scheduler.js')
-const DFSchecker = require('./dfsChecker.js')
-const CreationService = require('./creationService.js')
-
-const CREATION_ID = 0
 
 module.exports = class Hypervisor {
   /**
    * The Hypervisor manages the container instances by instantiating them and
    * destorying them when possible. It also facilitates localating Containers
-   * @param {Graph} dag an instance of [ipfs.dag](https://github.com/ipfs/interface-ipfs-core/tree/master/API/dag#dag-api)
-   * @param {object} state - the starting state
+   * @param {Tree} tree - a [radix tree](https://github.com/dfinity/js-dfinity-radix-tree) to store the state
    */
   constructor (tree) {
     this.tree = tree
     this.scheduler = new Scheduler()
     this._containerTypes = {}
-    this._nodesToCheck = new Set()
-
-    this.creationService = new CreationService({
-      hypervisor: this
-    })
-    this.scheduler.systemServices.set(CREATION_ID, this.creationService)
-    this.pinnedIds = new Set()
+    this.nonce = 0
   }
 
   /**
-   * add a potaintail node in the state graph to check for garbage collection
-   * @param {string} id
+   * sends a message
+   * @param {Object} cap - the capabilitly used to send the message
+   * @param {Object} message - the [message](https://github.com/primea/js-primea-message) to send
+   * @returns {Promise} a promise that resolves once the receiving container is loaded
    */
-  addNodeToCheck (id) {
-    this._nodesToCheck.add(id)
-  }
-
-  /**
-   * given a port, this finds the corridsponeding endpoint port of the channel
-   * @param {object} port
-   * @returns {Promise}
-   */
-  async getDestPort (port) {
-    if (port.destPort) {
-      return port.destPort
-    } else {
-      const instance = await this.scheduler.getInstance(port.destId)
-      let containerState
-      if (instance) {
-        containerState = instance.state
-      } else {
-        let {value} = await this.tree.get(port.destId, true)
-        containerState = value
-      }
-      return this.tree.graph.get(containerState, `ports/${port.destName}`)
-    }
-  }
-
-  async send (port, message) {
-    const id = port.destId
-    if (id !== undefined) {
-      const instance = await this.getInstance(id)
-      return instance.queue(port, message)
-    } else {
-      // port is unbound
-      port.destPort.messages.push(message)
-    }
+  async send (cap, message) {
+    const id = cap.destId
+    const instance = await this.getActor(id)
+    instance.queue(message)
   }
 
   // loads an instance of a container from the state
-  async _loadInstance (id) {
+  async _loadActor (id) {
     const state = await this.tree.get(id, true)
     const container = this._containerTypes[state.value.type]
 
-    // create a new kernel instance
-    const kernel = new Kernel({
+    // create a new actor instance
+    const actor = new Actor({
       hypervisor: this,
-      state: state.value,
-      node: state.node,
-      code: state.value.code,
+      state: state,
       container: container,
       id: id
     })
 
     // save the newly created instance
-    this.scheduler.update(kernel)
-    return kernel
+    this.scheduler.update(actor)
+    return actor
   }
 
   /**
-   * gets an existsing container instances
-   * @param {string} id - the containers ID
+   * gets an existsing actor
+   * @param {string} id - the actor's ID
    * @returns {Promise}
    */
-  async getInstance (id) {
-    let instance = this.scheduler.getInstance(id)
-    if (instance) {
-      return instance
+  async getActor (id) {
+    let actor = this.scheduler.getInstance(id)
+    if (actor) {
+      return actor
     } else {
       const resolve = this.scheduler.lock(id)
-      const instance = await this._loadInstance(id)
-      await instance.startup()
-      resolve(instance)
-      return instance
+      const actor = await this._loadActor(id)
+      await actor.startup()
+      resolve(actor)
+      return actor
     }
   }
 
-  getResponsePort (message) {
-    if (message.responsePort) {
-      return message.responsePort.destPort
-    } else {
-      const [portRef1, portRef2] = this.createChannel()
-      message.responsePort = portRef2
-      return portRef1
+  /**
+   * creates an instance of an Actor
+   * @param {Integer} type - the type id for the container
+   * @param {Object} message - an intial [message](https://github.com/primea/js-primea-message) to send newly created actor
+   * @param {Object} id - the id for the actor
+   */
+  async createActor (type, message, id = {nonce: this.nonce, parent: null}) {
+    const encoded = encodedID(id)
+    this.nonce++
+    const idHash = await this._getHashFromObj(encoded)
+    const state = {
+      nonce: 0,
+      caps: {},
+      type: type
     }
+
+    const code = message.data
+    if (code.length) {
+      state.code = code
+    }
+
+    // save the container in the state
+    await this.tree.set(idHash, state)
+
+    // create the container instance
+    const instance = await this._loadActor(idHash)
+
+    // send the intialization message
+    await instance.create(message)
+    return instance.mintCap()
   }
 
-  createChannel () {
-    const port1 = {
-      messages: []
-    }
-
-    const port2 = {
-      messages: [],
-      destPort: port1
-    }
-
-    port1.destPort = port2
-    return [port1, port2]
+  // get a hash from a POJO
+  _getHashFromObj (obj) {
+    return this.tree.constructor.getMerkleLink(obj)
   }
 
   /**
@@ -135,14 +107,6 @@ module.exports = class Hypervisor {
    */
   async createStateRoot (ticks) {
     await this.scheduler.wait(ticks)
-
-    const unlinked = await DFSchecker(this.tree, this._nodesToCheck, (id) => {
-      return this.pinnedIds.has(id)
-    })
-    for (const id of unlinked) {
-      await this.tree.delete(id)
-    }
-
     return this.tree.flush()
   }
 
@@ -150,7 +114,7 @@ module.exports = class Hypervisor {
    * regirsters a container with the hypervisor
    * @param {Class} Constructor - a Class for instantiating the container
    * @param {*} args - any args that the contructor takes
-   * @param {interger} typeId - the container's type identification ID
+   * @param {Integer} typeId - the container's type identification ID
    */
   registerContainer (Constructor, args, typeId = Constructor.typeId) {
     this._containerTypes[typeId] = {
@@ -158,8 +122,13 @@ module.exports = class Hypervisor {
       args: args
     }
   }
+}
 
-  pin (instance) {
-    this.pinnedIds.add(instance.id)
+function encodedID (id) {
+  const nonce = Buffer.from([id.nonce])
+  if (id.parent) {
+    return Buffer.concat([nonce, id.parent])
+  } else {
+    return nonce
   }
 }

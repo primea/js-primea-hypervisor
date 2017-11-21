@@ -39,10 +39,10 @@
     "typedarray-addition": "0.0.1"
   },
   "devDependencies": {
-    "dfinity-radix-tree": "0.0.4",
     "coveralls": "^3.0.0",
+    "dfinity-radix-tree": "0.0.4",
     "documentation": "^5.3.3",
-    "level": "^2.0.1",
+    "level-browserify": "^1.1.1",
     "nyc": "^11.3.0",
     "primea-abstract-container": "0.0.6",
     "standard": "10.0.3",

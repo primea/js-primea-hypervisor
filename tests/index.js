@@ -4,7 +4,7 @@ const Message = require('primea-message')
 const Hypervisor = require('../')
 const CapsManager = require('../capsManager.js')
 
-const level = require('level')
+const level = require('level-browserify')
 const RadixTree = require('dfinity-radix-tree')
 const db = level('./testdb')
 

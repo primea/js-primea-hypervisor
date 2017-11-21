@@ -32,7 +32,7 @@
   "dependencies": {
     "binary-search-insert": "^1.0.3",
     "lockmap": "^0.1.0",
-    "primea-message": "0.0.3",
+    "primea-message": "0.0.4",
     "safe-buffer": "^5.1.1",
     "sortedmap": "0.0.1",
     "typedarray-addition": "0.0.1"
@@ -40,9 +40,9 @@
   "devDependencies": {
     "dfinity-radix-tree": "0.0.4",
     "coveralls": "^3.0.0",
-    "documentation": "^5.0.1",
-    "level": "^2.0.0",
-    "nyc": "^11.2.1",
+    "documentation": "^5.3.3",
+    "level": "^2.0.1",
+    "nyc": "^11.3.0",
     "primea-abstract-container": "0.0.5",
     "standard": "10.0.3",
     "tape": "^4.6.3"

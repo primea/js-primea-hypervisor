@@ -8,7 +8,8 @@ function comparator (a, b) {
 
 module.exports = class Scheduler {
   /**
-   * the Scheduler keeps track of which containers are instantiated, running, and waiting for a message
+   * The Scheduler manages the actor instances and tracks how many "ticks" they
+   * have ran.
    */
   constructor () {
     this._waits = []

@@ -43,7 +43,7 @@ module.exports = class Actor {
   }
 
   /**
-   * adds a message to this containers message queue
+   * adds a message to this actor's message queue
    * @param {string} portName
    * @param {object} message
    */
@@ -132,7 +132,7 @@ module.exports = class Actor {
   }
 
   /**
-   * updates the number of ticks that the container has run
+   * updates the number of ticks that the actor has run
    * @param {Number} count - the number of ticks to add
    */
   incrementTicks (count) {

@@ -1,8 +1,9 @@
+const EventEmitter = require('events')
 const Message = require('primea-message')
 const CapsManager = require('./capsManager.js')
 const Inbox = require('./inbox.js')
 
-module.exports = class Actor {
+module.exports = class Actor extends EventEmitter {
   /**
    * the Actor manages the varous message passing functions and provides
    * an interface for the containers to use
@@ -13,6 +14,7 @@ module.exports = class Actor {
    * @param {Object} opts.container - the container constuctor and argments
    */
   constructor (opts) {
+    super()
     this.state = opts.state.value
     this.code = opts.state.value.code
     this.treeNode = opts.state.node
@@ -117,7 +119,7 @@ module.exports = class Actor {
     try {
       result = await this.container[method](message)
     } catch (e) {
-      console.log(e)
+      this.emit('execution:error', e)
       result = {
         exception: true,
         exceptionError: e

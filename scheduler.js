@@ -88,7 +88,7 @@ module.exports = class Scheduler {
    * @return {integer}
    */
   leastNumberOfTicks (exclude) {
-    let ticks = 0
+    let ticks = Infinity
     for (const instance of this.instances) {
       ticks = instance[1].ticks
       if (instance[1].id !== exclude) {

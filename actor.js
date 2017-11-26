@@ -117,7 +117,7 @@ module.exports = class Actor {
     try {
       result = await this.container[method](message)
     } catch (e) {
-      console.log(e)
+      message.emit('execution:error', e)
       result = {
         exception: true,
         exceptionError: e

@@ -68,9 +68,8 @@ module.exports = class Hypervisor {
    * @param {Object} message - an intial [message](https://github.com/primea/js-primea-message) to send newly created actor
    * @param {Object} id - the id for the actor
    */
-  async createActor (type, message, id = {nonce: this.nonce, parent: null}) {
+  async createActor (type, message, id = {nonce: this.nonce++, parent: null}) {
     const encoded = encodedID(id)
-    this.nonce++
     const idHash = await this._getHashFromObj(encoded)
     const state = {
       nonce: 0,

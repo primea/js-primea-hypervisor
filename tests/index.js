@@ -70,7 +70,7 @@ tape('two communicating actors', async t => {
   class testVMContainerA extends BaseContainer {
     onCreation (m) {
       message = new Message()
-      return this.actor.send(m.caps[0], message)
+      this.actor.send(m.caps[0], message)
     }
   }
 
@@ -112,7 +112,7 @@ tape('three communicating actors', async t => {
   class testVMContainerA extends BaseContainer {
     onCreation (m) {
       message = new Message()
-      return this.actor.send(m.caps[0], message)
+      this.actor.send(m.caps[0], message)
     }
   }
 
@@ -162,16 +162,13 @@ tape('three communicating actors, with tick counting', async t => {
       this.actor.incrementTicks(ticks)
       ticks++
       message = new Message()
-      await this.actor.send(m.caps[0], message)
+      this.actor.send(m.caps[0], message)
     }
   }
 
   class testVMContainerB extends BaseContainer {
     onMessage (m) {
       t.true(m, 'should recive a message')
-      return new Promise((resolve, reject) => {
-        setTimeout(resolve, 200)
-      })
     }
 
     static get typeId () {
@@ -184,7 +181,7 @@ tape('three communicating actors, with tick counting', async t => {
   hypervisor.registerContainer(testVMContainerB)
 
   let capB = await hypervisor.createActor(testVMContainerB.typeId, new Message())
-  hypervisor.createActor(testVMContainerA.typeId, new Message({
+  await hypervisor.createActor(testVMContainerA.typeId, new Message({
     caps: [capB]
   }))
 
@@ -212,7 +209,7 @@ tape('response caps', async t => {
     onCreation (m) {
       message = new Message()
       message.responseCap = this.actor.mintCap()
-      return this.actor.send(m.caps[0], message)
+      this.actor.send(m.caps[0], message)
     }
 
     onMessage (m) {
@@ -259,7 +256,7 @@ tape('response caps for errors', async t => {
     onCreation (m) {
       message = new Message()
       message.responseCap = this.actor.mintCap()
-      return this.actor.send(m.caps[0], message)
+      this.actor.send(m.caps[0], message)
     }
 
     onMessage (m) {
@@ -319,7 +316,7 @@ tape('actor creation', async t => {
   class testVMContainerB extends BaseContainer {
     onCreation (m) {
       const cap = m.caps[0]
-      return this.actor.send(cap, new Message({data: 'test'}))
+      this.actor.send(cap, new Message({data: 'test'}))
     }
 
     static get typeId () {
@@ -363,7 +360,7 @@ tape('simple message arbiter test', async t => {
       this.actor.incrementTicks(1)
       this.actor.send(m.caps[0], message2)
       this.actor.incrementTicks(1)
-      return this.actor.send(m.caps[0], message3)
+      this.actor.send(m.caps[0], message3)
     }
   }
 
@@ -432,10 +429,6 @@ tape('arbiter test for id comparision', async t => {
         t.equal(m.data, 'third', 'should recive third message')
       }
       recMsg++
-
-      return new Promise((resolve, reject) => {
-        setTimeout(resolve, 200)
-      })
     }
 
     static get typeId () {
@@ -448,9 +441,10 @@ tape('arbiter test for id comparision', async t => {
   hypervisor.registerContainer(testVMContainerB)
 
   let capB = await hypervisor.createActor(testVMContainerB.typeId, new Message())
-  hypervisor.send(capB, new Message({
+  await hypervisor.send(capB, new Message({
     data: 'first'
   }))
+
   await hypervisor.createActor(testVMContainerA.typeId, new Message({
     caps: [capB],
     data: 'second'
@@ -482,7 +476,7 @@ tape('basic tagged caps', async t => {
       const rCap = this.actor.mintCap(1)
       const message = new Message()
       message.responseCap = rCap
-      await this.actor.send(m.caps[0], message)
+      this.actor.send(m.caps[0], message)
       const rMessage = await this.actor.inbox.nextTaggedMessage([1], 44)
       t.true(rMessage, 'should recive a response message')
     }
@@ -528,7 +522,7 @@ tape('trying to listen for caps more then once', async t => {
       const rCap = this.actor.mintCap(1)
       const message = new Message({data: 'first'})
       message.responseCap = rCap
-      await this.actor.send(m.caps[0], message)
+      this.actor.send(m.caps[0], message)
       const promise = this.actor.inbox.nextTaggedMessage([1], 44)
       try {
         await this.actor.inbox.nextTaggedMessage([1], 44)
@@ -587,10 +581,8 @@ tape('multple messages to restore on waiting for tags', async t => {
         })
         message1.caps.push(cap1)
         message2.caps.push(cap2)
-        await Promise.all([
-          this.actor.send(m.caps[0], message1),
-          this.actor.send(m.caps[1], message2)
-        ])
+        this.actor.send(m.caps[0], message1)
+        this.actor.send(m.caps[1], message2)
         const rMessage = await this.actor.inbox.nextTaggedMessage([1, 2], 44)
         t.true(rMessage, 'should recive a response message')
       }
@@ -598,15 +590,11 @@ tape('multple messages to restore on waiting for tags', async t => {
   }
 
   class testVMContainerB extends BaseContainer {
-    async onMessage (m) {
+    onMessage (m) {
       t.true(m, 'should recive a message')
       const cap = m.caps[0]
       this.actor.incrementTicks(1)
-      await this.actor.send(cap, new Message({data: m.data}))
-
-      return new Promise((resolve, reject) => {
-        setTimeout(resolve, 200)
-      })
+      this.actor.send(cap, new Message({data: m.data}))
     }
 
     static get typeId () {
@@ -653,8 +641,8 @@ tape('multple messages to backup on waiting for tags', async t => {
         })
         message1.caps.push(cap1)
         message2.caps.push(cap2)
-        await this.actor.send(m.caps[0], message1)
-        await this.actor.send(m.caps[1], message2)
+        this.actor.send(m.caps[0], message1)
+        this.actor.send(m.caps[1], message2)
         const rMessage = await this.actor.inbox.nextTaggedMessage([1, 2], 44)
         t.true(rMessage, 'should recive a response message')
       }
@@ -666,11 +654,7 @@ tape('multple messages to backup on waiting for tags', async t => {
       t.true(m, 'should recive a message')
       const cap = m.caps[0]
       this.actor.incrementTicks(1)
-      await this.actor.send(cap, new Message({data: m.data}))
-
-      return new Promise((resolve, reject) => {
-        setTimeout(resolve, 200)
-      })
+      this.actor.send(cap, new Message({data: m.data}))
     }
 
     static get typeId () {
@@ -730,11 +714,7 @@ tape('multple messages, but single tag', async t => {
       t.true(m, 'should recive a message')
       const cap = m.caps[0]
       this.actor.incrementTicks(1)
-      await this.actor.send(cap, new Message({data: m.data}))
-
-      return new Promise((resolve, reject) => {
-        setTimeout(resolve, 200)
-      })
+      this.actor.send(cap, new Message({data: m.data}))
     }
 
     static get typeId () {

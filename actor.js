@@ -1,4 +1,5 @@
 const Message = require('primea-message')
+const LockMap = require('lockmap')
 const CapsManager = require('./capsManager.js')
 const Inbox = require('./inbox.js')
 
@@ -26,6 +27,7 @@ module.exports = class Actor {
 
     this.ticks = 0
     this.running = false
+    this._sending = new LockMap()
 
     this.caps = new CapsManager(opts.state.caps)
   }
@@ -166,10 +168,11 @@ module.exports = class Actor {
    * @param {Message} message - the message
    */
   send (cap, message) {
+    const resolve = this._sending.lock(cap)
     message._fromTicks = this.ticks
     message._fromId = this.id
     message.tag = cap.tag
 
-    return this.hypervisor.send(cap, message)
+    return this.hypervisor.send(cap, message).then(() => resolve(cap))
   }
 }

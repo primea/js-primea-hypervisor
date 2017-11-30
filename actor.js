@@ -1,6 +1,6 @@
 const Message = require('primea-message')
 const LockMap = require('lockmap')
-const CapsManager = require('./capsManager.js')
+const CapsStore = require('./capsStore.js')
 const Inbox = require('./inbox.js')
 
 module.exports = class Actor {
@@ -29,7 +29,7 @@ module.exports = class Actor {
     this.running = false
     this._sending = new LockMap()
 
-    this.caps = new CapsManager(opts.state.caps)
+    this.caps = new CapsStore(opts.state.value.caps)
   }
 
   /**

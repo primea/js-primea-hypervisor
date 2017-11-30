@@ -2,7 +2,7 @@ const tape = require('tape')
 const AbstractContainer = require('primea-abstract-container')
 const Message = require('primea-message')
 const Hypervisor = require('../')
-const CapsManager = require('../capsManager.js')
+const CapsStore = require('../capsStore.js')
 
 const level = require('level-browserify')
 const RadixTree = require('dfinity-radix-tree')
@@ -45,13 +45,13 @@ tape('basic', async t => {
 })
 
 tape('caps manager', async t => {
-  const capsManager = new CapsManager({})
+  const capsManager = new CapsStore({})
   const cap = {}
   capsManager.store('test', cap)
-  const c = capsManager.get('test')
+  const c = capsManager.load('test')
   t.equals(cap, c)
   capsManager.delete('test')
-  const empty = capsManager.get('test')
+  const empty = capsManager.load('test')
   t.equals(empty, undefined)
   t.end()
 })

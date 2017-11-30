@@ -6,10 +6,10 @@
     "coveralls": "npm run coverage && nyc report --reporter=text-lcov | coveralls",
     "coverage": "nyc npm test",
     "lint": "standard",
-    "build:docs": "npm run build:docs:hypervisor && npm run build:docs:actor && npm run build:docs:scheduler && npm run build:docs:capsManager && npm run build:docs:inbox",
+    "build:docs": "npm run build:docs:hypervisor && npm run build:docs:actor && npm run build:docs:scheduler && npm run build:docs:capsStore && npm run build:docs:inbox",
     "build:docs:hypervisor": "documentation build ./index.js --github --shallow --sort-order source -f md  > ./docs/hypervisor.md",
     "build:docs:actor": "documentation build ./actor.js --github --shallow --sort-order source -f md  > ./docs/actor.md",
-    "build:docs:capsManager": "documentation build ./capsManager.js --github --shallow --sort-order source -f md  > ./docs/capsManager.md",
+    "build:docs:capsStore": "documentation build ./capsStore.js --github --shallow --sort-order source -f md  > ./docs/capsStore.md",
     "build:docs:scheduler": "documentation build ./scheduler.js --github --shallow --sort-order source -f md  > ./docs/scheduler.md",
     "build:docs:inbox": "documentation build ./inbox.js --github --shallow --sort-order source -f md  > ./docs/inbox.md",
     "test": "node ./tests/index.js"

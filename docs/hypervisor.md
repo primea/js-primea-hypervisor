@@ -11,7 +11,7 @@
 
 ## constructor
 
-[index.js:10-15](https://github.com/primea/js-primea-hypervisor/blob/4d548116a6a4d4ceeda766ea686a328148cb029b/index.js#L10-L15 "Source code on GitHub")
+[index.js:10-15](https://github.com/primea/js-primea-hypervisor/blob/46c11229b2dac84739660d8242a0eaa65697f8bc/index.js#L10-L15 "Source code on GitHub")
 
 The Hypervisor manages the container instances by instantiating them and
 destorying them when possible. It also facilitates localating Containers
@@ -22,7 +22,7 @@ destorying them when possible. It also facilitates localating Containers
 
 ## send
 
-[index.js:23-27](https://github.com/primea/js-primea-hypervisor/blob/4d548116a6a4d4ceeda766ea686a328148cb029b/index.js#L23-L27 "Source code on GitHub")
+[index.js:23-27](https://github.com/primea/js-primea-hypervisor/blob/46c11229b2dac84739660d8242a0eaa65697f8bc/index.js#L23-L27 "Source code on GitHub")
 
 sends a message
 
@@ -35,7 +35,7 @@ Returns **[Promise](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Refe
 
 ## getActor
 
-[index.js:52-63](https://github.com/primea/js-primea-hypervisor/blob/4d548116a6a4d4ceeda766ea686a328148cb029b/index.js#L52-L63 "Source code on GitHub")
+[index.js:52-63](https://github.com/primea/js-primea-hypervisor/blob/46c11229b2dac84739660d8242a0eaa65697f8bc/index.js#L52-L63 "Source code on GitHub")
 
 gets an existsing actor
 
@@ -47,7 +47,7 @@ Returns **[Promise](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Refe
 
 ## createActor
 
-[index.js:71-95](https://github.com/primea/js-primea-hypervisor/blob/4d548116a6a4d4ceeda766ea686a328148cb029b/index.js#L71-L95 "Source code on GitHub")
+[index.js:71-94](https://github.com/primea/js-primea-hypervisor/blob/46c11229b2dac84739660d8242a0eaa65697f8bc/index.js#L71-L94 "Source code on GitHub")
 
 creates an instance of an Actor
 
@@ -55,11 +55,11 @@ creates an instance of an Actor
 
 -   `type` **Integer** the type id for the container
 -   `message` **[Object](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Object)** an intial [message](https://github.com/primea/js-primea-message) to send newly created actor
--   `id` **[Object](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Object)** the id for the actor (optional, default `{nonce:this.nonce,parent:null}`)
+-   `id` **[Object](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Object)** the id for the actor (optional, default `{nonce:this.nonce++,parent:null}`)
 
 ## createStateRoot
 
-[index.js:108-111](https://github.com/primea/js-primea-hypervisor/blob/4d548116a6a4d4ceeda766ea686a328148cb029b/index.js#L108-L111 "Source code on GitHub")
+[index.js:107-110](https://github.com/primea/js-primea-hypervisor/blob/46c11229b2dac84739660d8242a0eaa65697f8bc/index.js#L107-L110 "Source code on GitHub")
 
 creates a state root starting from a given container and a given number of
 ticks
@@ -72,7 +72,7 @@ Returns **[Promise](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Refe
 
 ## registerContainer
 
-[index.js:119-124](https://github.com/primea/js-primea-hypervisor/blob/4d548116a6a4d4ceeda766ea686a328148cb029b/index.js#L119-L124 "Source code on GitHub")
+[index.js:118-123](https://github.com/primea/js-primea-hypervisor/blob/46c11229b2dac84739660d8242a0eaa65697f8bc/index.js#L118-L123 "Source code on GitHub")
 
 regirsters a container with the hypervisor
 

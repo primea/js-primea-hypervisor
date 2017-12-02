@@ -1,6 +1,5 @@
 const Message = require('primea-message')
 const LockMap = require('lockmap')
-const CapsStore = require('./capsStore.js')
 const Inbox = require('./inbox.js')
 
 module.exports = class Actor {
@@ -14,9 +13,9 @@ module.exports = class Actor {
    * @param {Object} opts.container - the container constuctor and argments
    */
   constructor (opts) {
-    this.state = opts.state.value
-    this.code = opts.state.value.code
-    this.treeNode = opts.state.node
+    // console.log(opts.state)
+    this.state = opts.state
+    this.nonce = opts.state.root['/'][3][2]
     this.hypervisor = opts.hypervisor
     this.id = opts.id
     this.container = new opts.container.Constructor(this, opts.container.args)
@@ -28,8 +27,6 @@ module.exports = class Actor {
     this.ticks = 0
     this.running = false
     this._sending = new LockMap()
-
-    this.caps = new CapsStore(opts.state.value.caps)
   }
 
   /**
@@ -84,6 +81,8 @@ module.exports = class Actor {
         }
         // run the next message
         await this.runMessage(message)
+        // wait for state ops to finish
+        await this.state.done()
       }
 
       this.running = false
@@ -95,6 +94,8 @@ module.exports = class Actor {
    * Runs the shutdown routine for the actor
    */
   shutdown () {
+    // save the nonce
+    this.state.root['/'][3][2] = this.nonce
     this.hypervisor.scheduler.done(this.id)
   }
 
@@ -154,11 +155,11 @@ module.exports = class Actor {
 
   _generateNextId () {
     const id = {
-      nonce: this.state.nonce,
+      nonce: this.nonce,
       parent: this.id
     }
 
-    this.state.nonce++
+    this.nonce++
     return id
   }
 

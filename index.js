@@ -7,11 +7,11 @@ module.exports = class Hypervisor {
    * destorying them when possible. It also facilitates localating Containers
    * @param {Tree} tree - a [radix tree](https://github.com/dfinity/js-dfinity-radix-tree) to store the state
    */
-  constructor (tree) {
+  constructor (tree, nonce = 0) {
     this.tree = tree
     this.scheduler = new Scheduler()
     this._containerTypes = {}
-    this.nonce = 0
+    this.nonce = nonce
   }
 
   /**
@@ -28,15 +28,15 @@ module.exports = class Hypervisor {
 
   // loads an instance of a container from the state
   async _loadActor (id) {
-    const state = await this.tree.get(id, true)
-    const container = this._containerTypes[state.value.type]
+    const state = await this.tree.getSubTree(id)
+    const container = this._containerTypes[state.root['/'][3][0]]
 
     // create a new actor instance
     const actor = new Actor({
       hypervisor: this,
-      state: state,
-      container: container,
-      id: id
+      state,
+      container,
+      id
     })
 
     // save the newly created instance
@@ -71,19 +71,10 @@ module.exports = class Hypervisor {
   async createActor (type, message, id = {nonce: this.nonce++, parent: null}) {
     const encoded = encodedID(id)
     const idHash = await this._getHashFromObj(encoded)
-    const state = {
-      nonce: 0,
-      caps: {},
-      type: type
-    }
-
-    const code = message.data
-    if (code.length) {
-      state.code = code
-    }
+    const state = Buffer.from([type, 0, 0])
 
     // save the container in the state
-    await this.tree.set(idHash, state)
+    this.tree.set(idHash, state)
 
     // create the container instance
     const instance = await this._loadActor(idHash)
@@ -104,7 +95,7 @@ module.exports = class Hypervisor {
    * @param {Number} ticks the number of ticks at which to create the state root
    * @returns {Promise}
    */
-  async createStateRoot (ticks) {
+  async createStateRoot (ticks = Infinity) {
     await this.scheduler.wait(ticks)
     return this.tree.flush()
   }

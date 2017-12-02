@@ -2,7 +2,6 @@ const tape = require('tape')
 const AbstractContainer = require('primea-abstract-container')
 const Message = require('primea-message')
 const Hypervisor = require('../')
-const CapsStore = require('../capsStore.js')
 
 const level = require('level-browserify')
 const RadixTree = require('dfinity-radix-tree')
@@ -19,7 +18,7 @@ tape('basic', async t => {
   t.plan(2)
   let message
   const expectedState = {
-    '/': Buffer.from('70a9676b7995b108057bd29955e3874401aa5ba7', 'hex')
+    '/': Buffer.from('a364c55f9993e0bc63f7155d5eb661ae9ad769d9', 'hex')
   }
 
   const tree = new RadixTree({
@@ -40,27 +39,15 @@ tape('basic', async t => {
   message = new Message()
   hypervisor.send(rootCap, message)
 
-  const stateRoot = await hypervisor.createStateRoot(Infinity)
+  const stateRoot = await hypervisor.createStateRoot()
   t.deepEquals(stateRoot, expectedState, 'expected root!')
-})
-
-tape('caps manager', async t => {
-  const capsManager = new CapsStore({})
-  const cap = {}
-  capsManager.store('test', cap)
-  const c = capsManager.load('test')
-  t.equals(cap, c)
-  capsManager.delete('test')
-  const empty = capsManager.load('test')
-  t.equals(empty, undefined)
-  t.end()
 })
 
 tape('two communicating actors', async t => {
   t.plan(2)
   let message
   const expectedState = {
-    '/': Buffer.from('fc935489953ed357f06171dd23439d83190b3a1b', 'hex')
+    '/': Buffer.from('9e8d5671e2c7d167e03784e5d9ec36e15747ad95', 'hex')
   }
 
   const tree = new RadixTree({
@@ -93,8 +80,7 @@ tape('two communicating actors', async t => {
     caps: [capB]
   }))
 
-  const stateRoot = await hypervisor.createStateRoot(Infinity)
-
+  const stateRoot = await hypervisor.createStateRoot()
   t.deepEquals(stateRoot, expectedState, 'expected root!')
 })
 
@@ -102,7 +88,7 @@ tape('three communicating actors', async t => {
   t.plan(3)
   let message
   const expectedState = {
-    '/': Buffer.from('24855a8efa9af536f0f9b319c05b10d6b7cae6c8', 'hex')
+    '/': Buffer.from('840607eafe779858648d3311039f986e68f4752e', 'hex')
   }
 
   const tree = new RadixTree({
@@ -139,8 +125,7 @@ tape('three communicating actors', async t => {
     caps: [capB]
   }))
 
-  const stateRoot = await hypervisor.createStateRoot(Infinity)
-
+  const stateRoot = await hypervisor.createStateRoot()
   t.deepEquals(stateRoot, expectedState, 'expected root!')
 })
 
@@ -148,7 +133,7 @@ tape('three communicating actors, with tick counting', async t => {
   t.plan(3)
   let message
   const expectedState = {
-    '/': Buffer.from('24855a8efa9af536f0f9b319c05b10d6b7cae6c8', 'hex')
+    '/': Buffer.from('840607eafe779858648d3311039f986e68f4752e', 'hex')
   }
 
   const tree = new RadixTree({
@@ -189,7 +174,7 @@ tape('three communicating actors, with tick counting', async t => {
     caps: [capB]
   }))
 
-  const stateRoot = await hypervisor.createStateRoot(Infinity)
+  const stateRoot = await hypervisor.createStateRoot()
 
   t.deepEquals(stateRoot, expectedState, 'expected root!')
 })
@@ -198,7 +183,7 @@ tape('response caps', async t => {
   t.plan(3)
   let message
   const expectedState = {
-    '/': Buffer.from('fc935489953ed357f06171dd23439d83190b3a1b', 'hex')
+    '/': Buffer.from('9e8d5671e2c7d167e03784e5d9ec36e15747ad95', 'hex')
   }
 
   const tree = new RadixTree({
@@ -236,7 +221,7 @@ tape('response caps', async t => {
     caps: [capB]
   }))
 
-  const stateRoot = await hypervisor.createStateRoot(Infinity)
+  const stateRoot = await hypervisor.createStateRoot()
 
   t.deepEquals(stateRoot, expectedState, 'expected root!')
 })
@@ -245,7 +230,7 @@ tape('response caps for errors', async t => {
   t.plan(3)
   let message
   const expectedState = {
-    '/': Buffer.from('fc935489953ed357f06171dd23439d83190b3a1b', 'hex')
+    '/': Buffer.from('9e8d5671e2c7d167e03784e5d9ec36e15747ad95', 'hex')
   }
 
   const tree = new RadixTree({
@@ -284,8 +269,7 @@ tape('response caps for errors', async t => {
     caps: [capB]
   }))
 
-  const stateRoot = await hypervisor.createStateRoot(Infinity)
-
+  const stateRoot = await hypervisor.createStateRoot()
   t.deepEquals(stateRoot, expectedState, 'expected root!')
 })
 
@@ -293,7 +277,7 @@ tape('actor creation', async t => {
   t.plan(2)
   let message
   const expectedState = {
-    '/': Buffer.from('8e809b10d473ef4592dc5c1683e89bc7001e5e3e', 'hex')
+    '/': Buffer.from('b19c67aea0ff97e96df6e2aacbd45b1bd260af30', 'hex')
   }
 
   const tree = new RadixTree({
@@ -330,15 +314,14 @@ tape('actor creation', async t => {
 
   await hypervisor.createActor(testVMContainerA.typeId, new Message())
 
-  const stateRoot = await hypervisor.createStateRoot(Infinity)
-
+  const stateRoot = await hypervisor.createStateRoot()
   t.deepEquals(stateRoot, expectedState, 'expected root!')
 })
 
 tape('simple message arbiter test', async t => {
   t.plan(4)
   const expectedState = {
-    '/': Buffer.from('fc935489953ed357f06171dd23439d83190b3a1b', 'hex')
+    '/': Buffer.from('9e8d5671e2c7d167e03784e5d9ec36e15747ad95', 'hex')
   }
 
   const tree = new RadixTree({
@@ -392,8 +375,7 @@ tape('simple message arbiter test', async t => {
     caps: [capB]
   }))
 
-  const stateRoot = await hypervisor.createStateRoot(Infinity)
-
+  const stateRoot = await hypervisor.createStateRoot()
   t.deepEquals(stateRoot, expectedState, 'expected root!')
 })
 
@@ -401,7 +383,7 @@ tape('arbiter test for id comparision', async t => {
   t.plan(4)
   let message
   const expectedState = {
-    '/': Buffer.from('0866fe6a6adaf28c51ce99ddfddd49c492e9ce48', 'hex')
+    '/': Buffer.from('840607eafe779858648d3311039f986e68f4752e', 'hex')
   }
 
   const tree = new RadixTree({
@@ -455,15 +437,14 @@ tape('arbiter test for id comparision', async t => {
     data: 'third'
   }))
 
-  const stateRoot = await hypervisor.createStateRoot(Infinity)
-
+  const stateRoot = await hypervisor.createStateRoot()
   t.deepEquals(stateRoot, expectedState, 'expected root!')
 })
 
 tape('basic tagged caps', async t => {
   t.plan(4)
   const expectedState = {
-    '/': Buffer.from('ef403643f292108fe9edc1700d80a7bf2402e7a0', 'hex')
+    '/': Buffer.from('d4291da4536544bf90aa473a1148cb29f913d078', 'hex')
   }
 
   const tree = new RadixTree({
@@ -501,15 +482,14 @@ tape('basic tagged caps', async t => {
 
   await hypervisor.send(capA, new Message({caps: [capB]}))
 
-  const stateRoot = await hypervisor.createStateRoot(Infinity)
-
+  const stateRoot = await hypervisor.createStateRoot()
   t.deepEquals(stateRoot, expectedState, 'expected root!')
 })
 
 tape('trying to listen for caps more then once', async t => {
   t.plan(4)
   const expectedState = {
-    '/': Buffer.from('ef403643f292108fe9edc1700d80a7bf2402e7a0', 'hex')
+    '/': Buffer.from('d4291da4536544bf90aa473a1148cb29f913d078', 'hex')
   }
 
   const tree = new RadixTree({
@@ -552,15 +532,14 @@ tape('trying to listen for caps more then once', async t => {
 
   await hypervisor.send(capA, new Message({caps: [capB]}))
 
-  const stateRoot = await hypervisor.createStateRoot(Infinity)
-
+  const stateRoot = await hypervisor.createStateRoot()
   t.deepEquals(stateRoot, expectedState, 'expected root!')
 })
 
 tape('multple messages to restore on waiting for tags', async t => {
   t.plan(6)
   const expectedState = {
-    '/': Buffer.from('c2bbd78ee38ecf417f857451bdb06cdba1345b22', 'hex')
+    '/': Buffer.from('b5c0822ccb21bbaa2ad8069c4dcd18add7d6e2d1', 'hex')
   }
 
   const tree = new RadixTree({
@@ -612,7 +591,7 @@ tape('multple messages to restore on waiting for tags', async t => {
 
   await hypervisor.send(capA, new Message({caps: [capB1, capB2]}))
 
-  const stateRoot = await hypervisor.createStateRoot(Infinity)
+  const stateRoot = await hypervisor.createStateRoot()
 
   t.deepEquals(stateRoot, expectedState, 'expected root!')
 })
@@ -620,7 +599,7 @@ tape('multple messages to restore on waiting for tags', async t => {
 tape('multple messages to backup on waiting for tags', async t => {
   t.plan(6)
   const expectedState = {
-    '/': Buffer.from('c2bbd78ee38ecf417f857451bdb06cdba1345b22', 'hex')
+    '/': Buffer.from('b5c0822ccb21bbaa2ad8069c4dcd18add7d6e2d1', 'hex')
   }
 
   const tree = new RadixTree({
@@ -672,15 +651,14 @@ tape('multple messages to backup on waiting for tags', async t => {
 
   await hypervisor.send(capA, new Message({caps: [capB1, capB2]}))
 
-  const stateRoot = await hypervisor.createStateRoot(Infinity)
-
+  const stateRoot = await hypervisor.createStateRoot()
   t.deepEquals(stateRoot, expectedState, 'expected root!')
 })
 
 tape('multple messages, but single tag', async t => {
   t.plan(6)
   const expectedState = {
-    '/': Buffer.from('c2bbd78ee38ecf417f857451bdb06cdba1345b22', 'hex')
+    '/': Buffer.from('b5c0822ccb21bbaa2ad8069c4dcd18add7d6e2d1', 'hex')
   }
 
   const tree = new RadixTree({
@@ -732,15 +710,14 @@ tape('multple messages, but single tag', async t => {
 
   await hypervisor.send(capA, new Message({caps: [capB1, capB2]}))
 
-  const stateRoot = await hypervisor.createStateRoot(Infinity)
-
+  const stateRoot = await hypervisor.createStateRoot()
   t.deepEquals(stateRoot, expectedState, 'expected root!')
 })
 
 tape('deadlock test', async t => {
   t.plan(7)
   const expectedState = {
-    '/': Buffer.from('2e8658dc2f616599b4fa622318b86ad6ed809db0', 'hex')
+    '/': Buffer.from('f290945ad63dd06b9ada924fa5149df4a0a32f53', 'hex')
   }
 
   const tree = new RadixTree({
@@ -795,6 +772,6 @@ tape('deadlock test', async t => {
     hypervisor.send(capB, new Message()),
     hypervisor.send(capC, new Message())
   ])
-  const stateRoot = await hypervisor.createStateRoot(Infinity)
+  const stateRoot = await hypervisor.createStateRoot()
   t.deepEquals(stateRoot, expectedState, 'expected root!')
 })

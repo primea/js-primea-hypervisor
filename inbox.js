@@ -1,5 +1,5 @@
-const binarySearchInsert = require('binary-search-insert')
 const Buffer = require('safe-buffer').Buffer
+const binarySearchInsert = require('binary-search-insert')
 
 // decides which message to go first
 function messageArbiter (messageA, messageB) {

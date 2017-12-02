@@ -1,4 +1,6 @@
+const Buffer = require('safe-buffer').Buffer
 const Message = require('primea-message')
+const leb128 = require('leb128').unsigned
 const LockMap = require('lockmap')
 const Inbox = require('./inbox.js')
 
@@ -15,7 +17,7 @@ module.exports = class Actor {
   constructor (opts) {
     // console.log(opts.state)
     this.state = opts.state
-    this.nonce = opts.state.root['/'][3][2]
+    this.nonce = leb128.decode(opts.state.root['/'][3].subarray(2))
     this.hypervisor = opts.hypervisor
     this.id = opts.id
     this.container = new opts.container.Constructor(this, opts.container.args)
@@ -95,7 +97,8 @@ module.exports = class Actor {
    */
   shutdown () {
     // save the nonce
-    this.state.root['/'][3][2] = this.nonce
+    let state = this.state.root['/'][3].subarray(0, 2)
+    this.state.root['/'][3] = Buffer.concat([state, leb128.encode(this.nonce)])
     this.hypervisor.scheduler.done(this.id)
   }
 

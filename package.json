@@ -32,6 +32,7 @@
   "license": "MPL-2.0",
   "dependencies": {
     "binary-search-insert": "^1.0.3",
+    "leb128": "0.0.4",
     "lockmap": "^0.1.0",
     "primea-message": "0.6.1",
     "safe-buffer": "^5.1.1",
@@ -40,7 +41,7 @@
   },
   "devDependencies": {
     "coveralls": "^3.0.0",
-    "dfinity-radix-tree": "0.0.5",
+    "dfinity-radix-tree": "0.0.7",
     "documentation": "^5.3.3",
     "level-browserify": "^1.1.1",
     "nyc": "^11.3.0",

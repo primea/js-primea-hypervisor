@@ -9,7 +9,7 @@
 
 ## constructor
 
-[inbox.js:23-31](https://github.com/primea/js-primea-hypervisor/blob/46c11229b2dac84739660d8242a0eaa65697f8bc/inbox.js#L23-L31 "Source code on GitHub")
+[inbox.js:23-31](https://github.com/primea/js-primea-hypervisor/blob/3ae2283be27509914459ba5c6d1acd9f4cc59b8d/inbox.js#L23-L31 "Source code on GitHub")
 
 The inbox manages and sorts incoming messages and provides functions
 to wait on messages
@@ -22,7 +22,7 @@ to wait on messages
 
 ## queue
 
-[inbox.js:37-47](https://github.com/primea/js-primea-hypervisor/blob/46c11229b2dac84739660d8242a0eaa65697f8bc/inbox.js#L37-L47 "Source code on GitHub")
+[inbox.js:37-47](https://github.com/primea/js-primea-hypervisor/blob/3ae2283be27509914459ba5c6d1acd9f4cc59b8d/inbox.js#L37-L47 "Source code on GitHub")
 
 queues a message
 
@@ -32,7 +32,7 @@ queues a message
 
 ## nextTaggedMessage
 
-[inbox.js:55-66](https://github.com/primea/js-primea-hypervisor/blob/46c11229b2dac84739660d8242a0eaa65697f8bc/inbox.js#L55-L66 "Source code on GitHub")
+[inbox.js:55-66](https://github.com/primea/js-primea-hypervisor/blob/3ae2283be27509914459ba5c6d1acd9f4cc59b8d/inbox.js#L55-L66 "Source code on GitHub")
 
 Waits for a message sent with a capablitly that has one of the given tags
 
@@ -45,7 +45,7 @@ Returns **[Promise](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Refe
 
 ## nextMessage
 
-[inbox.js:73-110](https://github.com/primea/js-primea-hypervisor/blob/46c11229b2dac84739660d8242a0eaa65697f8bc/inbox.js#L73-L110 "Source code on GitHub")
+[inbox.js:73-110](https://github.com/primea/js-primea-hypervisor/blob/3ae2283be27509914459ba5c6d1acd9f4cc59b8d/inbox.js#L73-L110 "Source code on GitHub")
 
 Waits for the the next message if any
 

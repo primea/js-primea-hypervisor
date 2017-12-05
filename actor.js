@@ -15,7 +15,6 @@ module.exports = class Actor {
    * @param {Object} opts.container - the container constuctor and argments
    */
   constructor (opts) {
-    // console.log(opts.state)
     this.state = opts.state
     this.nonce = leb128.decode(opts.state.root['/'][3].subarray(2))
     this.hypervisor = opts.hypervisor

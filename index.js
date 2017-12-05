@@ -1,5 +1,6 @@
 const Actor = require('./actor.js')
 const Scheduler = require('./scheduler.js')
+const leb128 = require('leb128').unsigned
 
 module.exports = class Hypervisor {
   /**
@@ -29,7 +30,8 @@ module.exports = class Hypervisor {
   // loads an instance of a container from the state
   async _loadActor (id) {
     const state = await this.tree.getSubTree(id)
-    const container = this._containerTypes[state.root['/'][3][0]]
+    const type = leb128.decode(state.root['/'][3])
+    const container = this._containerTypes[type]
 
     // create a new actor instance
     const actor = new Actor({
@@ -71,7 +73,7 @@ module.exports = class Hypervisor {
   async createActor (type, message, id = {nonce: this.nonce++, parent: null}) {
     const encoded = encodedID(id)
     const idHash = await this._getHashFromObj(encoded)
-    const state = Buffer.from([type, 0, 0])
+    const state = Buffer.concat([leb128.encode(type), Buffer.from([0, 0])])
 
     // save the container in the state
     this.tree.set(idHash, state)

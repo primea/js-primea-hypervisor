@@ -1,4 +1,5 @@
 const Buffer = require('safe-buffer').Buffer
+const Cap = require('primea-capability')
 const Message = require('primea-message')
 const leb128 = require('leb128').unsigned
 const LockMap = require('lockmap')
@@ -36,10 +37,7 @@ module.exports = class Actor {
    * @return {Object}
    */
   mintCap (tag = 0) {
-    return {
-      destId: this.id,
-      tag: tag
-    }
+    return new Cap(this.id, tag)
   }
 
   /**

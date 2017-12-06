@@ -32,8 +32,10 @@
   "license": "MPL-2.0",
   "dependencies": {
     "binary-search-insert": "^1.0.3",
+    "buffer-pipe": "0.0.1",
     "leb128": "0.0.4",
     "lockmap": "^0.1.0",
+    "primea-capability": "0.0.0",
     "primea-message": "0.6.1",
     "safe-buffer": "^5.1.1",
     "sortedmap": "0.0.1",

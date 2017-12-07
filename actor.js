@@ -1,4 +1,5 @@
 const Buffer = require('safe-buffer').Buffer
+const Pipe = require('buffer-pipe')
 const Cap = require('primea-capability')
 const Message = require('primea-message')
 const leb128 = require('leb128').unsigned
@@ -16,10 +17,8 @@ module.exports = class Actor {
    * @param {Object} opts.container - the container constuctor and argments
    */
   constructor (opts) {
-    this.state = opts.state
-    this.nonce = leb128.decode(opts.state.root['/'][3].subarray(2))
-    this.hypervisor = opts.hypervisor
-    this.id = opts.id
+    Object.assign(this, opts)
+
     this.container = new opts.container.Constructor(this, opts.container.args)
     this.inbox = new Inbox({
       actor: this,
@@ -89,13 +88,32 @@ module.exports = class Actor {
     }
   }
 
+  serializeMetaData () {
+    return Actor.serializeMetaData(this.type, this.transparent, this.nonce)
+  }
+
+  static serializeMetaData (type, transparent = 0, nonce = 0) {
+    const p = new Pipe()
+    leb128.write(type, p)
+    p.write(Buffer.from([transparent]))
+    leb128.write(nonce, p)
+    return p.buffer
+  }
+
+  static deserializeMetaData (buffer) {
+    const pipe = new Pipe(buffer)
+    return {
+      type: leb128.read(pipe),
+      nonce: leb128.read(pipe),
+      transparent: pipe.read(1)[0]
+    }
+  }
+
   /**
    * Runs the shutdown routine for the actor
    */
   shutdown () {
-    // save the nonce
-    let state = this.state.root['/'][3].subarray(0, 2)
-    this.state.root['/'][3] = Buffer.concat([state, leb128.encode(this.nonce)])
+    this.state.root['/'][3] = this.serializeMetaData()
     this.hypervisor.scheduler.done(this.id)
   }
 

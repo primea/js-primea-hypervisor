@@ -1,6 +1,5 @@
 const Actor = require('./actor.js')
 const Scheduler = require('./scheduler.js')
-const leb128 = require('leb128').unsigned
 
 module.exports = class Hypervisor {
   /**
@@ -30,7 +29,7 @@ module.exports = class Hypervisor {
   // loads an instance of a container from the state
   async _loadActor (id) {
     const state = await this.tree.getSubTree(id)
-    const type = leb128.decode(state.root['/'][3])
+    const {type, nonce, transparent} = Actor.deserializeMetaData(state.root['/'][3])
     const container = this._containerTypes[type]
 
     // create a new actor instance
@@ -38,7 +37,10 @@ module.exports = class Hypervisor {
       hypervisor: this,
       state,
       container,
-      id
+      id,
+      nonce,
+      transparent,
+      type
     })
 
     // save the newly created instance
@@ -53,15 +55,13 @@ module.exports = class Hypervisor {
    */
   async getActor (id) {
     let actor = this.scheduler.getInstance(id)
-    if (actor) {
-      return actor
-    } else {
+    if (!actor) {
       const resolve = this.scheduler.lock(id)
-      const actor = await this._loadActor(id)
+      actor = await this._loadActor(id)
       await actor.startup()
       resolve(actor)
-      return actor
     }
+    return actor
   }
 
   /**
@@ -73,10 +73,10 @@ module.exports = class Hypervisor {
   async createActor (type, message, id = {nonce: this.nonce++, parent: null}) {
     const encoded = encodedID(id)
     const idHash = await this._getHashFromObj(encoded)
-    const state = Buffer.concat([leb128.encode(type), Buffer.from([0, 0])])
+    const metaData = Actor.serializeMetaData(type)
 
     // save the container in the state
-    this.tree.set(idHash, state)
+    this.tree.set(idHash, metaData)
 
     // create the container instance
     const instance = await this._loadActor(idHash)
@@ -110,8 +110,8 @@ module.exports = class Hypervisor {
    */
   registerContainer (Constructor, args, typeId = Constructor.typeId) {
     this._containerTypes[typeId] = {
-      Constructor: Constructor,
-      args: args
+      Constructor,
+      args
     }
   }
 }

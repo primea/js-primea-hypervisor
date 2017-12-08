@@ -35,8 +35,8 @@ module.exports = class Actor {
    * @param {*} tag - a tag which can be used to identify caps
    * @return {Object}
    */
-  mintCap (tag = 0) {
-    return new Cap(this.id, tag)
+  mintCap (tag = 0, funcIndex = 0) {
+    return new Cap(this.id, tag, funcIndex)
   }
 
   /**
@@ -95,7 +95,7 @@ module.exports = class Actor {
   static serializeMetaData (type, transparent = 0, nonce = 0) {
     const p = new Pipe()
     leb128.write(type, p)
-    p.write(Buffer.from([transparent]))
+    p.write(Buffer.from([0]))
     leb128.write(nonce, p)
     return p.buffer
   }
@@ -104,8 +104,7 @@ module.exports = class Actor {
     const pipe = new Pipe(buffer)
     return {
       type: leb128.read(pipe),
-      nonce: leb128.read(pipe),
-      transparent: pipe.read(1)[0]
+      nonce: leb128.read(pipe)
     }
   }
 

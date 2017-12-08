@@ -29,7 +29,7 @@ module.exports = class Hypervisor {
   // loads an instance of a container from the state
   async _loadActor (id) {
     const state = await this.tree.getSubTree(id)
-    const {type, nonce, transparent} = Actor.deserializeMetaData(state.root['/'][3])
+    const {type, nonce} = Actor.deserializeMetaData(state.root['/'][3])
     const container = this._containerTypes[type]
 
     // create a new actor instance
@@ -39,7 +39,6 @@ module.exports = class Hypervisor {
       container,
       id,
       nonce,
-      transparent,
       type
     })
 

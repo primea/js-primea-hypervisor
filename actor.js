@@ -71,12 +71,6 @@ module.exports = class Actor {
         const message = await this.inbox.nextMessage()
         if (!message) break
 
-        // if the message we recived had more ticks then we currently have then
-        // update it
-        if (message._fromTicks > this.ticks) {
-          this.ticks = message._fromTicks
-          this.hypervisor.scheduler.update(this)
-        }
         // run the next message
         await this.runMessage(message)
         // wait for state ops to finish
@@ -130,9 +124,6 @@ module.exports = class Actor {
    * @returns {Promise}
    */
   async runMessage (message, method = 'onMessage') {
-    const responseCap = message.responseCap
-    delete message.responseCap
-
     let result
     try {
       result = await this.container[method](message)
@@ -144,8 +135,8 @@ module.exports = class Actor {
       }
     }
 
-    if (responseCap) {
-      this.send(responseCap, new Message({
+    if (message.responseCap) {
+      this.send(message.responseCap, new Message({
         data: result
       }))
     }

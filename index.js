@@ -81,7 +81,7 @@ module.exports = class Hypervisor {
     const instance = await this._loadActor(idHash)
 
     // send the intialization message
-    await instance.create(message)
+    instance.create(message)
     return instance.mintCap()
   }
 

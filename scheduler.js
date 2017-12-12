@@ -104,12 +104,7 @@ module.exports = class Scheduler {
   }
 
   // checks outstanding waits to see if they can be resolved
-  async _checkWaits () {
-    if (this._checkingWaits) {
-      return
-    }
-    this._checkingWaits = true
-
+  _checkWaits () {
     // if there are no instances, clear any remaining waits
     if (!this.instances.size) {
       this._waits.forEach(wait => wait.resolve())

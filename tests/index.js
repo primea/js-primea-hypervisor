@@ -300,7 +300,7 @@ tape('actor creation', async t => {
   class testVMContainerB extends BaseContainer {
     onCreation (m) {
       const cap = m.caps[0]
-      return this.actor.send(cap, new Message({data: 'test'}))
+      this.actor.send(cap, new Message({data: 'test'}))
     }
 
     static get typeId () {

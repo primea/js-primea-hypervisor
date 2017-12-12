@@ -3,7 +3,6 @@ const Pipe = require('buffer-pipe')
 const Cap = require('primea-capability')
 const Message = require('primea-message')
 const leb128 = require('leb128').unsigned
-const LockMap = require('lockmap')
 const Inbox = require('./inbox.js')
 
 module.exports = class Actor {
@@ -27,7 +26,6 @@ module.exports = class Actor {
 
     this.ticks = 0
     this.running = false
-    this._sending = new LockMap()
   }
 
   /**
@@ -55,11 +53,9 @@ module.exports = class Actor {
    * @returns {Promise}
    */
   create (message) {
-    // start loop before running intializtion message so the the container state
-    // will be "running" incase the actor recievse a message will running
-    // creation code
-    this._startMessageLoop()
-    return this.runMessage(message, 'onCreation')
+    return this.runMessage(message, 'onCreation').then(() => {
+      this._startMessageLoop()
+    })
   }
 
   // waits for the next message
@@ -75,7 +71,6 @@ module.exports = class Actor {
         await this.runMessage(message)
         // wait for state ops to finish
         await this.state.done()
-        await Promise.all([...this._sending.values()])
       }
 
       this.running = false
@@ -181,11 +176,10 @@ module.exports = class Actor {
    * @param {Message} message - the message
    */
   send (cap, message) {
-    const resolve = this._sending.lock(cap)
     message._fromTicks = this.ticks
     message._fromId = this.id
     message.tag = cap.tag
 
-    return this.hypervisor.send(cap, message).then(() => resolve(cap))
+    return this.hypervisor.send(cap, message)
   }
 }

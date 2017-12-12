@@ -423,7 +423,7 @@ tape('arbiter test for id comparision', async t => {
   hypervisor.registerContainer(testVMContainerB)
 
   let capB = await hypervisor.createActor(testVMContainerB.typeId, new Message())
-  await hypervisor.send(capB, new Message({
+  hypervisor.send(capB, new Message({
     data: 'first'
   }))
 
@@ -480,7 +480,7 @@ tape('basic tagged caps', async t => {
   let capA = await hypervisor.createActor(testVMContainerA.typeId, new Message())
   let capB = await hypervisor.createActor(testVMContainerB.typeId, new Message())
 
-  await hypervisor.send(capA, new Message({caps: [capB]}))
+  hypervisor.send(capA, new Message({caps: [capB]}))
 
   const stateRoot = await hypervisor.createStateRoot()
   t.deepEquals(stateRoot, expectedState, 'expected root!')
@@ -528,7 +528,7 @@ tape('return while waiting for tag', async t => {
   let capA = await hypervisor.createActor(testVMContainerA.typeId, new Message())
   let capB = await hypervisor.createActor(testVMContainerB.typeId, new Message())
 
-  await hypervisor.send(capA, new Message({caps: [capB]}))
+  hypervisor.send(capA, new Message({caps: [capB]}))
 
   const stateRoot = await hypervisor.createStateRoot()
   t.deepEquals(stateRoot, expectedState, 'expected root!')
@@ -637,7 +637,7 @@ tape('multple messages to restore on waiting for tags', async t => {
   let capB1 = await hypervisor.createActor(testVMContainerB.typeId, new Message())
   let capB2 = await hypervisor.createActor(testVMContainerB.typeId, new Message())
 
-  await hypervisor.send(capA, new Message({caps: [capB1, capB2]}))
+  hypervisor.send(capA, new Message({caps: [capB1, capB2]}))
 
   const stateRoot = await hypervisor.createStateRoot()
 
@@ -697,7 +697,7 @@ tape('multple messages to backup on waiting for tags', async t => {
   let capB1 = await hypervisor.createActor(testVMContainerB.typeId, new Message())
   let capB2 = await hypervisor.createActor(testVMContainerB.typeId, new Message())
 
-  await hypervisor.send(capA, new Message({caps: [capB1, capB2]}))
+  hypervisor.send(capA, new Message({caps: [capB1, capB2]}))
 
   const stateRoot = await hypervisor.createStateRoot()
   t.deepEquals(stateRoot, expectedState, 'expected root!')
@@ -756,7 +756,7 @@ tape('multple messages, but single tag', async t => {
   let capB1 = await hypervisor.createActor(testVMContainerB.typeId, new Message())
   let capB2 = await hypervisor.createActor(testVMContainerB.typeId, new Message())
 
-  await hypervisor.send(capA, new Message({caps: [capB1, capB2]}))
+  hypervisor.send(capA, new Message({caps: [capB1, capB2]}))
 
   const stateRoot = await hypervisor.createStateRoot()
   t.deepEquals(stateRoot, expectedState, 'expected root!')
@@ -815,11 +815,10 @@ tape('deadlock test', async t => {
   let capB = await hypervisor.createActor(testVMContainerB.typeId, new Message())
   let capC = await hypervisor.createActor(testVMContainerC.typeId, new Message())
 
-  await Promise.all([
-    hypervisor.send(capA, new Message()),
-    hypervisor.send(capB, new Message()),
-    hypervisor.send(capC, new Message())
-  ])
+  hypervisor.send(capA, new Message())
+  hypervisor.send(capB, new Message())
+  hypervisor.send(capC, new Message())
+
   const stateRoot = await hypervisor.createStateRoot()
   t.deepEquals(stateRoot, expectedState, 'expected root!')
 })

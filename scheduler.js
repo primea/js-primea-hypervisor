@@ -1,6 +1,5 @@
 const binarySearchInsert = require('binary-search-insert')
 const SortedMap = require('sortedmap')
-const LockMap = require('lockmap')
 
 function comparator (a, b) {
   return a.ticks - b.ticks
@@ -14,7 +13,6 @@ module.exports = class Scheduler {
   constructor () {
     this._waits = []
     this._running = new Set()
-    this._loadingInstances = new LockMap()
     this._checkingWaits = false
     this.instances = new SortedMap(comparator)
   }
@@ -25,11 +23,14 @@ module.exports = class Scheduler {
    * @return {function} the resolve function to call once it to unlock
    */
   lock (id) {
-    this.instances.set(id, {
-      ticks: 0
+    let r
+    const p = new Promise((resolve, reject) => {
+      r = resolve
     })
+    p.ticks = 0
+    this.instances.set(id, p)
     this._running.add(id)
-    return this._loadingInstances.lock(id)
+    return r
   }
 
   /**
@@ -54,7 +55,7 @@ module.exports = class Scheduler {
    * @return {Object}
    */
   getInstance (id) {
-    return this._loadingInstances.get(id) || this.instances.get(id)
+    return this.instances.get(id)
   }
 
   /**

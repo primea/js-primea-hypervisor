@@ -25,6 +25,10 @@ module.exports = class Scheduler {
    * @return {function} the resolve function to call once it to unlock
    */
   lock (id) {
+    this.instances.set(id, {
+      ticks: 0
+    })
+    this._running.add(id)
     return this._loadingInstances.lock(id)
   }
 
@@ -50,7 +54,7 @@ module.exports = class Scheduler {
    * @return {Object}
    */
   getInstance (id) {
-    return this.instances.get(id) || this._loadingInstances.get(id)
+    return this._loadingInstances.get(id) || this.instances.get(id)
   }
 
   /**
@@ -105,9 +109,6 @@ module.exports = class Scheduler {
       return
     }
     this._checkingWaits = true
-
-    // wait to check waits until all the instances are done loading
-    await [...this._loadingInstances.values()]
 
     // if there are no instances, clear any remaining waits
     if (!this.instances.size) {

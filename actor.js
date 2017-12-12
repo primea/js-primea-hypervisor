@@ -75,6 +75,7 @@ module.exports = class Actor {
         await this.runMessage(message)
         // wait for state ops to finish
         await this.state.done()
+        await Promise.all([...this._sending.values()])
       }
 
       this.running = false

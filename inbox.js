@@ -73,6 +73,9 @@ module.exports = class Inbox {
   nextMessage (timeout, getCurrent = false) {
     if (!this._gettingNextMessage) {
       this._gettingNextMessage = this._nextMessage(timeout)
+      this._gettingNextMessage.then(() => {
+        this._gettingNextMessage = false
+      })
     } else if (!getCurrent) {
       throw new Error('already waiting for next message')
     }
@@ -80,10 +83,8 @@ module.exports = class Inbox {
   }
 
   async _nextMessage (timeout) {
-    await Promise.all([...this.actor._sending.values()])
     let message = this._getOldestMessage()
     if (message === undefined && timeout === 0) {
-      this._gettingNextMessage = false
       return
     }
 
@@ -122,7 +123,6 @@ module.exports = class Inbox {
       ])
       oldestTime = this.hypervisor.scheduler.leastNumberOfTicks(this.actor.id)
     }
-    this._gettingNextMessage = false
     return this._deQueueMessage()
   }
 

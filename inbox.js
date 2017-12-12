@@ -83,6 +83,7 @@ module.exports = class Inbox {
     await Promise.all([...this.actor._sending.values()])
     let message = this._getOldestMessage()
     if (message === undefined && timeout === 0) {
+      this._gettingNextMessage = false
       return
     }
 

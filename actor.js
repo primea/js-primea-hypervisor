@@ -96,9 +96,12 @@ module.exports = class Actor {
 
   static deserializeMetaData (buffer) {
     const pipe = new Pipe(buffer)
+    const type = leb128.read(pipe)
+    pipe.read(1)
+    const nonce = leb128.read(pipe)
     return {
-      type: leb128.read(pipe),
-      nonce: leb128.read(pipe)
+      nonce,
+      type
     }
   }
 

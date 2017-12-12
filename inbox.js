@@ -53,9 +53,6 @@ module.exports = class Inbox {
    * @returns {Promise}
    */
   async nextTaggedMessage (tags, timeout) {
-    if (this._waitingTags) {
-      throw new Error('already waiting on tags')
-    }
     this._waitingTags = new Set(tags)
     this._queue = this._queue.filter(message => !this._queueTaggedMessage(message))
 
@@ -73,14 +70,16 @@ module.exports = class Inbox {
    * @param {Integer} timeout
    * @returns {Promise}
    */
-  nextMessage (timeout) {
+  nextMessage (timeout, getCurrent = false) {
     if (!this._gettingNextMessage) {
       this._gettingNextMessage = this._nextMessage(timeout)
+    } else if (!getCurrent) {
+      throw new Error('already waiting for next message')
     }
     return this._gettingNextMessage
   }
 
-  async _nextMessage (timeout = 0) {
+  async _nextMessage (timeout) {
     await Promise.all([...this.actor._sending.values()])
     let message = this._getOldestMessage()
     if (message === undefined && timeout === 0) {

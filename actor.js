@@ -68,7 +68,7 @@ module.exports = class Actor {
     if (!this.running) {
       this.running = true
       while (1) {
-        const message = await this.inbox.nextMessage()
+        const message = await this.inbox.nextMessage(0, true)
         if (!message) break
 
         // run the next message

@@ -53,7 +53,9 @@ module.exports = class Actor {
    * @returns {Promise}
    */
   create (message) {
+    this.running = true
     return this.runMessage(message, 'onCreation').then(() => {
+      this.running = false
       this._startMessageLoop()
     })
   }

@@ -18,7 +18,7 @@ tape('basic', async t => {
   t.plan(2)
   let message
   const expectedState = {
-    '/': Buffer.from('a364c55f9993e0bc63f7155d5eb661ae9ad769d9', 'hex')
+    '/': Buffer.from('926de6b7eb39cfa8d7f8a44d1ef191d3bcb765a7', 'hex')
   }
 
   const tree = new RadixTree({
@@ -47,7 +47,7 @@ tape('two communicating actors', async t => {
   t.plan(2)
   let message
   const expectedState = {
-    '/': Buffer.from('9e8d5671e2c7d167e03784e5d9ec36e15747ad95', 'hex')
+    '/': Buffer.from('a4c7ceacd8c867ae1d0b472d8bffa3cb10048331', 'hex')
   }
 
   const tree = new RadixTree({
@@ -88,7 +88,7 @@ tape('three communicating actors', async t => {
   t.plan(3)
   let message
   const expectedState = {
-    '/': Buffer.from('840607eafe779858648d3311039f986e68f4752e', 'hex')
+    '/': Buffer.from('4633ac4b9f8212e501b6c56906039ec081fbe5a3', 'hex')
   }
 
   const tree = new RadixTree({
@@ -133,7 +133,7 @@ tape('three communicating actors, with tick counting', async t => {
   t.plan(3)
   let message
   const expectedState = {
-    '/': Buffer.from('840607eafe779858648d3311039f986e68f4752e', 'hex')
+    '/': Buffer.from('4633ac4b9f8212e501b6c56906039ec081fbe5a3', 'hex')
   }
 
   const tree = new RadixTree({
@@ -183,7 +183,7 @@ tape('response caps', async t => {
   t.plan(3)
   let message
   const expectedState = {
-    '/': Buffer.from('9e8d5671e2c7d167e03784e5d9ec36e15747ad95', 'hex')
+    '/': Buffer.from('a4c7ceacd8c867ae1d0b472d8bffa3cb10048331', 'hex')
   }
 
   const tree = new RadixTree({
@@ -230,7 +230,7 @@ tape('response caps for errors', async t => {
   t.plan(3)
   let message
   const expectedState = {
-    '/': Buffer.from('9e8d5671e2c7d167e03784e5d9ec36e15747ad95', 'hex')
+    '/': Buffer.from('a4c7ceacd8c867ae1d0b472d8bffa3cb10048331', 'hex')
   }
 
   const tree = new RadixTree({
@@ -277,7 +277,7 @@ tape('actor creation', async t => {
   t.plan(2)
   let message
   const expectedState = {
-    '/': Buffer.from('b19c67aea0ff97e96df6e2aacbd45b1bd260af30', 'hex')
+    '/': Buffer.from('f47377a763c91247e62138408d706a09bccaaf36', 'hex')
   }
 
   const tree = new RadixTree({
@@ -321,7 +321,7 @@ tape('actor creation', async t => {
 tape('simple message arbiter test', async t => {
   t.plan(4)
   const expectedState = {
-    '/': Buffer.from('9e8d5671e2c7d167e03784e5d9ec36e15747ad95', 'hex')
+    '/': Buffer.from('a4c7ceacd8c867ae1d0b472d8bffa3cb10048331', 'hex')
   }
 
   const tree = new RadixTree({
@@ -383,7 +383,7 @@ tape('arbiter test for id comparision', async t => {
   t.plan(4)
   let message
   const expectedState = {
-    '/': Buffer.from('840607eafe779858648d3311039f986e68f4752e', 'hex')
+    '/': Buffer.from('4633ac4b9f8212e501b6c56906039ec081fbe5a3', 'hex')
   }
 
   const tree = new RadixTree({
@@ -444,7 +444,7 @@ tape('arbiter test for id comparision', async t => {
 tape('basic tagged caps', async t => {
   t.plan(4)
   const expectedState = {
-    '/': Buffer.from('d4291da4536544bf90aa473a1148cb29f913d078', 'hex')
+    '/': Buffer.from('b8eb399087a990e30373e954b627a9512c9af40b', 'hex')
   }
 
   const tree = new RadixTree({
@@ -489,7 +489,7 @@ tape('basic tagged caps', async t => {
 tape('return while waiting for tag', async t => {
   t.plan(4)
   const expectedState = {
-    '/': Buffer.from('d4291da4536544bf90aa473a1148cb29f913d078', 'hex')
+    '/': Buffer.from('b8eb399087a990e30373e954b627a9512c9af40b', 'hex')
   }
 
   const tree = new RadixTree({
@@ -537,7 +537,7 @@ tape('return while waiting for tag', async t => {
 tape('trying to listen for caps more then once', async t => {
   t.plan(4)
   const expectedState = {
-    '/': Buffer.from('d4291da4536544bf90aa473a1148cb29f913d078', 'hex')
+    '/': Buffer.from('b8eb399087a990e30373e954b627a9512c9af40b', 'hex')
   }
 
   const tree = new RadixTree({
@@ -587,7 +587,7 @@ tape('trying to listen for caps more then once', async t => {
 tape('multple messages to restore on waiting for tags', async t => {
   t.plan(6)
   const expectedState = {
-    '/': Buffer.from('b5c0822ccb21bbaa2ad8069c4dcd18add7d6e2d1', 'hex')
+    '/': Buffer.from('b2025e9430f0ce3a53767a36124fa622f782a38f', 'hex')
   }
 
   const tree = new RadixTree({
@@ -647,7 +647,7 @@ tape('multple messages to restore on waiting for tags', async t => {
 tape('multple messages to backup on waiting for tags', async t => {
   t.plan(6)
   const expectedState = {
-    '/': Buffer.from('b5c0822ccb21bbaa2ad8069c4dcd18add7d6e2d1', 'hex')
+    '/': Buffer.from('b2025e9430f0ce3a53767a36124fa622f782a38f', 'hex')
   }
 
   const tree = new RadixTree({
@@ -706,7 +706,7 @@ tape('multple messages to backup on waiting for tags', async t => {
 tape('multple messages, but single tag', async t => {
   t.plan(6)
   const expectedState = {
-    '/': Buffer.from('b5c0822ccb21bbaa2ad8069c4dcd18add7d6e2d1', 'hex')
+    '/': Buffer.from('b2025e9430f0ce3a53767a36124fa622f782a38f', 'hex')
   }
 
   const tree = new RadixTree({
@@ -765,7 +765,7 @@ tape('multple messages, but single tag', async t => {
 tape('deadlock test', async t => {
   t.plan(7)
   const expectedState = {
-    '/': Buffer.from('f290945ad63dd06b9ada924fa5149df4a0a32f53', 'hex')
+    '/': Buffer.from('54f55756d0255d849e6878cc706f4c1565396e5c', 'hex')
   }
 
   const tree = new RadixTree({

@@ -44,7 +44,11 @@ module.exports = class Actor {
    */
   queue (message) {
     this.inbox.queue(message)
-    this._startMessageLoop()
+
+    if (!this.running) {
+      this.running = true
+      this._startMessageLoop()
+    }
   }
 
   /**
@@ -54,8 +58,8 @@ module.exports = class Actor {
    */
   create (message) {
     this.running = true
+    this.inbox.currentMessage = message
     return this.runMessage(message, 'onCreation').then(() => {
-      this.running = false
       this._startMessageLoop()
     })
   }
@@ -63,31 +67,28 @@ module.exports = class Actor {
   // waits for the next message
   async _startMessageLoop () {
     // this ensure we only every have one loop running at a time
+    while (1) {
+      const message = await this.inbox.nextMessage(0, true)
+      if (!message) break
+
+      // run the next message
+      await this.runMessage(message)
+    }
+    this.running = false
+    // wait for state ops to finish
+    await this.state.done()
     if (!this.running) {
-      this.running = true
-      while (1) {
-        const message = await this.inbox.nextMessage(0, true)
-        if (!message) break
-
-        // run the next message
-        await this.runMessage(message)
-        // wait for state ops to finish
-        await this.state.done()
-      }
-
-      this.running = false
       this.container.onIdle()
     }
   }
 
   serializeMetaData () {
-    return Actor.serializeMetaData(this.type, this.transparent, this.nonce)
+    return Actor.serializeMetaData(this.type, this.nonce)
   }
 
-  static serializeMetaData (type, transparent = 0, nonce = 0) {
+  static serializeMetaData (type, nonce = 0) {
     const p = new Pipe()
     leb128.write(type, p)
-    p.write(Buffer.from([0]))
     leb128.write(nonce, p)
     return p.buffer
   }
@@ -95,7 +96,6 @@ module.exports = class Actor {
   static deserializeMetaData (buffer) {
     const pipe = new Pipe(buffer)
     const type = leb128.read(pipe)
-    pipe.read(1)
     const nonce = leb128.read(pipe)
     return {
       nonce,
@@ -180,7 +180,6 @@ module.exports = class Actor {
   send (cap, message) {
     message._fromTicks = this.ticks
     message._fromId = this.id
-    message.tag = cap.tag
 
     return this.hypervisor.send(cap, message)
   }

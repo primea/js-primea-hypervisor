@@ -21,6 +21,7 @@ module.exports = class Hypervisor {
    * @returns {Promise} a promise that resolves once the receiving container is loaded
    */
   async send (cap, message) {
+    message.tag = cap.tag
     const id = cap.destId
     const instance = await this.getActor(id)
     instance.queue(message)

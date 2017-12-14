@@ -123,7 +123,8 @@ module.exports = class Inbox {
       ])
       oldestTime = this.hypervisor.scheduler.leastNumberOfTicks(this.actor.id)
     }
-    return this._deQueueMessage()
+    this.currentMessage = this._deQueueMessage()
+    return this.currentMessage
   }
 
   // returns a promise that resolve when a message older then the given message

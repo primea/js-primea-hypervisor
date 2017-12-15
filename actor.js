@@ -1,4 +1,3 @@
-const Buffer = require('safe-buffer').Buffer
 const Pipe = require('buffer-pipe')
 const Cap = require('primea-capability')
 const Message = require('primea-message')

@@ -32,7 +32,7 @@
   "license": "MPL-2.0",
   "dependencies": {
     "binary-search-insert": "^1.0.3",
-    "buffer-pipe": "0.0.1",
+    "buffer-pipe": "0.0.2",
     "leb128": "0.0.4",
     "primea-capability": "0.0.1",
     "primea-message": "0.6.1",

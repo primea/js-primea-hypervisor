@@ -57,7 +57,6 @@ module.exports = class Actor {
    */
   create (message) {
     this.running = true
-    this.inbox.currentMessage = message
     return this.runMessage(message, 'onCreation').then(() => {
       this._startMessageLoop()
     })
@@ -124,21 +123,10 @@ module.exports = class Actor {
    * @returns {Promise}
    */
   async runMessage (message, method = 'onMessage') {
-    let result
     try {
-      result = await this.container[method](message)
+      await this.container[method](message)
     } catch (e) {
       message.emit('execution:error', e)
-      result = {
-        exception: true,
-        exceptionError: e
-      }
-    }
-
-    if (message.responseCap) {
-      this.send(message.responseCap, new Message({
-        data: result
-      }))
     }
   }
 

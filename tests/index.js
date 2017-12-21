@@ -179,7 +179,7 @@ tape('three communicating actors, with tick counting', async t => {
   t.deepEquals(stateRoot, expectedState, 'expected root!')
 })
 
-tape('response caps', async t => {
+tape('errors', async t => {
   t.plan(3)
   let message
   const expectedState = {
@@ -193,59 +193,10 @@ tape('response caps', async t => {
   class testVMContainerA extends BaseContainer {
     onCreation (m) {
       message = new Message()
-      message.responseCap = this.actor.mintCap()
+      message.on('execution:error', () => {
+        t.pass('should recive a exeption')
+      })
       this.actor.send(m.caps[0], message)
-    }
-
-    onMessage (m) {
-      t.true(m, 'should recive a response message')
-    }
-  }
-
-  class testVMContainerB extends BaseContainer {
-    onMessage (m) {
-      t.true(m === message, 'should recive a message')
-    }
-
-    static get typeId () {
-      return 8
-    }
-  }
-
-  const hypervisor = new Hypervisor(tree)
-  hypervisor.registerContainer(testVMContainerA)
-  hypervisor.registerContainer(testVMContainerB)
-
-  let capB = await hypervisor.createActor(testVMContainerB.typeId, new Message())
-  await hypervisor.createActor(testVMContainerA.typeId, new Message({
-    caps: [capB]
-  }))
-
-  const stateRoot = await hypervisor.createStateRoot()
-
-  t.deepEquals(stateRoot, expectedState, 'expected root!')
-})
-
-tape('response caps for errors', async t => {
-  t.plan(3)
-  let message
-  const expectedState = {
-    '/': Buffer.from('a4c7ceacd8c867ae1d0b472d8bffa3cb10048331', 'hex')
-  }
-
-  const tree = new RadixTree({
-    db: db
-  })
-
-  class testVMContainerA extends BaseContainer {
-    onCreation (m) {
-      message = new Message()
-      message.responseCap = this.actor.mintCap()
-      this.actor.send(m.caps[0], message)
-    }
-
-    onMessage (m) {
-      t.true(m.data.exceptionError instanceof Error, 'should recive a response message')
     }
   }
 
@@ -455,8 +406,7 @@ tape('basic tagged caps', async t => {
     async onMessage (m) {
       t.true(m, 'should recive first message')
       const rCap = this.actor.mintCap(1)
-      const message = new Message()
-      message.responseCap = rCap
+      const message = new Message({caps: [rCap]})
       this.actor.send(m.caps[0], message)
       const rMessage = await this.actor.inbox.nextTaggedMessage([1], 44)
       t.true(rMessage, 'should recive a response message')
@@ -466,6 +416,7 @@ tape('basic tagged caps', async t => {
   class testVMContainerB extends BaseContainer {
     onMessage (m) {
       t.true(m, 'should recive a message')
+      this.actor.send(m.caps[0], new Message())
     }
 
     static get typeId () {
@@ -503,8 +454,7 @@ tape('return while waiting for tag', async t => {
       } else {
         t.true(m, 'should recive first message')
         const rCap = this.actor.mintCap(1)
-        const message = new Message()
-        message.responseCap = rCap
+        const message = new Message({caps: [rCap]})
         this.actor.send(m.caps[0], message)
         this.actor.inbox.nextTaggedMessage([1], 44)
       }
@@ -514,6 +464,7 @@ tape('return while waiting for tag', async t => {
   class testVMContainerB extends BaseContainer {
     onMessage (m) {
       t.true(m, 'should recive a message')
+      this.actor.send(m.caps[0], new Message())
     }
 
     static get typeId () {
@@ -549,7 +500,6 @@ tape('trying to listen for caps more then once', async t => {
       t.true(m, 'should recive first message')
       const rCap = this.actor.mintCap(1)
       const message = new Message({data: 'first'})
-      message.responseCap = rCap
       this.actor.send(m.caps[0], message)
       const promise = this.actor.inbox.nextTaggedMessage([1], 44)
       try {

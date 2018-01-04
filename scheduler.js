@@ -13,7 +13,6 @@ module.exports = class Scheduler {
   constructor () {
     this._waits = []
     this._running = new Set()
-    this._checkingWaits = false
     this.instances = new SortedMap(comparator)
   }
 
@@ -110,8 +109,6 @@ module.exports = class Scheduler {
     if (!this.instances.size) {
       this._waits.forEach(wait => wait.resolve())
       this._waits = []
-      this._checkingWaits = false
-
       return
     }
 
@@ -140,11 +137,7 @@ module.exports = class Scheduler {
         instance.ticks = oldest
         this._update(instance)
       }
-      this._checkingWaits = false
-
       return this._checkWaits()
     }
-
-    this._checkingWaits = false
   }
 }

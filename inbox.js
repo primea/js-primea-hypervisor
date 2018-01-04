@@ -30,6 +30,10 @@ module.exports = class Inbox {
     })
   }
 
+  get isEmpty () {
+    return !this._queue.length
+  }
+
   /**
    * queues a message
    * @param {Message} message
@@ -70,23 +74,14 @@ module.exports = class Inbox {
    * @param {Integer} timeout
    * @returns {Promise}
    */
-  nextMessage (timeout, getCurrent = false) {
+  async nextMessage (timeout) {
     if (!this._gettingNextMessage) {
-      this._gettingNextMessage = this._nextMessage(timeout)
-      this._gettingNextMessage.then(() => {
-        this._gettingNextMessage = false
-      })
-    } else if (!getCurrent) {
+      this._gettingNextMessage = true
+    } else {
       throw new Error('already waiting for next message')
     }
-    return this._gettingNextMessage
-  }
 
-  async _nextMessage (timeout) {
     let message = this._getOldestMessage()
-    if (message === undefined && timeout === 0) {
-      return
-    }
 
     timeout += this.actor.ticks
     let oldestTime = this.hypervisor.scheduler.leastNumberOfTicks(this.actor.id)
@@ -123,6 +118,7 @@ module.exports = class Inbox {
       ])
       oldestTime = this.hypervisor.scheduler.leastNumberOfTicks(this.actor.id)
     }
+    this._gettingNextMessage = false
     return this._deQueueMessage()
   }
 

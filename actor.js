@@ -1,6 +1,5 @@
 const Pipe = require('buffer-pipe')
 const Cap = require('primea-capability')
-const Message = require('primea-message')
 const leb128 = require('leb128').unsigned
 const Inbox = require('./inbox.js')
 
@@ -65,19 +64,18 @@ module.exports = class Actor {
   // waits for the next message
   async _startMessageLoop () {
     // this ensure we only every have one loop running at a time
-    while (1) {
-      const message = await this.inbox.nextMessage(0, true)
-      if (!message) break
-
-      // run the next message
+    while (!this.inbox.isEmpty) {
+      const message = await this.inbox.nextMessage(0)
       await this.runMessage(message)
     }
     this.running = false
     // wait for state ops to finish
     await this.state.done()
-    if (!this.running) {
-      this.container.onIdle()
-    }
+    setTimeout(() => {
+      if (!this.running) {
+        this.container.onIdle()
+      }
+    }, 0)
   }
 
   serializeMetaData () {

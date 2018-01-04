@@ -437,54 +437,6 @@ tape('basic tagged caps', async t => {
   t.deepEquals(stateRoot, expectedState, 'expected root!')
 })
 
-tape('return while waiting for tag', async t => {
-  t.plan(4)
-  const expectedState = {
-    '/': Buffer.from('b8eb399087a990e30373e954b627a9512c9af40b', 'hex')
-  }
-
-  const tree = new RadixTree({
-    db: db
-  })
-
-  class testVMContainerA extends BaseContainer {
-    async onMessage (m) {
-      if (m.tag === 1) {
-        t.true(m, 'should recive second message')
-      } else {
-        t.true(m, 'should recive first message')
-        const rCap = this.actor.mintCap(1)
-        const message = new Message({caps: [rCap]})
-        this.actor.send(m.caps[0], message)
-        this.actor.inbox.nextTaggedMessage([1], 44)
-      }
-    }
-  }
-
-  class testVMContainerB extends BaseContainer {
-    onMessage (m) {
-      t.true(m, 'should recive a message')
-      this.actor.send(m.caps[0], new Message())
-    }
-
-    static get typeId () {
-      return 8
-    }
-  }
-
-  const hypervisor = new Hypervisor(tree)
-  hypervisor.registerContainer(testVMContainerA)
-  hypervisor.registerContainer(testVMContainerB)
-
-  let capA = await hypervisor.createActor(testVMContainerA.typeId, new Message())
-  let capB = await hypervisor.createActor(testVMContainerB.typeId, new Message())
-
-  hypervisor.send(capA, new Message({caps: [capB]}))
-
-  const stateRoot = await hypervisor.createStateRoot()
-  t.deepEquals(stateRoot, expectedState, 'expected root!')
-})
-
 tape('trying to listen for caps more then once', async t => {
   t.plan(4)
   const expectedState = {
@@ -498,7 +450,6 @@ tape('trying to listen for caps more then once', async t => {
   class testVMContainerA extends BaseContainer {
     async onMessage (m) {
       t.true(m, 'should recive first message')
-      const rCap = this.actor.mintCap(1)
       const message = new Message({data: 'first'})
       this.actor.send(m.caps[0], message)
       const promise = this.actor.inbox.nextTaggedMessage([1], 44)

@@ -22,6 +22,7 @@ module.exports = class Scheduler {
    * @return {function} the resolve function to call once it to unlock
    */
   lock (id) {
+    id = id.toString('hex')
     let r
     const p = new Promise((resolve, reject) => {
       r = resolve
@@ -37,15 +38,14 @@ module.exports = class Scheduler {
    * @param {Object} instance - an actor instance
    */
   update (instance) {
-    this._waits = this._waits.filter(wait => wait.id !== instance.id)
     this._update(instance)
-    this._running.add(instance.id)
+    this._running.add(instance.id.toString('hex'))
     this._checkWaits()
   }
 
   _update (instance) {
-    this.instances.delete(instance.id)
-    this.instances.set(instance.id, instance)
+    this.instances.delete(instance.id.toString('hex'))
+    this.instances.set(instance.id.toString('hex'), instance)
   }
 
   /**
@@ -54,6 +54,7 @@ module.exports = class Scheduler {
    * @return {Object}
    */
   getInstance (id) {
+    id = id.toString('hex')
     return this.instances.get(id)
   }
 
@@ -62,6 +63,7 @@ module.exports = class Scheduler {
    * @param {String} id - the containers id
    */
   done (id) {
+    id = id.toString('hex')
     this._running.delete(id)
     this.instances.delete(id)
     this._checkWaits()
@@ -75,7 +77,10 @@ module.exports = class Scheduler {
    * @return {Promise}
    */
   wait (ticks, id) {
-    this._running.delete(id)
+    if (id) {
+      id = id.toString('hex')
+      this._running.delete(id)
+    }
 
     return new Promise((resolve, reject) => {
       binarySearchInsert(this._waits, comparator, {

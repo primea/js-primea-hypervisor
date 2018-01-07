@@ -82,19 +82,16 @@ module.exports = class Inbox {
     }
 
     let message = this._getOldestMessage()
+    if (message) {
+      timeout = message._fromTicks
+    } else {
+      timeout += this.actor.ticks
+    }
 
-    timeout += this.actor.ticks
     let oldestTime = this.hypervisor.scheduler.leastNumberOfTicks(this.actor.id)
 
     while (true) {
       if (message) {
-        // if the message we recived had more ticks then we currently have then
-        // update our ticks to it, since we jumped forward in time
-        if (message._fromTicks > this.actor.ticks) {
-          this.actor.ticks = message._fromTicks
-          this.hypervisor.scheduler.update(this.actor)
-        }
-
         // if there is a message that is "older" then the timeout, the lower
         // the timeout to the oldest message
         if (message._fromTicks < timeout) {
@@ -119,6 +116,12 @@ module.exports = class Inbox {
       oldestTime = this.hypervisor.scheduler.leastNumberOfTicks(this.actor.id)
     }
     this._gettingNextMessage = false
+    // if the message we recived had more ticks then we currently have then
+    // update our ticks to it, since we jumped forward in time
+    if (message && message._fromTicks > this.actor.ticks) {
+      this.actor.ticks = message._fromTicks
+      this.hypervisor.scheduler.update(this.actor)
+    }
     return this._deQueueMessage()
   }
 

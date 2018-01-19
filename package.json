@@ -35,8 +35,6 @@
     "buffer-pipe": "0.0.2",
     "events": "^1.1.1",
     "leb128": "0.0.4",
-    "primea-capability": "0.0.1",
-    "primea-message": "0.6.1",
     "safe-buffer": "^5.1.1",
     "sortedmap": "0.0.1",
     "typedarray-addition": "0.0.1"

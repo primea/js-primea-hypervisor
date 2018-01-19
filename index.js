@@ -43,7 +43,6 @@ module.exports = class Hypervisor {
     })
 
     await actor.startup()
-    // save the newly created instance
     this.scheduler.update(actor)
     return actor
   }

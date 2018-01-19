@@ -3,9 +3,7 @@
 ### Table of Contents
 
 -   [constructor](#constructor)
--   [mintCap](#mintcap)
 -   [queue](#queue)
--   [create](#create)
 -   [shutdown](#shutdown)
 -   [startup](#startup)
 -   [runMessage](#runmessage)
@@ -15,108 +13,84 @@
 
 ## constructor
 
-[actor.js:17-32](https://github.com/primea/js-primea-hypervisor/blob/3ae2283be27509914459ba5c6d1acd9f4cc59b8d/actor.js#L17-L32 "Source code on GitHub")
+[actor.js:15-25](https://github.com/dfinity/js-primea/blob/3d3fc0d82dd65f14b8533dcd2fb881c9fbbb1bd3/actor.js#L15-L25 "Source code on GitHub")
 
 the Actor manages the varous message passing functions and provides
 an interface for the containers to use
 
 **Parameters**
 
--   `opts` **[Object](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Object)** 
-    -   `opts.id` **[Object](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Object)** the UUID of the Actor
-    -   `opts.state` **[Object](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Object)** the state of the container
-    -   `opts.hypervisor` **[Object](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Object)** the instance of the hypervisor
-    -   `opts.container` **[Object](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Object)** the container constuctor and argments
-
-## mintCap
-
-[actor.js:39-44](https://github.com/primea/js-primea-hypervisor/blob/3ae2283be27509914459ba5c6d1acd9f4cc59b8d/actor.js#L39-L44 "Source code on GitHub")
-
-Mints a new capabilitly with a given tag
-
-**Parameters**
-
--   `tag` **any** a tag which can be used to identify caps (optional, default `0`)
-
-Returns **[Object](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Object)** 
+-   `opts` **[Object](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Object)** 
+    -   `opts.id` **[Object](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Object)** the UUID of the Actor
+    -   `opts.state` **[Object](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Object)** the state of the container
+    -   `opts.hypervisor` **[Object](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Object)** the instance of the hypervisor
+    -   `opts.container` **[Object](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Object)** the container constuctor and argments
 
 ## queue
 
-[actor.js:51-54](https://github.com/primea/js-primea-hypervisor/blob/3ae2283be27509914459ba5c6d1acd9f4cc59b8d/actor.js#L51-L54 "Source code on GitHub")
+[actor.js:32-39](https://github.com/dfinity/js-primea/blob/3d3fc0d82dd65f14b8533dcd2fb881c9fbbb1bd3/actor.js#L32-L39 "Source code on GitHub")
 
 adds a message to this actor's message queue
 
 **Parameters**
 
--   `message` **[object](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Object)** 
--   `portName` **[string](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String)** 
-
-## create
-
-[actor.js:61-67](https://github.com/primea/js-primea-hypervisor/blob/3ae2283be27509914459ba5c6d1acd9f4cc59b8d/actor.js#L61-L67 "Source code on GitHub")
-
-runs the creation routine for the actor
-
-**Parameters**
-
--   `message` **[object](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Object)** 
-
-Returns **[Promise](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Promise)** 
+-   `message` **[object](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Object)** 
+-   `portName` **[string](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/String)** 
 
 ## shutdown
 
-[actor.js:98-103](https://github.com/primea/js-primea-hypervisor/blob/3ae2283be27509914459ba5c6d1acd9f4cc59b8d/actor.js#L98-L103 "Source code on GitHub")
+[actor.js:89-92](https://github.com/dfinity/js-primea/blob/3d3fc0d82dd65f14b8533dcd2fb881c9fbbb1bd3/actor.js#L89-L92 "Source code on GitHub")
 
 Runs the shutdown routine for the actor
 
 ## startup
 
-[actor.js:108-110](https://github.com/primea/js-primea-hypervisor/blob/3ae2283be27509914459ba5c6d1acd9f4cc59b8d/actor.js#L108-L110 "Source code on GitHub")
+[actor.js:97-99](https://github.com/dfinity/js-primea/blob/3d3fc0d82dd65f14b8533dcd2fb881c9fbbb1bd3/actor.js#L97-L99 "Source code on GitHub")
 
 Runs the startup routine for the actor
 
 ## runMessage
 
-[actor.js:118-138](https://github.com/primea/js-primea-hypervisor/blob/3ae2283be27509914459ba5c6d1acd9f4cc59b8d/actor.js#L118-L138 "Source code on GitHub")
+[actor.js:107-114](https://github.com/dfinity/js-primea/blob/3d3fc0d82dd65f14b8533dcd2fb881c9fbbb1bd3/actor.js#L107-L114 "Source code on GitHub")
 
 run the Actor with a given message
 
 **Parameters**
 
--   `message` **[object](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Object)** the message to run
--   `method` **[String](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String)** which method to run (optional, default `'onMessage'`)
+-   `message` **[object](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Object)** the message to run
+-   `method` **[String](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/String)** which method to run
 
-Returns **[Promise](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Promise)** 
+Returns **[Promise](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Promise)** 
 
 ## incrementTicks
 
-[actor.js:144-147](https://github.com/primea/js-primea-hypervisor/blob/3ae2283be27509914459ba5c6d1acd9f4cc59b8d/actor.js#L144-L147 "Source code on GitHub")
+[actor.js:120-123](https://github.com/dfinity/js-primea/blob/3d3fc0d82dd65f14b8533dcd2fb881c9fbbb1bd3/actor.js#L120-L123 "Source code on GitHub")
 
 updates the number of ticks that the actor has run
 
 **Parameters**
 
--   `count` **[Number](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Number)** the number of ticks to add
+-   `count` **[Number](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number)** the number of ticks to add
 
 ## createActor
 
-[actor.js:154-157](https://github.com/primea/js-primea-hypervisor/blob/3ae2283be27509914459ba5c6d1acd9f4cc59b8d/actor.js#L154-L157 "Source code on GitHub")
+[actor.js:130-133](https://github.com/dfinity/js-primea/blob/3d3fc0d82dd65f14b8533dcd2fb881c9fbbb1bd3/actor.js#L130-L133 "Source code on GitHub")
 
 creates an actor
 
 **Parameters**
 
 -   `type` **Integer** the type id for the container
--   `message` **[Object](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Object)** an intial [message](https://github.com/primea/js-primea-message) to send newly created actor
+-   `code`  
+-   `message` **[Object](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Object)** an intial [message](https://github.com/primea/js-primea-message) to send newly created actor
 
 ## send
 
-[actor.js:174-181](https://github.com/primea/js-primea-hypervisor/blob/3ae2283be27509914459ba5c6d1acd9f4cc59b8d/actor.js#L174-L181 "Source code on GitHub")
+[actor.js:150-155](https://github.com/dfinity/js-primea/blob/3d3fc0d82dd65f14b8533dcd2fb881c9fbbb1bd3/actor.js#L150-L155 "Source code on GitHub")
 
 sends a message to a given port
 
 **Parameters**
 
--   `cap`  
 -   `message` **Message** the message
--   `portRef` **[Object](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Object)** the port
+-   `portRef` **[Object](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Object)** the port

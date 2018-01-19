@@ -4,25 +4,24 @@
 
 -   [constructor](#constructor)
 -   [queue](#queue)
--   [nextTaggedMessage](#nexttaggedmessage)
 -   [nextMessage](#nextmessage)
 
 ## constructor
 
-[inbox.js:23-31](https://github.com/primea/js-primea-hypervisor/blob/3ae2283be27509914459ba5c6d1acd9f4cc59b8d/inbox.js#L23-L31 "Source code on GitHub")
+[inbox.js:24-31](https://github.com/dfinity/js-primea/blob/3d3fc0d82dd65f14b8533dcd2fb881c9fbbb1bd3/inbox.js#L24-L31 "Source code on GitHub")
 
 The inbox manages and sorts incoming messages and provides functions
 to wait on messages
 
 **Parameters**
 
--   `opts` **[Object](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Object)** 
-    -   `opts.state` **[Object](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Object)** 
-    -   `opts.hypervisor` **[Object](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Object)** 
+-   `opts` **[Object](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Object)** 
+    -   `opts.state` **[Object](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Object)** 
+    -   `opts.hypervisor` **[Object](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Object)** 
 
 ## queue
 
-[inbox.js:37-47](https://github.com/primea/js-primea-hypervisor/blob/3ae2283be27509914459ba5c6d1acd9f4cc59b8d/inbox.js#L37-L47 "Source code on GitHub")
+[inbox.js:41-51](https://github.com/dfinity/js-primea/blob/3d3fc0d82dd65f14b8533dcd2fb881c9fbbb1bd3/inbox.js#L41-L51 "Source code on GitHub")
 
 queues a message
 
@@ -30,27 +29,14 @@ queues a message
 
 -   `message` **Message** 
 
-## nextTaggedMessage
-
-[inbox.js:55-66](https://github.com/primea/js-primea-hypervisor/blob/3ae2283be27509914459ba5c6d1acd9f4cc59b8d/inbox.js#L55-L66 "Source code on GitHub")
-
-Waits for a message sent with a capablitly that has one of the given tags
-
-**Parameters**
-
--   `tags` **[Array](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array)&lt;any>** 
--   `timeout` **Integer** 
-
-Returns **[Promise](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Promise)** 
-
 ## nextMessage
 
-[inbox.js:73-110](https://github.com/primea/js-primea-hypervisor/blob/3ae2283be27509914459ba5c6d1acd9f4cc59b8d/inbox.js#L73-L110 "Source code on GitHub")
+[inbox.js:58-91](https://github.com/dfinity/js-primea/blob/3d3fc0d82dd65f14b8533dcd2fb881c9fbbb1bd3/inbox.js#L58-L91 "Source code on GitHub")
 
 Waits for the the next message if any
 
 **Parameters**
 
--   `timeout` **Integer**  (optional, default `0`)
+-   `timeout` **Integer** 
 
-Returns **[Promise](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Promise)** 
+Returns **[Promise](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Promise)** 

@@ -13,7 +13,7 @@ module.exports = class Scheduler {
   constructor () {
     this._waits = []
     this._running = new Set()
-    this.instances = new SortedMap(comparator)
+    this.actors = new SortedMap(comparator)
   }
 
   /**
@@ -28,24 +28,24 @@ module.exports = class Scheduler {
       r = resolve
     })
     p.ticks = 0
-    this.instances.set(id, p)
+    this.actors.set(id, p)
     this._running.add(id)
     return r
   }
 
   /**
-   * updates an instance with a new tick count
-   * @param {Object} instance - an actor instance
+   * updates an actor with a new tick count
+   * @param {Object} actor - an actor instance
    */
-  update (instance) {
-    this._update(instance)
-    this._running.add(instance.id.toString('hex'))
+  update (actor) {
+    this._update(actor)
+    this._running.add(actor.id.toString('hex'))
     this._checkWaits()
   }
 
-  _update (instance) {
-    this.instances.delete(instance.id.toString('hex'))
-    this.instances.set(instance.id.toString('hex'), instance)
+  _update (actor) {
+    this.actors.delete(actor.id.toString('hex'))
+    this.actors.set(actor.id.toString('hex'), actor)
   }
 
   /**
@@ -53,19 +53,19 @@ module.exports = class Scheduler {
    * @param {String} id
    * @return {Object}
    */
-  getInstance (id) {
+  getActor (id) {
     id = id.toString('hex')
-    return this.instances.get(id)
+    return this.actors.get(id)
   }
 
   /**
-   * deletes an instance from the scheduler
+   * deletes an actor from the scheduler
    * @param {String} id - the containers id
    */
   done (id) {
     id = id.toString('hex')
     this._running.delete(id)
-    this.instances.delete(id)
+    this.actors.delete(id)
     this._checkWaits()
   }
 
@@ -98,9 +98,9 @@ module.exports = class Scheduler {
    */
   leastNumberOfTicks (exclude) {
     let ticks = Infinity
-    for (const instance of this.instances) {
-      ticks = instance[1].ticks
-      if (instance[1].id !== exclude) {
+    for (const actor of this.actors) {
+      ticks = actor[1].ticks
+      if (actor[1].id !== exclude) {
         return ticks
       }
     }
@@ -111,14 +111,14 @@ module.exports = class Scheduler {
   // checks outstanding waits to see if they can be resolved
   _checkWaits () {
     // if there are no instances, clear any remaining waits
-    if (!this.instances.size) {
+    if (!this.actors.size) {
       // console.log('here', this._waits)
       this._waits.forEach(wait => wait.resolve())
       this._waits = []
       return
     }
 
-    // find the old container, see if any of the waits can be resolved
+    // find the oldest container, see if any of the waits can be resolved
     while (this._waits[0]) {
       const wait = this._waits[0]
       const least = this.leastNumberOfTicks(wait.id)
@@ -135,13 +135,13 @@ module.exports = class Scheduler {
     // and update the oldest containers to its ticks
     if (!this._running.size && this._waits.length) {
       const oldest = this._waits[0].ticks
-      for (let instance of this.instances) {
-        instance = instance[1]
-        if (instance.ticks > oldest) {
+      for (let actor of this.actors) {
+        actor = actor[1]
+        if (actor.ticks > oldest) {
           break
         }
-        instance.ticks = oldest
-        this._update(instance)
+        actor.ticks = oldest
+        this._update(actor)
       }
       return this._checkWaits()
     }

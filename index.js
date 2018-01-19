@@ -22,11 +22,10 @@ module.exports = class Hypervisor {
    */
   async send (message) {
     const id = message.funcRef.destId
-    const instance = await this.getActor(id)
-    instance.queue(message)
+    const actor = await this.getActor(id)
+    actor.queue(message)
   }
 
-  // loads an instance of a container from the state
   async _loadActor (id) {
     const state = await this.tree.getSubTree(id)
     const {type, nonce} = Actor.deserializeMetaData(state.root['/'][3])
@@ -53,7 +52,7 @@ module.exports = class Hypervisor {
    * @returns {Promise}
    */
   async getActor (id) {
-    let actor = this.scheduler.getInstance(id)
+    let actor = this.scheduler.getActor(id)
     if (!actor) {
       const resolve = this.scheduler.lock(id)
       actor = await this._loadActor(id)

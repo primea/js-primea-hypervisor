@@ -112,6 +112,7 @@ module.exports = class Scheduler {
   _checkWaits () {
     // if there are no instances, clear any remaining waits
     if (!this.instances.size) {
+      // console.log('here', this._waits)
       this._waits.forEach(wait => wait.resolve())
       this._waits = []
       return

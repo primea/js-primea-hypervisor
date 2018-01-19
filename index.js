@@ -20,9 +20,8 @@ module.exports = class Hypervisor {
    * @param {Object} message - the [message](https://github.com/primea/js-primea-message) to send
    * @returns {Promise} a promise that resolves once the receiving container is loaded
    */
-  async send (cap, message) {
-    message.tag = cap.tag
-    const id = cap.destId
+  async send (message) {
+    const id = message.funcRef.destId
     const instance = await this.getActor(id)
     instance.queue(message)
   }
@@ -43,6 +42,7 @@ module.exports = class Hypervisor {
       type
     })
 
+    await actor.startup()
     // save the newly created instance
     this.scheduler.update(actor)
     return actor
@@ -58,7 +58,6 @@ module.exports = class Hypervisor {
     if (!actor) {
       const resolve = this.scheduler.lock(id)
       actor = await this._loadActor(id)
-      await actor.startup()
       resolve(actor)
     }
     return actor
@@ -70,20 +69,20 @@ module.exports = class Hypervisor {
    * @param {Object} message - an intial [message](https://github.com/primea/js-primea-message) to send newly created actor
    * @param {Object} id - the id for the actor
    */
-  async createActor (type, message, id = {nonce: this.nonce++, parent: null}) {
+  async createActor (type, code, id = {nonce: this.nonce++, parent: null}) {
     const encoded = encodedID(id)
     const idHash = await this._getHashFromObj(encoded)
     const metaData = Actor.serializeMetaData(type)
 
     // save the container in the state
     this.tree.set(idHash, metaData)
-
-    // create the container instance
-    const instance = await this._loadActor(idHash)
-
-    // send the intialization message
-    instance.create(message)
-    return instance.mintCap()
+    const Container = this._containerTypes[type]
+    await Container.validate(code)
+    const module = await Container.compile(code)
+    return {
+      id: idHash,
+      exports: Container.exports(module, idHash)
+    }
   }
 
   // get a hash from a POJO
@@ -108,11 +107,8 @@ module.exports = class Hypervisor {
    * @param {*} args - any args that the contructor takes
    * @param {Integer} typeId - the container's type identification ID
    */
-  registerContainer (Constructor, args, typeId = Constructor.typeId) {
-    this._containerTypes[typeId] = {
-      Constructor,
-      args
-    }
+  registerContainer (Constructor) {
+    this._containerTypes[Constructor.typeId] = Constructor
   }
 }
 

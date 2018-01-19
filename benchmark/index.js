@@ -1,5 +1,4 @@
-const AbstractContainer = require('primea-abstract-container')
-const Message = require('primea-message')
+const Message = require('../message.js')
 const Hypervisor = require('../')
 
 const level = require('level-browserify')
@@ -9,31 +8,54 @@ const db = level('./testdb')
 let numOfMsg = 0
 const messageOrder = {}
 
-async function main (numOfActors, depth) {
-  class BenchmarkContainer extends AbstractContainer {
-    onCreation () {}
-    async onMessage (message) {
-      // console.log('run queue', this.actor.inbox._queue)
-      // console.log('from', message._fromId.toString('hex'), 'to: ', this.actor.id.toString('hex'), this.actor.ticks, message._fromTicks)
-      const last = messageOrder[this.actor.id.toString('hex')]
-      if (last && last > message._fromTicks) {
-        console.log(last, message._fromTicks)
-        // console.log(this.actor.hypervisor.scheduler.instances)
-      } else {
-      }
-      messageOrder[this.actor.id.toString('hex')] = message._fromTicks
-      numOfMsg++
-      this.actor.incrementTicks(1)
-      const cap = message.caps.pop()
-      if (cap) {
-        return this.actor.send(cap, message)
-      }
-    }
-    static get typeId () {
-      return 9
-    }
+class BenchmarkContainer {
+  static validate () {}
+  static compile () {}
+  static get typeId () {
+    return 9
   }
 
+  static exports (m, id) {
+    return Object.keys(this.functions()).map(name => {
+      return {
+        name,
+        destId: id
+      }
+    })
+  }
+  static instance (actor) {
+    return {
+      exports: this.functions(actor)
+    }
+  }
+  static functions (actor) {
+    return {
+      onMessage: function () {
+        const refs = [...arguments]
+        const ref = refs.pop()
+        // console.log('run queue', this.actor.inbox._queue)
+        // console.log('from', message._fromId.toString('hex'), 'to: ', this.actor.id.toString('hex'), this.actor.ticks, message._fromTicks)
+        // const last = messageOrder[actor.id.toString('hex')]
+        // const message = actor.currentMessage 
+        // if (last && last > message._fromTicks) {
+        //   console.log(last, message._fromTicks)
+        //   // console.log(this.actor.hypervisor.scheduler.instances)
+        // }
+        // messageOrder[actor.id.toString('hex')] = message._fromTicks
+        numOfMsg++
+        actor.incrementTicks(10)
+        if (ref) {
+          return actor.send(new Message({
+            funcRef: ref,
+            funcArguments: refs
+          }))
+        }
+      }
+    }
+  }
+}
+
+async function main (numOfActors, depth) {
   const tree = new RadixTree({
     db: db
   })
@@ -41,37 +63,38 @@ async function main (numOfActors, depth) {
   const hypervisor = new Hypervisor(tree)
   hypervisor.registerContainer(BenchmarkContainer)
 
-  const caps = []
+  const refernces = []
   let _numOfActors = numOfActors
   while (_numOfActors--) {
-    const cap = await hypervisor.createActor(BenchmarkContainer.typeId, new Message())
-    caps.push(cap)
+    const {exports} = await hypervisor.createActor(BenchmarkContainer.typeId)
+    refernces.push(exports[0])
   }
+  // console.log(refernces)
   _numOfActors = numOfActors
   let msgs = []
   while (_numOfActors--) {
-    const message = new Message()
-    msgs.push(message)
     let _depth = depth
+    const funcArguments = []
     while (_depth--) {
       const r = Math.floor(Math.random() * numOfActors)
-      const cap = caps[r]
-      message.caps.push(cap)
+      const ref = refernces[r]
+      funcArguments.push(ref)
     }
+    const message = new Message({
+      funcArguments,
+      funcRef: refernces[_numOfActors]
+    })
+    msgs.push(message)
   }
 
   let start = new Date()
-  // hypervisor.scheduler.lock(Buffer.from([0xff]))
-  msgs.forEach((msg, index) => {
-    hypervisor.send(caps[index], msg)
-  })
+  await Promise.all(msgs.map((msg) => hypervisor.send(msg)))
   console.log('done sending')
   await hypervisor.scheduler.wait(Infinity)
-  // console.log(JSON.stringify(hypervisor.tree.root, null ,2))
   const end = new Date() - start
   console.info('Execution time: %dms', end)
   console.log('messages processed', numOfActors * depth + numOfActors)
   console.log('messages processed', numOfMsg)
 }
 
-main(55, 10)
+main(1000, 10)

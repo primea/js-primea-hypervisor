@@ -1,5 +1,4 @@
 const Pipe = require('buffer-pipe')
-const Cap = require('primea-capability')
 const leb128 = require('leb128').unsigned
 const Inbox = require('./inbox.js')
 
@@ -16,7 +15,6 @@ module.exports = class Actor {
   constructor (opts) {
     Object.assign(this, opts)
 
-    this.container = new opts.container.Constructor(this, opts.container.args)
     this.inbox = new Inbox({
       actor: this,
       hypervisor: opts.hypervisor
@@ -24,15 +22,6 @@ module.exports = class Actor {
 
     this.ticks = 0
     this.running = false
-  }
-
-  /**
-   * Mints a new capabilitly with a given tag
-   * @param {*} tag - a tag which can be used to identify caps
-   * @return {Object}
-   */
-  mintCap (tag = 0, funcIndex = 0) {
-    return new Cap(this.id, tag, funcIndex)
   }
 
   /**
@@ -49,23 +38,11 @@ module.exports = class Actor {
     }
   }
 
-  /**
-   * runs the creation routine for the actor
-   * @param {object} message
-   * @returns {Promise}
-   */
-  create (message) {
-    this.running = true
-    return this.runMessage(message, 'onCreation').then(() => {
-      this._startMessageLoop()
-    })
-  }
-
   // waits for the next message
   async _startMessageLoop () {
     // this ensure we only every have one loop running at a time
     while (!this.inbox.isEmpty) {
-      const message = await this.inbox.nextMessage(0)
+      const message = await this.inbox.nextMessage()
       await this.runMessage(message)
     }
     this.running = false
@@ -73,13 +50,20 @@ module.exports = class Actor {
     await this.state.done()
     setTimeout(() => {
       if (!this.running) {
-        this.container.onIdle()
+        this.shutdown()
       }
     }, 0)
   }
 
   serializeMetaData () {
     return Actor.serializeMetaData(this.type, this.nonce)
+  }
+
+  getFuncRef (name) {
+    return {
+      name,
+      destId: this.id
+    }
   }
 
   static serializeMetaData (type, nonce = 0) {
@@ -110,8 +94,8 @@ module.exports = class Actor {
   /**
    * Runs the startup routine for the actor
    */
-  startup () {
-    return this.container.onStartup()
+  async startup () {
+    this.instance = await this.container.instance(this)
   }
 
   /**
@@ -120,9 +104,10 @@ module.exports = class Actor {
    * @param {String} method - which method to run
    * @returns {Promise}
    */
-  async runMessage (message, method = 'onMessage') {
+  async runMessage (message) {
     try {
-      await this.container[method](message)
+      this.currentMessage = message
+      await this.instance.exports[message.funcRef.name](...message.funcArguments)
     } catch (e) {
       message.emit('execution:error', e)
     }
@@ -142,9 +127,9 @@ module.exports = class Actor {
    * @param {Integer} type - the type id for the container
    * @param {Object} message - an intial [message](https://github.com/primea/js-primea-message) to send newly created actor
    */
-  createActor (type, message) {
+  createActor (type, code) {
     const id = this._generateNextId()
-    return this.hypervisor.createActor(type, message, id)
+    return this.hypervisor.createActor(type, code, id)
   }
 
   _generateNextId () {
@@ -162,10 +147,10 @@ module.exports = class Actor {
    * @param {Object} portRef - the port
    * @param {Message} message - the message
    */
-  send (cap, message) {
+  send (message) {
     message._fromTicks = this.ticks
     message._fromId = this.id
 
-    return this.hypervisor.send(cap, message)
+    return this.hypervisor.send(message)
   }
 }

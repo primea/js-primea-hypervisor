@@ -8,7 +8,6 @@ const db = level('./testdb')
 
 class BaseContainer {
   static validate () {}
-  static compile () {}
   static get typeId () {
     return 9
   }

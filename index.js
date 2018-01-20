@@ -68,18 +68,17 @@ module.exports = class Hypervisor {
    * @param {Object} id - the id for the actor
    */
   async createActor (type, code, id = {nonce: this.nonce++, parent: null}) {
+    const Container = this._containerTypes[type]
+    await Container.validate(code)
     const encoded = encodedID(id)
     const idHash = await this._getHashFromObj(encoded)
     const metaData = Actor.serializeMetaData(type)
 
     // save the container in the state
     this.tree.set(idHash, metaData)
-    const Container = this._containerTypes[type]
-    await Container.validate(code)
-    const module = await Container.compile(code)
     return {
       id: idHash,
-      exports: Container.exports(module, idHash)
+      exports: Container.exports(code, idHash)
     }
   }
 

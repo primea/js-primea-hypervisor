@@ -1,0 +1,15 @@
+const fs = require('fs')
+const tape = require('tape')
+const WasmContainer = require('../wasmContainer.js')
+// const Message = require('../message.js')
+// const Hypervisor = require('../')
+
+// const level = require('level-browserify')
+// const RadixTree = require('dfinity-radix-tree')
+// const db = level('./testdb')
+tape('basic', async t => {
+  const addTwoBin = fs.readFileSync(`${__dirname}/wasm/addTwo.wasm`)
+  const exports = WasmContainer.actorRef(addTwoBin, 'test')
+  console.log(exports)
+  t.end()
+})

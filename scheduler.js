@@ -1,6 +1,5 @@
 const EventEmitter = require('events')
 const binarySearchInsert = require('binary-search-insert')
-// const bs = require('binary-search')
 
 // decides which message to go first
 function comparator (messageA, messageB) {
@@ -23,29 +22,23 @@ module.exports = class Scheduler extends EventEmitter {
     this._messages = []
     this._times = []
     this.actors = new Map()
-    this._state = 'idle'
+    this._running = false
   }
 
   queue (messages) {
     messages.forEach(msg => binarySearchInsert(this._messages, comparator, msg))
-    if (this._state === 'idle') {
-      this._state = 'running'
+    if (!this._running) {
+      this._running = true
       this._messageLoop()
     }
   }
 
   async _messageLoop () {
-    let waits = []
     while (this._messages.length) {
       const message = this._messages.shift()
-      waits.push(this._processMessage(message))
-      const oldestMessage = this._messages[0]
-      if (!oldestMessage || oldestMessage._fromTicks !== message._fromTicks) {
-        await Promise.all(waits)
-        waits = []
-      }
+      await this._processMessage(message)
     }
-    this._state = 'idle'
+    this._running = false
     const promises = []
     this.actors.forEach(actor => promises.push(actor.shutdown()))
     await Promise.all(promises)
@@ -55,16 +48,6 @@ module.exports = class Scheduler extends EventEmitter {
 
   // enable for concurrency
   update (oldTicks, ticks) {
-    // const index = bs(this._times, oldTicks, (a, b) => a - b)
-    // this._times.splice(index, 1)
-    // binarySearchInsert(this._times, (a, b) => { return a - b }, ticks)
-    // let oldestMessage = this._messages[0]
-    // const oldestTime = this._times[0]
-    // while (oldestMessage && oldestMessage._fromTicks < oldestTime) {
-    //   const message = this._messages.shift()
-    //   this._processMessage(message)
-    //   oldestMessage = this._messages[0]
-    // }
   }
 
   async _processMessage (message) {

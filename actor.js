@@ -15,7 +15,6 @@ module.exports = class Actor {
     Object.assign(this, opts)
 
     this.inbox = []
-
     this.ticks = 0
     this.running = false
   }

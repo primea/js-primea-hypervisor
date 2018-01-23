@@ -10,8 +10,6 @@
     "build:docs:hypervisor": "documentation build ./index.js --github --shallow --sort-order source -f md  > ./docs/hypervisor.md",
     "build:docs:actor": "documentation build ./actor.js --github --shallow --sort-order source -f md  > ./docs/actor.md",
     "build:docs:capsStore": "documentation build ./capsStore.js --github --shallow --sort-order source -f md  > ./docs/capsStore.md",
-    "build:docs:scheduler": "documentation build ./scheduler.js --github --shallow --sort-order source -f md  > ./docs/scheduler.md",
-    "build:docs:inbox": "documentation build ./inbox.js --github --shallow --sort-order source -f md  > ./docs/inbox.md",
     "test": "node ./tests/index.js"
   },
   "repository": {
@@ -31,6 +29,7 @@
   "contributors": "Alex Beregszaszi <alex@rtfs.hu>",
   "license": "MPL-2.0",
   "dependencies": {
+    "binary-search": "^1.3.2",
     "binary-search-insert": "^1.0.3",
     "buffer-pipe": "0.0.2",
     "events": "^1.1.1",

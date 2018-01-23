@@ -36,8 +36,6 @@
     "events": "^1.1.1",
     "leb128": "0.0.4",
     "safe-buffer": "^5.1.1",
-    "sortedmap": "0.0.1",
-    "typedarray-addition": "0.0.1",
     "wasm-json-toolkit": "^0.2.0"
   },
   "devDependencies": {

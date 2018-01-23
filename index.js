@@ -9,7 +9,7 @@ module.exports = class Hypervisor {
    */
   constructor (tree, nonce = 0) {
     this.tree = tree
-    this.scheduler = new Scheduler()
+    this.scheduler = new Scheduler(this)
     this._containerTypes = {}
     this.nonce = nonce
   }
@@ -20,13 +20,14 @@ module.exports = class Hypervisor {
    * @param {Object} message - the [message](https://github.com/primea/js-primea-message) to send
    * @returns {Promise} a promise that resolves once the receiving container is loaded
    */
-  async send (message) {
-    const id = message.funcRef.destId
-    const actor = await this.getActor(id)
-    actor.queue(message)
+  send (messages) {
+    if (!Array.isArray(messages)) {
+      messages = [messages]
+    }
+    this.scheduler.queue(messages)
   }
 
-  async _loadActor (id) {
+  async loadActor (id) {
     const state = await this.tree.getSubTree(id)
     const {type, nonce} = Actor.deserializeMetaData(state.root['/'][3])
     const container = this._containerTypes[type]
@@ -42,22 +43,6 @@ module.exports = class Hypervisor {
     })
 
     await actor.startup()
-    this.scheduler.update(actor)
-    return actor
-  }
-
-  /**
-   * gets an existsing actor
-   * @param {string} id - the actor's ID
-   * @returns {Promise}
-   */
-  async getActor (id) {
-    let actor = this.scheduler.getActor(id)
-    if (!actor) {
-      const resolve = this.scheduler.lock(id)
-      actor = await this._loadActor(id)
-      resolve(actor)
-    }
     return actor
   }
 
@@ -93,9 +78,12 @@ module.exports = class Hypervisor {
    * @param {Number} ticks the number of ticks at which to create the state root
    * @returns {Promise}
    */
-  async createStateRoot (ticks = Infinity) {
-    await this.scheduler.wait(ticks)
-    return this.tree.flush()
+  createStateRoot () {
+    return new Promise((resolve, reject) => {
+      this.scheduler.on('idle', () => {
+        this.tree.flush().then(resolve)
+      })
+    })
   }
 
   /**

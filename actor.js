@@ -1,6 +1,5 @@
 const Pipe = require('buffer-pipe')
 const leb128 = require('leb128').unsigned
-const Inbox = require('./inbox.js')
 
 module.exports = class Actor {
   /**
@@ -15,10 +14,7 @@ module.exports = class Actor {
   constructor (opts) {
     Object.assign(this, opts)
 
-    this.inbox = new Inbox({
-      actor: this,
-      hypervisor: opts.hypervisor
-    })
+    this.inbox = []
 
     this.ticks = 0
     this.running = false
@@ -30,29 +26,26 @@ module.exports = class Actor {
    * @param {object} message
    */
   queue (message) {
-    this.inbox.queue(message)
+    this.inbox.push(message)
 
     if (!this.running) {
       this.running = true
-      this._startMessageLoop()
+      return this._startMessageLoop()
     }
   }
 
   // waits for the next message
   async _startMessageLoop () {
     // this ensure we only every have one loop running at a time
-    while (!this.inbox.isEmpty) {
-      const message = await this.inbox.nextMessage()
+    while (this.inbox.length) {
+      const message = this.inbox.shift()
+      if (message._fromTicks > this.ticks) {
+        this.hypervisor.scheduler.update(this.ticks, message._fromTicks)
+        this.ticks = message._fromTicks
+      }
       await this.runMessage(message)
     }
     this.running = false
-    // wait for state ops to finish
-    await this.state.done()
-    setTimeout(() => {
-      if (!this.running) {
-        this.shutdown()
-      }
-    }, 0)
   }
 
   serializeMetaData () {
@@ -86,9 +79,9 @@ module.exports = class Actor {
   /**
    * Runs the shutdown routine for the actor
    */
-  shutdown () {
+  async shutdown () {
+    await this.state.done()
     this.state.root['/'][3] = this.serializeMetaData()
-    this.hypervisor.scheduler.done(this.id)
   }
 
   /**
@@ -111,6 +104,7 @@ module.exports = class Actor {
     } catch (e) {
       message.emit('execution:error', e)
     }
+    message.emit('done')
   }
 
   /**
@@ -118,8 +112,9 @@ module.exports = class Actor {
    * @param {Number} count - the number of ticks to add
    */
   incrementTicks (count) {
+    const oldValue = this.ticks
     this.ticks += count
-    this.hypervisor.scheduler.update(this)
+    this.hypervisor.scheduler.update(oldValue, this.ticks)
   }
 
   /**
@@ -151,6 +146,6 @@ module.exports = class Actor {
     message._fromTicks = this.ticks
     message._fromId = this.id
 
-    return this.hypervisor.send(message)
+    this.hypervisor.scheduler.queue([message])
   }
 }

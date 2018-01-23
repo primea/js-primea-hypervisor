@@ -90,7 +90,7 @@ tape('two communicating actors', async t => {
     static functions () {
       return {
         onMessage: (args) => {
-          t.true(args === 2, 'should recive a message')
+          t.equals(args, 2, 'should recive a message')
         }
       }
     }
@@ -106,12 +106,13 @@ tape('two communicating actors', async t => {
 
   const {exports: exportsB} = await hypervisor.createActor(testVMContainerB.typeId)
   const {exports: exportsA} = await hypervisor.createActor(testVMContainerA.typeId)
+
   const message = new Message({
     funcRef: exportsA[0],
-    funcArguments: [exportsB[0]]
+    funcArguments: exportsB
   })
 
-  await hypervisor.send(message)
+  hypervisor.send(message)
 
   const stateRoot = await hypervisor.createStateRoot()
   t.deepEquals(stateRoot, expectedState, 'expected root!')
@@ -231,7 +232,6 @@ tape('three communicating actors, with tick counting', async t => {
     funcRef: actorA0.exports[0],
     funcArguments: [actorB.exports[0]]
   })
-
   const message1 = new Message({
     funcRef: actorA1.exports[0],
     funcArguments: actorB.exports
@@ -505,6 +505,75 @@ tape('arbiter test for id comparision', async t => {
   t.deepEquals(stateRoot, expectedState, 'expected root!')
 })
 
+tape('async work', async t => {
+  t.plan(3)
+  const expectedState = {
+    '/': Buffer.from('a4c7ceacd8c867ae1d0b472d8bffa3cb10048331', 'hex')
+  }
+
+  const tree = new RadixTree({
+    db: db
+  })
+
+  class testVMContainerA extends BaseContainer {
+    static functions (actor) {
+      return {
+        onMessage: (funcRef) => {
+          const message = new Message({
+            funcRef: funcRef,
+            funcArguments: [2]
+          })
+          actor.send(message)
+
+          const message2 = new Message({
+            funcRef: funcRef,
+            funcArguments: [2]
+          })
+          actor.send(message2)
+          actor.incrementTicks(1)
+          return new Promise((resolve, reject) => {
+            setTimeout(() => {
+              resolve()
+            }, 10)
+          })
+        }
+      }
+    }
+  }
+
+  class testVMContainerB extends BaseContainer {
+    static functions (actor) {
+      return {
+        onMessage: (args) => {
+          actor.incrementTicks(1)
+          t.equals(args, 2, 'should recive a message')
+        }
+      }
+    }
+
+    static get typeId () {
+      return 8
+    }
+  }
+
+  const hypervisor = new Hypervisor(tree)
+  hypervisor.registerContainer(testVMContainerA)
+  hypervisor.registerContainer(testVMContainerB)
+
+  const {exports: exportsB} = await hypervisor.createActor(testVMContainerB.typeId)
+  const {exports: exportsA} = await hypervisor.createActor(testVMContainerA.typeId)
+
+  const message = new Message({
+    funcRef: exportsA[0],
+    funcArguments: exportsB
+  })
+
+  hypervisor.send(message)
+
+  const stateRoot = await hypervisor.createStateRoot()
+  t.deepEquals(stateRoot, expectedState, 'expected root!')
+})
+
 tape('random', async t => {
   const numOfActors = 10
   const depth = 10
@@ -529,7 +598,7 @@ tape('random', async t => {
           numOfMsg++
           actor.incrementTicks(10)
           if (ref) {
-            return actor.send(new Message({
+            actor.send(new Message({
               funcRef: ref,
               funcArguments: refs
             }))
@@ -565,9 +634,9 @@ tape('random', async t => {
     msgs.push(message)
   }
 
-  msgs.forEach(msg => hypervisor.send(msg))
-  // console.log('here', numOfMsg)
-  await hypervisor.scheduler.wait(Infinity)
-  t.equals(numOfMsg, 110)
-  t.end()
+  hypervisor.send(msgs)
+  await hypervisor.scheduler.on('idle', () => {
+    t.equals(numOfMsg, 110)
+    t.end()
+  })
 })

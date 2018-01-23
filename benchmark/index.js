@@ -90,11 +90,12 @@ async function main (numOfActors, depth) {
   let start = new Date()
   await Promise.all(msgs.map((msg) => hypervisor.send(msg)))
   console.log('done sending')
-  await hypervisor.scheduler.wait(Infinity)
-  const end = new Date() - start
-  console.info('Execution time: %dms', end)
-  console.log('messages processed', numOfActors * depth + numOfActors)
-  console.log('messages processed', numOfMsg)
+  hypervisor.scheduler.on('idle', () => {
+    const end = new Date() - start
+    console.info('Execution time: %dms', end)
+    console.log('messages processed', numOfActors * depth + numOfActors)
+    console.log('messages processed', numOfMsg)
+  })
 }
 
 main(1000, 10)

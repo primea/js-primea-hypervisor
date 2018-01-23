@@ -1,0 +1,16 @@
+{
+  "type": [{
+    "form": "func",
+    "params": [
+      "i32",
+      "func",
+      "i64",
+      "actor",
+      "buf"
+    ]
+  }],
+  "typeMap": [{
+    "func": 0,
+    "type": 0
+  }]
+}

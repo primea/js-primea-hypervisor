@@ -46,10 +46,6 @@ module.exports = class Scheduler extends EventEmitter {
     this.emit('idle')
   }
 
-  // enable for concurrency
-  update (oldTicks, ticks) {
-  }
-
   async _processMessage (message) {
     const to = message.funcRef.destId.toString('hex')
     let actor = this.actors.get(to)
@@ -57,10 +53,6 @@ module.exports = class Scheduler extends EventEmitter {
       actor = await this.hypervisor.loadActor(message.funcRef.destId)
       this.actors.set(to, actor)
     }
-    const promise = new Promise((resolve, reject) => {
-      message.on('done', resolve)
-    })
-    actor.queue(message)
-    return promise
+    return actor.runMessage(message)
   }
 }

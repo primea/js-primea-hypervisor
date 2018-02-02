@@ -19,34 +19,6 @@ module.exports = class Actor {
     this.running = false
   }
 
-  /**
-   * adds a message to this actor's message queue
-   * @param {string} portName
-   * @param {object} message
-   */
-  queue (message) {
-    this.inbox.push(message)
-
-    if (!this.running) {
-      this.running = true
-      return this._startMessageLoop()
-    }
-  }
-
-  // waits for the next message
-  async _startMessageLoop () {
-    // this ensure we only every have one loop running at a time
-    while (this.inbox.length) {
-      const message = this.inbox.shift()
-      if (message._fromTicks > this.ticks) {
-        this.hypervisor.scheduler.update(this.ticks, message._fromTicks)
-        this.ticks = message._fromTicks
-      }
-      await this.runMessage(message)
-    }
-    this.running = false
-  }
-
   serializeMetaData () {
     return Actor.serializeMetaData(this.type, this.nonce)
   }
@@ -55,23 +27,6 @@ module.exports = class Actor {
     return {
       name,
       destId: this.id
-    }
-  }
-
-  static serializeMetaData (type, nonce = 0) {
-    const p = new Pipe()
-    leb128.write(type, p)
-    leb128.write(nonce, p)
-    return p.buffer
-  }
-
-  static deserializeMetaData (buffer) {
-    const pipe = new Pipe(buffer)
-    const type = leb128.read(pipe)
-    const nonce = leb128.read(pipe)
-    return {
-      nonce,
-      type
     }
   }
 
@@ -97,6 +52,9 @@ module.exports = class Actor {
    * @returns {Promise}
    */
   async runMessage (message) {
+    if (message._fromTicks > this.ticks) {
+      this.ticks = message._fromTicks
+    }
     try {
       this.currentMessage = message
       await this.instance.exports[message.funcRef.name](...message.funcArguments)
@@ -111,9 +69,7 @@ module.exports = class Actor {
    * @param {Number} count - the number of ticks to add
    */
   incrementTicks (count) {
-    const oldValue = this.ticks
     this.ticks += count
-    this.hypervisor.scheduler.update(oldValue, this.ticks)
   }
 
   /**
@@ -146,5 +102,22 @@ module.exports = class Actor {
     message._fromId = this.id
 
     this.hypervisor.scheduler.queue([message])
+  }
+
+  static serializeMetaData (type, nonce = 0) {
+    const p = new Pipe()
+    leb128.write(type, p)
+    leb128.write(nonce, p)
+    return p.buffer
+  }
+
+  static deserializeMetaData (buffer) {
+    const pipe = new Pipe(buffer)
+    const type = leb128.read(pipe)
+    const nonce = leb128.read(pipe)
+    return {
+      nonce,
+      type
+    }
   }
 }

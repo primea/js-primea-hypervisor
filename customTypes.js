@@ -60,8 +60,8 @@ function decodeTypeMap (buf) {
   const json = []
   while (numOfEntries--) {
     json.push({
-      func: leb.unsigned.read(stream),
-      type: leb.unsigned.read(stream)
+      func: leb.unsigned.readBn(stream).toNumber(),
+      type: leb.unsigned.readBn(stream).toNumber()
     })
   }
   return json
@@ -127,8 +127,14 @@ function injectCustomSection (custom, wasm) {
   return Buffer.concat([preramble, custom, body])
 }
 
+function inject (wasm, json) {
+  const buf = encodeJSON(json)
+  return injectCustomSection(buf, wasm)
+}
+
 module.exports = {
   injectCustomSection,
+  inject,
   decodeType,
   decodeTypeMap,
   encodeType,

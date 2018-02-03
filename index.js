@@ -30,13 +30,13 @@ module.exports = class Hypervisor {
   async loadActor (id) {
     const state = await this.tree.getSubTree(id)
     const {type, nonce} = Actor.deserializeMetaData(state.root['/'][3])
-    const container = this._containerTypes[type]
+    const Container = this._containerTypes[type]
 
     // create a new actor instance
     const actor = new Actor({
       hypervisor: this,
       state,
-      container,
+      Container,
       id,
       nonce,
       type
@@ -54,16 +54,16 @@ module.exports = class Hypervisor {
    */
   async createActor (type, code, id = {nonce: this.nonce++, parent: null}) {
     const Container = this._containerTypes[type]
-    await Container.validate(code)
     const encoded = encodedID(id)
     const idHash = await this._getHashFromObj(encoded)
+    const exports = await Container.onCreation(code, idHash)
     const metaData = Actor.serializeMetaData(type)
 
     // save the container in the state
     this.tree.set(idHash, metaData)
     return {
       id: idHash,
-      exports: Container.exports(code, idHash)
+      exports: exports
     }
   }
 

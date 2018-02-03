@@ -74,7 +74,7 @@ module.exports = class WasmContainer {
   constructor () {
     this.refs = new ReferanceMap()
   }
-  onCreation (wasm) {
+  onCreation (wasm, id, cachedb) {
     let moduleJSON = wasm2json(wasm)
     this.json = mergeTypeSections(moduleJSON)
     moduleJSON = wasmMetering.meterJSON(moduleJSON, {
@@ -94,7 +94,10 @@ module.exports = class WasmContainer {
       func: {
         externalize: () => {},
         internalize: (ref, index) => {
-          const {type, arg} = self.refs.get(ref, FunctionRef)
+          const {type, arg} = self.refs.get(ref)
+          if (type !== 'funcRef') {
+            throw new Error('invalid type')
+          }
           arg.container = self
           instance.exports.table.set(index, arg.wrapper.exports.check)
         },
@@ -142,7 +145,12 @@ module.exports = class WasmContainer {
         }
       },
       metering: {
-        usegas: () => {}
+        usegas: (amount) => {
+          funcRef.gas -= amount
+          if (funcRef.gas < 0) {
+            throw new Error('out of gas! :(')
+          }
+        }
       }
     })
     const args = funcRef.args.map(arg => {

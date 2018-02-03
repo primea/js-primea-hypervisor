@@ -7,23 +7,32 @@ const RadixTree = require('dfinity-radix-tree')
 const db = level('./testdb')
 
 class BaseContainer {
-  static validate () {}
-  static get typeId () {
-    return 9
+  constructor (actor) {
+    this.actor = actor
   }
-
-  static exports (m, id) {
-    return Object.keys(this.functions()).map(name => {
-      return {
+  onStartup () {}
+  static onCreation (code, id) {
+    const exp = {}
+    Object.getOwnPropertyNames(this.prototype).filter(name => name !== 'constructor').forEach(name => {
+      exp[name] = {
         name,
         destId: id
       }
     })
+    return exp
   }
-  static instance (actor) {
+  getFuncRef (name) {
     return {
-      exports: this.functions(actor)
+      name,
+      destId: this.id
     }
+  }
+  onMessage (message) {
+    return this[message.funcRef.name](...message.funcArguments)
+  }
+
+  static get typeId () {
+    return 9
   }
 }
 
@@ -38,22 +47,18 @@ tape('basic', async t => {
   })
 
   class testVMContainer extends BaseContainer {
-    static functions () {
-      return {
-        onMessage: (m) => {
-          t.true(m === 1, 'should recive a message')
-        }
-      }
+    main (m) {
+      t.equals(m, 1, 'should recive a message')
     }
   }
 
   const hypervisor = new Hypervisor(tree)
   hypervisor.registerContainer(testVMContainer)
 
-  let {exports} = await hypervisor.createActor(testVMContainer.typeId)
+  const {exports} = await hypervisor.createActor(testVMContainer.typeId)
 
   const message = new Message({
-    funcRef: exports[0],
+    funcRef: exports.main,
     funcArguments: [1]
   })
   hypervisor.send(message)
@@ -73,26 +78,18 @@ tape('two communicating actors', async t => {
   })
 
   class testVMContainerA extends BaseContainer {
-    static functions (actor) {
-      return {
-        onMessage: (funcRef) => {
-          const message = new Message({
-            funcRef: funcRef,
-            funcArguments: [2]
-          })
-          return actor.send(message)
-        }
-      }
+    main (funcRef) {
+      const message = new Message({
+        funcRef: funcRef,
+        funcArguments: [2]
+      })
+      return this.actor.send(message)
     }
   }
 
   class testVMContainerB extends BaseContainer {
-    static functions () {
-      return {
-        onMessage: (args) => {
-          t.equals(args, 2, 'should recive a message')
-        }
-      }
+    main (args) {
+      t.equals(args, 2, 'should recive a message')
     }
 
     static get typeId () {
@@ -108,8 +105,8 @@ tape('two communicating actors', async t => {
   const {exports: exportsA} = await hypervisor.createActor(testVMContainerA.typeId)
 
   const message = new Message({
-    funcRef: exportsA[0],
-    funcArguments: exportsB
+    funcRef: exportsA.main,
+    funcArguments: [exportsB.main]
   })
 
   hypervisor.send(message)
@@ -129,26 +126,18 @@ tape('three communicating actors', async t => {
   })
 
   class testVMContainerA extends BaseContainer {
-    static functions (actor) {
-      return {
-        onMessage: (funcRef) => {
-          const message = new Message({
-            funcRef: funcRef,
-            funcArguments: [2]
-          })
-          actor.send(message)
-        }
-      }
+    main (funcRef) {
+      const message = new Message({
+        funcRef: funcRef,
+        funcArguments: [2]
+      })
+      this.actor.send(message)
     }
   }
 
   class testVMContainerB extends BaseContainer {
-    static functions () {
-      return {
-        onMessage: (arg) => {
-          t.equals(arg, 2, 'should recive a message')
-        }
-      }
+    main (arg) {
+      t.equals(arg, 2, 'should recive a message')
     }
 
     static get typeId () {
@@ -165,13 +154,13 @@ tape('three communicating actors', async t => {
   let {exports: exportsA1} = await hypervisor.createActor(testVMContainerA.typeId)
 
   const message0 = new Message({
-    funcRef: exportsA0[0],
-    funcArguments: [exportsB[0]]
+    funcRef: exportsA0.main,
+    funcArguments: [exportsB.main]
   })
 
   const message1 = new Message({
-    funcRef: exportsA1[0],
-    funcArguments: [exportsB[0]]
+    funcRef: exportsA1.main,
+    funcArguments: [exportsB.main]
   })
 
   await hypervisor.send(message0)
@@ -192,27 +181,19 @@ tape('three communicating actors, with tick counting', async t => {
   })
 
   class testVMContainerA extends BaseContainer {
-    static functions (actor) {
-      return {
-        onMessage: funcRef => {
-          actor.incrementTicks(1)
-          const message = new Message({
-            funcRef: funcRef,
-            funcArguments: [2]
-          })
-          actor.send(message)
-        }
-      }
+    main (funcRef) {
+      this.actor.incrementTicks(1)
+      const message = new Message({
+        funcRef: funcRef,
+        funcArguments: [2]
+      })
+      this.actor.send(message)
     }
   }
 
   class testVMContainerB extends BaseContainer {
-    static functions (actor) {
-      return {
-        onMessage: arg => {
-          t.equals(arg, 2, 'should recive a message')
-        }
-      }
+    main (arg) {
+      t.equals(arg, 2, 'should recive a message')
     }
 
     static get typeId () {
@@ -229,12 +210,12 @@ tape('three communicating actors, with tick counting', async t => {
   let actorA1 = await hypervisor.createActor(testVMContainerA.typeId)
 
   const message0 = new Message({
-    funcRef: actorA0.exports[0],
-    funcArguments: [actorB.exports[0]]
+    funcRef: actorA0.exports.main,
+    funcArguments: [actorB.exports.main]
   })
   const message1 = new Message({
-    funcRef: actorA1.exports[0],
-    funcArguments: actorB.exports
+    funcRef: actorA1.exports.main,
+    funcArguments: [actorB.exports.main]
   })
 
   hypervisor.send(message0)
@@ -255,29 +236,21 @@ tape('errors', async t => {
   })
 
   class testVMContainerA extends BaseContainer {
-    static functions (actor) {
-      return {
-        onMessage: funcRef => {
-          const message = new Message({
-            funcRef
-          })
-          message.on('execution:error', () => {
-            t.pass('should recive a exeption')
-          })
-          actor.send(message)
-        }
-      }
+    main (funcRef) {
+      const message = new Message({
+        funcRef
+      })
+      message.on('execution:error', () => {
+        t.pass('should recive a exeption')
+      })
+      this.actor.send(message)
     }
   }
 
   class testVMContainerB extends BaseContainer {
-    static functions (actor) {
-      return {
-        onMessage: funcRef => {
-          t.true(true, 'should recive a message')
-          throw new Error('test error')
-        }
-      }
+    main (funcRef) {
+      t.true(true, 'should recive a message')
+      throw new Error('test error')
     }
 
     static get typeId () {
@@ -292,8 +265,8 @@ tape('errors', async t => {
   let {exports: exportsB} = await hypervisor.createActor(testVMContainerB.typeId)
   let {exports: exportsA} = await hypervisor.createActor(testVMContainerA.typeId)
   const message = new Message({
-    funcRef: exportsA[0],
-    funcArguments: exportsB
+    funcRef: exportsA.main,
+    funcArguments: [exportsB.main]
   })
   hypervisor.send(message)
   const stateRoot = await hypervisor.createStateRoot()
@@ -311,30 +284,22 @@ tape('actor creation', async t => {
   })
 
   class testVMContainerA extends BaseContainer {
-    static functions (actor) {
-      return {
-        onCreation: async funcRef => {
-          const {exports} = await actor.createActor(testVMContainerB.typeId)
-          const message = new Message({
-            funcRef: exports[0],
-            funcArguments: [actor.getFuncRef('onMessage')]
-          })
-          actor.send(message)
-        },
-        onMessage: data => {
-          t.equals(data, 'test', 'should recive a response message')
-        }
-      }
+    async start (funcRef) {
+      const {exports} = await this.actor.createActor(testVMContainerB.typeId)
+      const message = new Message({
+        funcRef: exports.main,
+        funcArguments: [this.actor.getFuncRef('main')]
+      })
+      this.actor.send(message)
+    }
+    main (data) {
+      t.equals(data, 'test', 'should recive a response message')
     }
   }
 
   class testVMContainerB extends BaseContainer {
-    static functions (actor) {
-      return {
-        onCreation: funcRef => {
-          actor.send(new Message({funcRef, funcArguments: ['test']}))
-        }
-      }
+    main (funcRef) {
+      this.actor.send(new Message({funcRef, funcArguments: ['test']}))
     }
 
     static get typeId () {
@@ -347,7 +312,7 @@ tape('actor creation', async t => {
   hypervisor.registerContainer(testVMContainerB)
 
   const {exports} = await hypervisor.createActor(testVMContainerA.typeId)
-  await hypervisor.send(new Message({funcRef: exports[0]}))
+  await hypervisor.send(new Message({funcRef: exports.start}))
 
   const stateRoot = await hypervisor.createStateRoot()
   t.deepEquals(stateRoot, expectedState, 'expected root!')
@@ -364,48 +329,40 @@ tape('simple message arbiter test', async t => {
   })
 
   class testVMContainerA extends BaseContainer {
-    static functions (actor) {
-      return {
-        onCreation: funcRef => {
-          const message1 = new Message({
-            funcArguments: ['first'],
-            funcRef
-          })
-          const message2 = new Message({
-            funcArguments: ['second'],
-            funcRef
-          })
-          const message3 = new Message({
-            funcArguments: ['third'],
-            funcRef
-          })
-          actor.send(message1)
-          actor.incrementTicks(1)
-          actor.send(message2)
-          actor.incrementTicks(1)
-          actor.send(message3)
-        }
-      }
+    main (funcRef) {
+      const message1 = new Message({
+        funcArguments: ['first'],
+        funcRef
+      })
+      const message2 = new Message({
+        funcArguments: ['second'],
+        funcRef
+      })
+      const message3 = new Message({
+        funcArguments: ['third'],
+        funcRef
+      })
+      this.actor.send(message1)
+      this.actor.incrementTicks(1)
+      this.actor.send(message2)
+      this.actor.incrementTicks(1)
+      this.actor.send(message3)
     }
   }
 
   let recMsg = 0
 
   class testVMContainerB extends BaseContainer {
-    static functions (actor) {
-      return {
-        onMessage: data => {
-          actor.incrementTicks(1)
-          if (recMsg === 0) {
-            t.equal(data, 'first', 'should recive fist message')
-          } else if (recMsg === 1) {
-            t.equal(data, 'second', 'should recive second message')
-          } else {
-            t.equal(data, 'third', 'should recive third message')
-          }
-          recMsg++
-        }
+    main (data) {
+      this.actor.incrementTicks(1)
+      if (recMsg === 0) {
+        t.equal(data, 'first', 'should recive fist message')
+      } else if (recMsg === 1) {
+        t.equal(data, 'second', 'should recive second message')
+      } else {
+        t.equal(data, 'third', 'should recive third message')
       }
+      recMsg++
     }
 
     static get typeId () {
@@ -420,8 +377,8 @@ tape('simple message arbiter test', async t => {
   const {exports: exportsB} = await hypervisor.createActor(testVMContainerB.typeId)
   const {exports: exportsA} = await hypervisor.createActor(testVMContainerA.typeId)
   const message = new Message({
-    funcRef: exportsA[0],
-    funcArguments: exportsB
+    funcRef: exportsA.main,
+    funcArguments: [exportsB.main]
   })
   hypervisor.send(message)
 
@@ -441,36 +398,28 @@ tape('arbiter test for id comparision', async t => {
   })
 
   class testVMContainerA extends BaseContainer {
-    static functions (actor) {
-      return {
-        onCreation: (funcRef, funcArguments) => {
-          actor.incrementTicks(1)
-          message = new Message({
-            funcRef,
-            funcArguments: [funcArguments]
-          })
-          return actor.send(message)
-        }
-      }
+    main (funcRef, funcArguments) {
+      this.actor.incrementTicks(1)
+      message = new Message({
+        funcRef,
+        funcArguments: [funcArguments]
+      })
+      this.actor.send(message)
     }
   }
 
   let recMsg = 0
 
   class testVMContainerB extends BaseContainer {
-    static functions (actor) {
-      return {
-        onMessage: data => {
-          if (recMsg === 0) {
-            t.equal(data, 'first', 'should recive fist message')
-          } else if (recMsg === 1) {
-            t.equal(data, 'second', 'should recive second message')
-          } else {
-            t.equal(data, 'third', 'should recive third message')
-          }
-          recMsg++
-        }
+    main (data) {
+      if (recMsg === 0) {
+        t.equal(data, 'first', 'should recive fist message')
+      } else if (recMsg === 1) {
+        t.equal(data, 'second', 'should recive second message')
+      } else {
+        t.equal(data, 'third', 'should recive third message')
       }
+      recMsg++
     }
 
     static get typeId () {
@@ -484,21 +433,21 @@ tape('arbiter test for id comparision', async t => {
 
   let {exports: exportsB} = await hypervisor.createActor(testVMContainerB.typeId)
   hypervisor.send(new Message({
-    funcRef: exportsB[0],
+    funcRef: exportsB.main,
     funcArguments: ['first']
   }))
 
   const {exports: exportsA0} = await hypervisor.createActor(testVMContainerA.typeId)
 
   hypervisor.send(new Message({
-    funcRef: exportsA0[0],
-    funcArguments: [exportsB[0], 'second']
+    funcRef: exportsA0.main,
+    funcArguments: [exportsB.main, 'second']
   }))
 
   const {exports: exportsA1} = await hypervisor.createActor(testVMContainerA.typeId)
   hypervisor.send(new Message({
-    funcRef: exportsA1[0],
-    funcArguments: [exportsB[0], 'third']
+    funcRef: exportsA1.main,
+    funcArguments: [exportsB.main, 'third']
   }))
 
   const stateRoot = await hypervisor.createStateRoot()
@@ -516,39 +465,31 @@ tape('async work', async t => {
   })
 
   class testVMContainerA extends BaseContainer {
-    static functions (actor) {
-      return {
-        onMessage: (funcRef) => {
-          const message = new Message({
-            funcRef: funcRef,
-            funcArguments: [2]
-          })
-          actor.send(message)
+    main (funcRef) {
+      const message = new Message({
+        funcRef: funcRef,
+        funcArguments: [2]
+      })
+      this.actor.send(message)
 
-          const message2 = new Message({
-            funcRef: funcRef,
-            funcArguments: [2]
-          })
-          actor.send(message2)
-          actor.incrementTicks(1)
-          return new Promise((resolve, reject) => {
-            setTimeout(() => {
-              resolve()
-            }, 10)
-          })
-        }
-      }
+      const message2 = new Message({
+        funcRef: funcRef,
+        funcArguments: [2]
+      })
+      this.actor.send(message2)
+      this.actor.incrementTicks(1)
+      return new Promise((resolve, reject) => {
+        setTimeout(() => {
+          resolve()
+        }, 10)
+      })
     }
   }
 
   class testVMContainerB extends BaseContainer {
-    static functions (actor) {
-      return {
-        onMessage: (args) => {
-          actor.incrementTicks(1)
-          t.equals(args, 2, 'should recive a message')
-        }
-      }
+    main (args) {
+      this.actor.incrementTicks(1)
+      t.equals(args, 2, 'should recive a message')
     }
 
     static get typeId () {
@@ -564,8 +505,8 @@ tape('async work', async t => {
   const {exports: exportsA} = await hypervisor.createActor(testVMContainerA.typeId)
 
   const message = new Message({
-    funcRef: exportsA[0],
-    funcArguments: exportsB
+    funcRef: exportsA.main,
+    funcArguments: [exportsB.main]
   })
 
   hypervisor.send(message)
@@ -584,26 +525,22 @@ tape('random', async t => {
   })
 
   class BenchmarkContainer extends BaseContainer {
-    static functions (actor) {
-      return {
-        onMessage: function () {
-          const refs = [...arguments]
-          const ref = refs.pop()
-          const last = messageOrder[actor.id.toString('hex')]
-          const message = actor.currentMessage
-          if (last) {
-            t.ok(last <= message._fromTicks)
-          }
-          messageOrder[actor.id.toString('hex')] = message._fromTicks
-          numOfMsg++
-          actor.incrementTicks(10)
-          if (ref) {
-            actor.send(new Message({
-              funcRef: ref,
-              funcArguments: refs
-            }))
-          }
-        }
+    main () {
+      const refs = [...arguments]
+      const ref = refs.pop()
+      const last = messageOrder[this.actor.id.toString('hex')]
+      const message = this.actor.currentMessage
+      if (last) {
+        t.ok(last <= message._fromTicks)
+      }
+      messageOrder[this.actor.id.toString('hex')] = message._fromTicks
+      numOfMsg++
+      this.actor.incrementTicks(10)
+      if (ref) {
+        this.actor.send(new Message({
+          funcRef: ref,
+          funcArguments: refs
+        }))
       }
     }
   }
@@ -615,7 +552,7 @@ tape('random', async t => {
   let _numOfActors = numOfActors
   while (_numOfActors--) {
     const {exports} = await hypervisor.createActor(BenchmarkContainer.typeId)
-    refernces.push(exports[0])
+    refernces.push(exports.main)
   }
   _numOfActors = numOfActors
   let msgs = []

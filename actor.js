@@ -17,6 +17,7 @@ module.exports = class Actor {
     this.inbox = []
     this.ticks = 0
     this.running = false
+    this.container = new this.Container(this)
   }
 
   serializeMetaData () {
@@ -41,8 +42,8 @@ module.exports = class Actor {
   /**
    * Runs the startup routine for the actor
    */
-  async startup () {
-    this.instance = await this.container.instance(this)
+  startup () {
+    return this.container.onStartup() 
   }
 
   /**
@@ -57,7 +58,8 @@ module.exports = class Actor {
     }
     try {
       this.currentMessage = message
-      await this.instance.exports[message.funcRef.name](...message.funcArguments)
+      // console.log(this.container.onMessage)
+      await this.container.onMessage(message)
     } catch (e) {
       message.emit('execution:error', e)
     }

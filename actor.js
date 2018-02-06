@@ -43,7 +43,7 @@ module.exports = class Actor {
    * Runs the startup routine for the actor
    */
   startup () {
-    return this.container.onStartup() 
+    return this.container.onStartup()
   }
 
   /**
@@ -58,7 +58,6 @@ module.exports = class Actor {
     }
     try {
       this.currentMessage = message
-      // console.log(this.container.onMessage)
       await this.container.onMessage(message)
     } catch (e) {
       message.emit('execution:error', e)

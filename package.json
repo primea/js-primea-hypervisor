@@ -34,6 +34,7 @@
     "buffer-pipe": "0.0.2",
     "events": "^1.1.1",
     "leb128": "0.0.4",
+    "levelup": "^2.0.1",
     "reference-map": "^1.1.0",
     "safe-buffer": "^5.1.1",
     "wasm-json-toolkit": "^0.2.0",

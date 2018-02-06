@@ -21,16 +21,9 @@ class BaseContainer {
     })
     return exp
   }
-  getFuncRef (name) {
-    return {
-      name,
-      destId: this.id
-    }
-  }
   onMessage (message) {
     return this[message.funcRef.name](...message.funcArguments)
   }
-
   static get typeId () {
     return 9
   }

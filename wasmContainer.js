@@ -27,13 +27,10 @@ const LANGUAGE_TYPES = {
   0x40: 'block_type'
 }
 
-class Ref {
-  serialize () {}
-}
-
 class FunctionRef {
-  constructor (json, name) {
+  constructor (name, json, id) {
     this.name = name
+    this.destId = id
     this.args = []
     const typeIndex = json.typeMap[name]
     const type = json.type[typeIndex]
@@ -71,26 +68,35 @@ class FunctionRef {
 }
 
 module.exports = class WasmContainer {
-  constructor () {
+  constructor (actor) {
+    this.actor = actor
     this.refs = new ReferanceMap()
   }
-  onCreation (wasm, id, cachedb) {
+
+  static onCreation (wasm, id, cachedb) {
+    WebAssembly.validate(wasm)
     let moduleJSON = wasm2json(wasm)
-    this.json = mergeTypeSections(moduleJSON)
+    const json = mergeTypeSections(moduleJSON)
     moduleJSON = wasmMetering.meterJSON(moduleJSON, {
       meterType: 'i32'
     })
-    this.wasm = json2wasm(moduleJSON)
-    this.mod = WebAssembly.Module(this.wasm)
+    wasm = json2wasm(moduleJSON)
+    cachedb.put(id.toString() + 'meta', json)
+    cachedb.put(id.toString() + 'code', wasm.toString('hex'))
+    const refs = {}
+    Object.keys(json.typeMap).forEach(key => {
+      refs[key] = new FunctionRef(key, json, id)
+    })
+    return refs
   }
 
   sendMessage () {
     console.log('send')
   }
 
-  onMessage (funcRef) {
+  getInteface (funcRef) {
     const self = this
-    const instance = WebAssembly.Instance(this.mod, {
+    return {
       func: {
         externalize: () => {},
         internalize: (ref, index) => {
@@ -99,7 +105,7 @@ module.exports = class WasmContainer {
             throw new Error('invalid type')
           }
           arg.container = self
-          instance.exports.table.set(index, arg.wrapper.exports.check)
+          this.instance.exports.table.set(index, arg.wrapper.exports.check)
         },
         catch: (ref, catchRef) => {
           const {funcRef} = self.refs.get(ref, FunctionRef)
@@ -152,25 +158,64 @@ module.exports = class WasmContainer {
           }
         }
       }
-    })
-    const args = funcRef.args.map(arg => {
-      if (nativeTypes.has(arg.type)) {
-        return arg.arg
+    }
+  }
+
+  onMessage (message) {
+    const funcRef = message.funcRef
+    const intef = this.getInteface(funcRef)
+    this.instance = WebAssembly.Instance(this.mod, intef)
+    const args = message.funcArguments.map(arg => {
+      if (typeof arg === 'number') {
+        return arg
       } else {
         return this.refs.add(arg)
       }
     })
-    instance.exports[funcRef.name](...args)
+    this.instance.exports[funcRef.name](...args)
   }
 
   getFuncRef (name, send) {
     const funcRef = new FunctionRef(this.json, name, send)
     return funcRef
   }
+
+  async onStartup () {
+    let [json, wasm] = await Promise.all([
+      new Promise((resolve, reject) => {
+        this.actor.cachedb.get(this.actor.id.toString() + 'meta', (err, json) => {
+          if (err) {
+            reject(err)
+          } else {
+            resolve(json)
+          }
+        })
+      }),
+      new Promise((resolve, reject) => {
+        this.actor.cachedb.get(this.actor.id.toString() + 'code', (err, wasm) => {
+          if (err) {
+            reject(err)
+          } else {
+            resolve(wasm)
+          }
+        })
+      })
+    ])
+    wasm = Buffer.from(wasm, 'hex')
+    this.mod = WebAssembly.Module(wasm)
+    this.json = json
+  }
+
+  static get typeId () {
+    return 9
+  }
 }
 
 function mergeTypeSections (json) {
-  const typeInfo = {}
+  const typeInfo = {
+    typeMap: [],
+    type: []
+  }
   let typeSection = {
     'entries': []
   }

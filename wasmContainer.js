@@ -145,11 +145,6 @@ module.exports = class WasmContainer {
         store: () => {},
         delete: () => {}
       },
-      test: {
-        check: (a, b) => {
-          console.log('$$$$', a, b)
-        }
-      },
       metering: {
         usegas: (amount) => {
           funcRef.gas -= amount

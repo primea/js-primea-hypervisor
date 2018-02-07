@@ -50,3 +50,30 @@ tape('basic', async t => {
   const stateRoot = await hypervisor.createStateRoot()
   t.deepEquals(stateRoot, expectedState, 'expected root!')
 })
+
+// Increment a counter.
+tape('increment', async t => {
+
+  const tree = new RadixTree({
+    db: db
+  })
+
+  const wasm = fs.readFileSync('./wasm/counter.wasm')
+
+  const hypervisor = new Hypervisor(tree)
+  hypervisor.registerContainer(TestWasmContainer)
+
+  const {exports} = await hypervisor.createActor(TestWasmContainer.typeId, wasm)
+
+  const message = new Message({
+    funcRef: exports.increment,
+    funcArguments: []
+  })
+  hypervisor.send(message)
+
+  const stateRoot = await hypervisor.createStateRoot()
+  t.end()
+
+  console.log(stateRoot)
+
+})

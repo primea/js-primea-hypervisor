@@ -3,11 +3,13 @@ const wasmMetering = require('wasm-metering')
 const customTypes = require('./customTypes.js')
 const typeCheckWrapper = require('./typeCheckWrapper.js')
 const ReferanceMap = require('reference-map')
+const leb128 = require('leb128')
 
 const nativeTypes = new Set(['i32', 'i64', 'f32', 'f64'])
 const LANGUAGE_TYPES = {
   'actor': 0x0,
   'buf': 0x1,
+  'elem': 0x2,
   'i32': 0x7f,
   'i64': 0x7e,
   'f32': 0x7d,
@@ -25,6 +27,36 @@ const LANGUAGE_TYPES = {
   0x70: 'anyFunc',
   0x60: 'func',
   0x40: 'block_type'
+}
+
+class ElementBuffer {
+  constructor (size) {
+    this._array = new Array(size)
+  }
+
+  serialize () {
+    const serialized = this._array.map(ref => ref.serailize())
+    return Buffer.concat(Buffer.from([LANGUAGE_TYPES['elem']]), leb128.encode(serialized.length), serialized)
+  }
+
+  static deserialize (serialized) {}
+}
+
+class DataBuffer {
+  constructor (memory, offset, length) {
+    this._data = new Uint8Array(this.instance.exports.memory.buffer, offset, length)
+  }
+  serialize () {
+    return Buffer.concat(Buffer.from([LANGUAGE_TYPES['elem']]), leb128.encode(this._data.length), this._data)
+  }
+  static deserialize (serialized) {}
+}
+
+class LinkRef {
+  serialize () {
+    return Buffer.concat(Buffer.from([LANGUAGE_TYPES['link'], this]))
+  }
+  static deserialize (serialized) {}
 }
 
 class FunctionRef {
@@ -46,10 +78,7 @@ class FunctionRef {
             const type = LANGUAGE_TYPES[args.shift()]
             let arg = args.shift()
             if (!nativeTypes.has(type)) {
-              arg = self._container.refs.get(arg)
-              if (arg.type !== type) {
-                throw new Error('invalid type')
-              }
+              arg = self._container.refs.get(arg, type)
             }
             self.args.push({
               arg,
@@ -73,7 +102,7 @@ module.exports = class WasmContainer {
     this.refs = new ReferanceMap()
   }
 
-  static onCreation (wasm, id, cachedb) {
+  static async onCreation (wasm, id, cachedb) {
     WebAssembly.validate(wasm)
     let moduleJSON = wasm2json(wasm)
     const json = mergeTypeSections(moduleJSON)
@@ -81,8 +110,14 @@ module.exports = class WasmContainer {
       meterType: 'i32'
     })
     wasm = json2wasm(moduleJSON)
-    cachedb.put(id.toString() + 'meta', json)
-    cachedb.put(id.toString() + 'code', wasm.toString('hex'))
+    await Promise.all([
+      new Promise((resolve, reject) => {
+        cachedb.put(id.toString() + 'meta', json, resolve)
+      }),
+      new Promise((resolve, reject) => {
+        cachedb.put(id.toString() + 'code', wasm.toString('hex'), resolve)
+      })
+    ])
     const refs = {}
     Object.keys(json.typeMap).forEach(key => {
       refs[key] = new FunctionRef(key, json, id)
@@ -112,38 +147,59 @@ module.exports = class WasmContainer {
           const {funcRef: catchFunc} = self.refs.get(ref, FunctionRef)
           funcRef.catch = catchFunc
         },
-        getGasAmount: () => {},
-        setGasAmount: () => {}
-      },
-      storage: {
-        load: () => {},
-        store: () => {},
-        delete: () => {}
+        getGasAmount: (funcRef) => {},
+        setGasAmount: (funcRef) => {}
       },
       link: {
         wrap: (ref) => {
           const obj = this.refs.get(ref)
-          obj.seriarlize()
+          const link = new LinkRef(obj.serialize())
+          return this.refs.add(link, 'link')
         },
-        unwrap: () => {}
+        unwrap: async (ref, cb) => {
+          const obj = this.refs.get(ref, 'link')
+          const promise = this.actor.tree.dataStore.get(obj)
+          await this._opsQueue.push(promise)
+          // todo
+        }
       },
-      databuf: {
-        create: () => {},
-        load8: () => {},
-        load16: () => {},
-        load32: () => {},
-        load64: () => {},
-        store8: () => {},
-        store16: () => {},
-        store32: () => {},
-        store64: () => {},
-        copy: () => {}
+      module: {
+        new: code => {},
+        exports: (mod, name) => {}
       },
-      elembuf: {
-        create: () => {},
-        load: () => {},
-        store: () => {},
-        delete: () => {}
+      memory: {
+        externalize: (index, length) => {
+          const buf = this.getMemory(index, length)
+          return this.refs.add(buf, 'buf')
+        },
+        internalize: (dataRef, writeOffset, readOffset, length) => {
+          let buf = this.refs.get(dataRef, 'buf')
+          buf = buf.subarray(readOffset, length)
+          const mem = this.getMemory(writeOffset, buf.length)
+          mem.set(buf)
+        }
+      },
+      table: {
+        externalize: (index, length) => {
+          const mem = this.getMemory(index, length * 4)
+          const objects = []
+          while (length--) {
+            const ref = mem[index + length]
+            if (this.refs.has(ref)) {
+              objects.push(ref)
+            } else {
+              throw new Error('invalid ref')
+            }
+          }
+          const eleBuf = new ElementBuffer(objects)
+          return this.refs.add(eleBuf, 'ele')
+        },
+        internalize: (dataRef, writeOffset, readOffset, length) => {
+          let buf = this.refs.get(dataRef, 'ele')
+          buf = buf.subarray(readOffset, length)
+          const mem = this.getMemory(writeOffset, buf.length)
+          mem.set(buf)
+        }
       },
       metering: {
         usegas: (amount) => {
@@ -156,10 +212,13 @@ module.exports = class WasmContainer {
     }
   }
 
-  onMessage (message) {
+  async onMessage (message) {
     const funcRef = message.funcRef
     const intef = this.getInteface(funcRef)
     this.instance = WebAssembly.Instance(this.mod, intef)
+    if (this.instance.exports.table) {
+      this._orginalTable = this.instance.exports.table.slice()
+    }
     const args = message.funcArguments.map(arg => {
       if (typeof arg === 'number') {
         return arg
@@ -168,6 +227,30 @@ module.exports = class WasmContainer {
       }
     })
     this.instance.exports[funcRef.name](...args)
+    await this.onDone()
+    this.referanceMap.clear()
+  }
+
+  /**
+   * returns a promise that resolves when the wasm instance is done running
+   * @returns {Promise}
+   */
+  async onDone () {
+    let prevOps
+    while (prevOps !== this._opsQueue) {
+      prevOps = this._opsQueue
+      await prevOps
+    }
+  }
+
+  /**
+   * Pushed an async operation to the a promise queue that
+   * @returns {Promise} the returned promise resolves in the order the intail
+   * operation was pushed to the queue
+   */
+  pushOpsQueue (promise) {
+    this._opsQueue = Promise.all([this._opsQueue, promise])
+    return this._opsQueue
   }
 
   getFuncRef (name, send) {
@@ -199,6 +282,10 @@ module.exports = class WasmContainer {
     wasm = Buffer.from(wasm, 'hex')
     this.mod = WebAssembly.Module(wasm)
     this.json = json
+  }
+
+  getMemory (offset, length) {
+    return new DataBuffer(this.instance.exports.memory.buffer, offset, length)
   }
 
   static get typeId () {

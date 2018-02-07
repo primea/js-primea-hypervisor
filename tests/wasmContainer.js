@@ -11,6 +11,10 @@ const db = level('./testdb')
 let tester
 
 class TestWasmContainer extends WasmContainer {
+  constructor (actor) {
+    super(actor)
+    this._storage = new Map()
+  }
   getInteface (funcRef) {
     const orginal = super.getInteface(funcRef)
     return Object.assign(orginal, {
@@ -20,6 +24,14 @@ class TestWasmContainer extends WasmContainer {
         }
       }
     })
+  }
+  setState (key, ref) {
+    const obj = this.refs.get(ref)
+    this._storage.set(key, obj)
+  }
+  getState (key) {
+    const obj = this._storage.get(key)
+    return this.refs.add(obj)
   }
 }
 

@@ -35,7 +35,7 @@
     "events": "^2.0.0",
     "leb128": "0.0.4",
     "levelup": "^2.0.1",
-    "reference-map": "^1.2.0",
+    "reference-map": "^1.2.1",
     "safe-buffer": "^5.1.1",
     "wasm-json-toolkit": "^0.2.0",
     "wasm-metering": "^0.1.1"

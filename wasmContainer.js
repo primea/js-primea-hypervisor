@@ -112,7 +112,7 @@ module.exports = class WasmContainer {
     wasm = json2wasm(moduleJSON)
     await Promise.all([
       new Promise((resolve, reject) => {
-        cachedb.put(id.toString() + 'meta', json, resolve)
+        cachedb.put(id.toString() + 'meta', JSON.stringify(json), resolve)
       }),
       new Promise((resolve, reject) => {
         cachedb.put(id.toString() + 'code', wasm.toString('hex'), resolve)
@@ -165,7 +165,10 @@ module.exports = class WasmContainer {
       },
       module: {
         new: code => {},
-        exports: (mod, name) => {}
+        exports: (mod, name) => {},
+        self: () => {
+          return this.refs.add(this.json)
+        }
       },
       memory: {
         externalize: (index, length) => {
@@ -280,6 +283,7 @@ module.exports = class WasmContainer {
       })
     ])
     wasm = Buffer.from(wasm, 'hex')
+    json = JSON.parse(json)
     this.mod = WebAssembly.Module(wasm)
     this.json = json
   }

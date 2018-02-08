@@ -39,7 +39,7 @@ tape('basic', async t => {
   t.plan(2)
   tester = t
   const expectedState = {
-    '/': Buffer.from('926de6b7eb39cfa8d7f8a44d1ef191d3bcb765a7', 'hex')
+    '/': Buffer.from('4494963fb0e02312510e675fbca8b60b6e03bd00', 'hex')
   }
 
   const tree = new RadixTree({
@@ -58,13 +58,41 @@ tape('basic', async t => {
     funcArguments: [5]
   })
   hypervisor.send(message)
+  const stateRoot = await hypervisor.createStateRoot()
+  t.deepEquals(stateRoot, expectedState, 'expected root!')
+})
 
+tape('basic', async t => {
+  t.plan(2)
+  tester = t
+  const expectedState = {
+    '/': Buffer.from('4494963fb0e02312510e675fbca8b60b6e03bd00', 'hex')
+  }
+
+  const tree = new RadixTree({
+    db: db
+  })
+
+  const recieverWasm = fs.readFileSync('./wasm/reciever.wasm')
+  const callerWasm = fs.readFileSync('./wasm/caller.wasm')
+
+  const hypervisor = new Hypervisor(tree)
+  hypervisor.registerContainer(TestWasmContainer)
+
+  const {exports: receiverExports} = await hypervisor.createActor(TestWasmContainer.typeId, recieverWasm)
+  const {exports: callerExports} = await hypervisor.createActor(TestWasmContainer.typeId, callerWasm)
+
+  const message = new Message({
+    funcRef: receiverExports.receive,
+    funcArguments: [5]
+  })
+  hypervisor.send(message)
   const stateRoot = await hypervisor.createStateRoot()
   t.deepEquals(stateRoot, expectedState, 'expected root!')
 })
 
 // Increment a counter.
-tape('increment', async t => {
+tape.skip('increment', async t => {
 
   const tree = new RadixTree({
     db: db

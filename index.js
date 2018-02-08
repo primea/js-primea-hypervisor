@@ -29,6 +29,7 @@ module.exports = class Hypervisor {
 
   async loadActor (id) {
     const state = await this.tree.getSubTree(id)
+    const code = state.get(Buffer.from([0]))
     const {type, nonce} = Actor.deserializeMetaData(state.root['/'][3])
     const Container = this._containerTypes[type]
 
@@ -40,6 +41,7 @@ module.exports = class Hypervisor {
       id,
       nonce,
       type,
+      code,
       cachedb: this.tree.dag._dag
     })
 
@@ -62,6 +64,9 @@ module.exports = class Hypervisor {
 
     // save the container in the state
     this.tree.set(idHash, metaData)
+    if (code) {
+      this.tree.set(Buffer.concat([idHash, Buffer.from([0])]), code)
+    }
     return {
       id: idHash,
       exports: exports

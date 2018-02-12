@@ -136,7 +136,7 @@ module.exports = class WasmContainer {
     console.log('send')
   }
 
-  getInteface (funcRef) {
+  getInterface (funcRef) {
     const self = this
     return {
       func: {
@@ -221,7 +221,7 @@ module.exports = class WasmContainer {
 
   async onMessage (message) {
     const funcRef = message.funcRef
-    const intef = this.getInteface(funcRef)
+    const intef = this.getInterface(funcRef)
     this.instance = WebAssembly.Instance(this.mod, intef)
     if (this.instance.exports.table) {
       this._orginalTable = this.instance.exports.table

@@ -15,8 +15,8 @@ class TestWasmContainer extends WasmContainer {
     super(actor)
     this._storage = new Map()
   }
-  getInteface (funcRef) {
-    const orginal = super.getInteface(funcRef)
+  getInterface (funcRef) {
+    const orginal = super.getInterface(funcRef)
     return Object.assign(orginal, {
       test: {
         check: (a, b) => {
@@ -63,6 +63,34 @@ tape('basic', async t => {
 })
 
 tape('two communicating actors', async t => {
+  t.plan(2)
+  tester = t
+  const expectedState = {
+    '/': Buffer.from('123bcbf52421f0ebf0c9a28d6546a3b374f5d56d', 'hex')
+  }
+
+  const tree = new RadixTree({db})
+
+  const recieverWasm = fs.readFileSync('./wasm/reciever.wasm')
+  const callerWasm = fs.readFileSync('./wasm/caller.wasm')
+
+  const hypervisor = new Hypervisor(tree)
+  hypervisor.registerContainer(TestWasmContainer)
+
+  const {exports: receiverExports} = await hypervisor.createActor(TestWasmContainer.typeId, recieverWasm)
+  const {exports: callerExports} = await hypervisor.createActor(TestWasmContainer.typeId, callerWasm)
+
+  const message = new Message({
+    funcRef: callerExports.call,
+    funcArguments: [receiverExports.receive]
+  })
+
+  hypervisor.send(message)
+  const stateRoot = await hypervisor.createStateRoot()
+  t.deepEquals(stateRoot, expectedState, 'expected root!')
+})
+
+tape.skip('two communicating actors with callback', async t => {
   t.plan(2)
   tester = t
   const expectedState = {

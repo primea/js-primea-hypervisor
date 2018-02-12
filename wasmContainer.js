@@ -1,4 +1,5 @@
 const {wasm2json, json2wasm} = require('wasm-json-toolkit')
+const Message = require('./message.js')
 const wasmMetering = require('wasm-metering')
 const customTypes = require('./customTypes.js')
 const typeCheckWrapper = require('./typeCheckWrapper.js')
@@ -60,6 +61,10 @@ class LinkRef {
 }
 
 class FunctionRef {
+  static get type () {
+    return 'funcRef'
+  }
+
   constructor (name, json, id) {
     this.name = name
     this.destId = id
@@ -74,18 +79,20 @@ class FunctionRef {
       'env': {
         'checkTypes': function () {
           const args = [...arguments]
+          const checkedArgs = []
           while (args.length) {
             const type = LANGUAGE_TYPES[args.shift()]
             let arg = args.shift()
             if (!nativeTypes.has(type)) {
               arg = self._container.refs.get(arg, type)
             }
-            self.args.push({
-              arg,
-              type
-            })
+            checkedArgs.push(arg)
           }
-          self._container.sendMessage(instance)
+          const message = new Message({
+            funcRef: self,
+            funcArguments: checkedArgs
+          })
+          self._container.actor.send(message)
         }
       }
     })
@@ -135,12 +142,9 @@ module.exports = class WasmContainer {
       func: {
         externalize: () => {},
         internalize: (ref, index) => {
-          const {type, arg} = self.refs.get(ref)
-          if (type !== 'funcRef') {
-            throw new Error('invalid type')
-          }
-          arg.container = self
-          this.instance.exports.table.set(index, arg.wrapper.exports.check)
+          const funcRef = self.refs.get(ref, 'funcRef')
+          funcRef.container = self
+          this.instance.exports.table.set(index, funcRef.wrapper.exports.check)
         },
         catch: (ref, catchRef) => {
           const {funcRef} = self.refs.get(ref, FunctionRef)
@@ -220,18 +224,18 @@ module.exports = class WasmContainer {
     const intef = this.getInteface(funcRef)
     this.instance = WebAssembly.Instance(this.mod, intef)
     if (this.instance.exports.table) {
-      this._orginalTable = this.instance.exports.table.slice()
+      this._orginalTable = this.instance.exports.table
     }
     const args = message.funcArguments.map(arg => {
       if (typeof arg === 'number') {
         return arg
       } else {
-        return this.refs.add(arg)
+        return this.refs.add(arg, arg.constructor.type)
       }
     })
     this.instance.exports[funcRef.name](...args)
     await this.onDone()
-    this.referanceMap.clear()
+    this.refs.clear()
   }
 
   /**

@@ -48,10 +48,10 @@ tape('basic', async t => {
   const hypervisor = new Hypervisor(tree)
   hypervisor.registerContainer(testVMContainer)
 
-  const {exports} = await hypervisor.createActor(testVMContainer.typeId)
+  const {module} = await hypervisor.createActor(testVMContainer.typeId)
 
   const message = new Message({
-    funcRef: exports.main,
+    funcRef: module.main,
     funcArguments: [1]
   })
   hypervisor.send(message)
@@ -94,12 +94,12 @@ tape('two communicating actors', async t => {
   hypervisor.registerContainer(testVMContainerA)
   hypervisor.registerContainer(testVMContainerB)
 
-  const {exports: exportsB} = await hypervisor.createActor(testVMContainerB.typeId)
-  const {exports: exportsA} = await hypervisor.createActor(testVMContainerA.typeId)
+  const {module: moduleB} = await hypervisor.createActor(testVMContainerB.typeId)
+  const {module: moduleA} = await hypervisor.createActor(testVMContainerA.typeId)
 
   const message = new Message({
-    funcRef: exportsA.main,
-    funcArguments: [exportsB.main]
+    funcRef: moduleA.main,
+    funcArguments: [moduleB.main]
   })
 
   hypervisor.send(message)
@@ -142,18 +142,18 @@ tape('three communicating actors', async t => {
   hypervisor.registerContainer(testVMContainerA)
   hypervisor.registerContainer(testVMContainerB)
 
-  let {exports: exportsB} = await hypervisor.createActor(testVMContainerB.typeId)
-  let {exports: exportsA0} = await hypervisor.createActor(testVMContainerA.typeId)
-  let {exports: exportsA1} = await hypervisor.createActor(testVMContainerA.typeId)
+  let {module: moduleB} = await hypervisor.createActor(testVMContainerB.typeId)
+  let {module: moduleA0} = await hypervisor.createActor(testVMContainerA.typeId)
+  let {module: moduleA1} = await hypervisor.createActor(testVMContainerA.typeId)
 
   const message0 = new Message({
-    funcRef: exportsA0.main,
-    funcArguments: [exportsB.main]
+    funcRef: moduleA0.main,
+    funcArguments: [moduleB.main]
   })
 
   const message1 = new Message({
-    funcRef: exportsA1.main,
-    funcArguments: [exportsB.main]
+    funcRef: moduleA1.main,
+    funcArguments: [moduleB.main]
   })
 
   await hypervisor.send(message0)
@@ -203,12 +203,12 @@ tape('three communicating actors, with tick counting', async t => {
   let actorA1 = await hypervisor.createActor(testVMContainerA.typeId)
 
   const message0 = new Message({
-    funcRef: actorA0.exports.main,
-    funcArguments: [actorB.exports.main]
+    funcRef: actorA0.module.main,
+    funcArguments: [actorB.module.main]
   })
   const message1 = new Message({
-    funcRef: actorA1.exports.main,
-    funcArguments: [actorB.exports.main]
+    funcRef: actorA1.module.main,
+    funcArguments: [actorB.module.main]
   })
 
   hypervisor.send(message0)
@@ -255,11 +255,11 @@ tape('errors', async t => {
   hypervisor.registerContainer(testVMContainerA)
   hypervisor.registerContainer(testVMContainerB)
 
-  let {exports: exportsB} = await hypervisor.createActor(testVMContainerB.typeId)
-  let {exports: exportsA} = await hypervisor.createActor(testVMContainerA.typeId)
+  let {module: moduleB} = await hypervisor.createActor(testVMContainerB.typeId)
+  let {module: moduleA} = await hypervisor.createActor(testVMContainerA.typeId)
   const message = new Message({
-    funcRef: exportsA.main,
-    funcArguments: [exportsB.main]
+    funcRef: moduleA.main,
+    funcArguments: [moduleB.main]
   })
   hypervisor.send(message)
   const stateRoot = await hypervisor.createStateRoot()
@@ -278,9 +278,9 @@ tape('actor creation', async t => {
 
   class testVMContainerA extends BaseContainer {
     async start (funcRef) {
-      const {exports} = await this.actor.createActor(testVMContainerB.typeId)
+      const {module} = await this.actor.createActor(testVMContainerB.typeId)
       const message = new Message({
-        funcRef: exports.main,
+        funcRef: module.main,
         funcArguments: [this.actor.getFuncRef('main')]
       })
       this.actor.send(message)
@@ -304,8 +304,8 @@ tape('actor creation', async t => {
   hypervisor.registerContainer(testVMContainerA)
   hypervisor.registerContainer(testVMContainerB)
 
-  const {exports} = await hypervisor.createActor(testVMContainerA.typeId)
-  await hypervisor.send(new Message({funcRef: exports.start}))
+  const {module} = await hypervisor.createActor(testVMContainerA.typeId)
+  await hypervisor.send(new Message({funcRef: module.start}))
 
   const stateRoot = await hypervisor.createStateRoot()
   t.deepEquals(stateRoot, expectedState, 'expected root!')
@@ -367,11 +367,11 @@ tape('simple message arbiter test', async t => {
   hypervisor.registerContainer(testVMContainerA)
   hypervisor.registerContainer(testVMContainerB)
 
-  const {exports: exportsB} = await hypervisor.createActor(testVMContainerB.typeId)
-  const {exports: exportsA} = await hypervisor.createActor(testVMContainerA.typeId)
+  const {module: moduleB} = await hypervisor.createActor(testVMContainerB.typeId)
+  const {module: moduleA} = await hypervisor.createActor(testVMContainerA.typeId)
   const message = new Message({
-    funcRef: exportsA.main,
-    funcArguments: [exportsB.main]
+    funcRef: moduleA.main,
+    funcArguments: [moduleB.main]
   })
   hypervisor.send(message)
 
@@ -424,23 +424,23 @@ tape('arbiter test for id comparision', async t => {
   hypervisor.registerContainer(testVMContainerA)
   hypervisor.registerContainer(testVMContainerB)
 
-  let {exports: exportsB} = await hypervisor.createActor(testVMContainerB.typeId)
+  let {module: moduleB} = await hypervisor.createActor(testVMContainerB.typeId)
   hypervisor.send(new Message({
-    funcRef: exportsB.main,
+    funcRef: moduleB.main,
     funcArguments: ['first']
   }))
 
-  const {exports: exportsA0} = await hypervisor.createActor(testVMContainerA.typeId)
+  const {module: moduleA0} = await hypervisor.createActor(testVMContainerA.typeId)
 
   hypervisor.send(new Message({
-    funcRef: exportsA0.main,
-    funcArguments: [exportsB.main, 'second']
+    funcRef: moduleA0.main,
+    funcArguments: [moduleB.main, 'second']
   }))
 
-  const {exports: exportsA1} = await hypervisor.createActor(testVMContainerA.typeId)
+  const {module: moduleA1} = await hypervisor.createActor(testVMContainerA.typeId)
   hypervisor.send(new Message({
-    funcRef: exportsA1.main,
-    funcArguments: [exportsB.main, 'third']
+    funcRef: moduleA1.main,
+    funcArguments: [moduleB.main, 'third']
   }))
 
   const stateRoot = await hypervisor.createStateRoot()
@@ -494,12 +494,12 @@ tape('async work', async t => {
   hypervisor.registerContainer(testVMContainerA)
   hypervisor.registerContainer(testVMContainerB)
 
-  const {exports: exportsB} = await hypervisor.createActor(testVMContainerB.typeId)
-  const {exports: exportsA} = await hypervisor.createActor(testVMContainerA.typeId)
+  const {module: moduleB} = await hypervisor.createActor(testVMContainerB.typeId)
+  const {module: moduleA} = await hypervisor.createActor(testVMContainerA.typeId)
 
   const message = new Message({
-    funcRef: exportsA.main,
-    funcArguments: [exportsB.main]
+    funcRef: moduleA.main,
+    funcArguments: [moduleB.main]
   })
 
   hypervisor.send(message)
@@ -544,8 +544,8 @@ tape('random', async t => {
   const refernces = []
   let _numOfActors = numOfActors
   while (_numOfActors--) {
-    const {exports} = await hypervisor.createActor(BenchmarkContainer.typeId)
-    refernces.push(exports.main)
+    const {module} = await hypervisor.createActor(BenchmarkContainer.typeId)
+    refernces.push(module.main)
   }
   _numOfActors = numOfActors
   let msgs = []

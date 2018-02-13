@@ -18,11 +18,12 @@ function filesWast2wasm () {
 
     console.log(wat)
     const mod = wabt.parseWat('module.wast', wat)
-    let binary = Buffer.from(mod.toBinary({log: true}).buffer)
+    const r = mod.toBinary({log: true})
+    let binary = Buffer.from(r.buffer)
     if (json) {
       console.log(json)
       const buf = types.encodeJSON(json)
-      binary = types.injectCustomSection(buf, binary)
+      // binary = types.injectCustomSection(buf, binary)
     }
     fs.writeFileSync(`${__dirname}/wasm/${file}.wasm`, binary)
   }

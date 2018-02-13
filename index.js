@@ -59,7 +59,7 @@ module.exports = class Hypervisor {
     const Container = this._containerTypes[type]
     const encoded = encodedID(id)
     const idHash = await this._getHashFromObj(encoded)
-    const exports = await Container.onCreation(code, idHash, this.tree.dag._dag)
+    const module = await Container.onCreation(code, idHash, this.tree.dag._dag)
     const metaData = Actor.serializeMetaData(type)
 
     // save the container in the state
@@ -69,7 +69,7 @@ module.exports = class Hypervisor {
     }
     return {
       id: idHash,
-      exports: exports
+      module: module
     }
   }
 

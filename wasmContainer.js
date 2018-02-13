@@ -30,6 +30,7 @@ const LANGUAGE_TYPES = {
   0x40: 'block_type'
 }
 
+
 class ElementBuffer {
   constructor (size) {
     this._array = new Array(size)
@@ -103,6 +104,23 @@ class FunctionRef {
   }
 }
 
+class ModuleRef {
+  constructor (json, id) {
+    this._json = json
+    this.id = id
+  }
+
+  getFuncRef (name) {
+    return new FunctionRef(name, this._json, this.id)
+  }
+
+  serialize () {
+    return this._json
+  }
+
+  static deserialize (serialized) {}
+}
+
 module.exports = class WasmContainer {
   constructor (actor) {
     this.actor = actor
@@ -110,7 +128,9 @@ module.exports = class WasmContainer {
   }
 
   static async onCreation (wasm, id, cachedb) {
-    WebAssembly.validate(wasm)
+    if (!WebAssembly.validate(wasm)) {
+      throw new Error('invalid wasm binary')
+    }
     let moduleJSON = wasm2json(wasm)
     const json = mergeTypeSections(moduleJSON)
     moduleJSON = wasmMetering.meterJSON(moduleJSON, {
@@ -125,15 +145,7 @@ module.exports = class WasmContainer {
         cachedb.put(id.toString() + 'code', wasm.toString('hex'), resolve)
       })
     ])
-    const refs = {}
-    Object.keys(json.typeMap).forEach(key => {
-      refs[key] = new FunctionRef(key, json, id)
-    })
-    return refs
-  }
-
-  sendMessage () {
-    console.log('send')
+    return new ModuleRef(json, id)
   }
 
   getInterface (funcRef) {
@@ -169,9 +181,15 @@ module.exports = class WasmContainer {
       },
       module: {
         new: code => {},
-        exports: (mod, name) => {},
+        exports: (modRef, offset, length) => {
+          const mod = this.refs.get(modRef, 'mod')
+          let name = this.getMemory(offset, length)
+          name = Buffer.from(name).toString()
+          const funcRef = new FunctionRef(name, mod, this.actor.id)
+          return this.refs.add(funcRef)
+        },
         self: () => {
-          return this.refs.add(this.json)
+          return this.refs.add(this.json, 'mod')
         }
       },
       memory: {
@@ -293,7 +311,7 @@ module.exports = class WasmContainer {
   }
 
   getMemory (offset, length) {
-    return new DataBuffer(this.instance.exports.memory.buffer, offset, length)
+    return new Uint8Array(this.instance.exports.memory.buffer, offset, length)
   }
 
   static get typeId () {

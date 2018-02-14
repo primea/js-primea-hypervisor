@@ -132,6 +132,73 @@ function inject (wasm, json) {
   return injectCustomSection(buf, wasm)
 }
 
+function mergeTypeSections (json) {
+  const result = {
+    types: [],
+    indexes: {},
+    exports: {}
+  }
+  const iterator = findSections(json)
+  const mappedFuncs = new Map()
+  const mappedTypes = new Map()
+  iterator.next()
+  const {value: customType} = iterator.next('custom')
+  if (customType) {
+    const type = decodeType(customType.payload)
+    result.types = type
+  }
+  let {value: typeMap} = iterator.next('custom')
+  if (typeMap) {
+    decodeTypeMap(typeMap.payload).forEach(map => mappedFuncs.set(map.func, map.type))
+  }
+
+  const {value: type} = iterator.next('type')
+  const {value: imports = {entries: []}} = iterator.next('import')
+  const {value: functions} = iterator.next('function')
+  functions.entries.forEach((typeIndex, funcIndex) => {
+    let customIndex = mappedFuncs.get(funcIndex)
+    if (customIndex === undefined) {
+      customIndex = mappedTypes.get(typeIndex)
+    }
+    if (customIndex === undefined) {
+      customIndex = result.types.push(type.entries[typeIndex]) - 1
+      mappedTypes.set(typeIndex, customIndex)
+    }
+    result.indexes[funcIndex + imports.entries.length] = customIndex
+  })
+
+  const {value: exports = {entries: []}} = iterator.next('export')
+  exports.entries.forEach(entry => {
+    if (entry.kind === 'function') {
+      result.exports[entry.field_str] = entry.index
+    }
+  })
+  return result
+}
+
+const wantedSections = new Set(['custom', 'type', 'function', 'export', 'import'])
+
+function * findSections (array) {
+  let section = array[0]
+  let index = 0
+  let nextSection = yield null
+
+  while (section) {
+    if (!wantedSections.has(section.name)) {
+      index++
+      section = array[index]
+    } else {
+      if (section.name === nextSection) {
+        nextSection = yield section
+        index++
+        section = array[index]
+      } else {
+        nextSection = yield null
+      }
+    }
+  }
+}
+
 module.exports = {
   injectCustomSection,
   inject,
@@ -139,5 +206,6 @@ module.exports = {
   decodeTypeMap,
   encodeType,
   encodeTypeMap,
-  encodeJSON
+  encodeJSON,
+  mergeTypeSections
 }

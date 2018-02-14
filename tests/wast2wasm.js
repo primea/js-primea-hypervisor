@@ -21,9 +21,8 @@ function filesWast2wasm () {
     const r = mod.toBinary({log: true})
     let binary = Buffer.from(r.buffer)
     if (json) {
-      console.log(json)
       const buf = types.encodeJSON(json)
-      // binary = types.injectCustomSection(buf, binary)
+      binary = types.injectCustomSection(buf, binary)
     }
     fs.writeFileSync(`${__dirname}/wasm/${file}.wasm`, binary)
   }

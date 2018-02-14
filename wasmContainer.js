@@ -30,8 +30,10 @@ const LANGUAGE_TYPES = {
   0x40: 'block_type'
 }
 
-
 class ElementBuffer {
+  static get type () {
+    return 'elem'
+  }
   constructor (size) {
     this._array = new Array(size)
   }
@@ -45,6 +47,9 @@ class ElementBuffer {
 }
 
 class DataBuffer {
+  static get type () {
+    return 'data'
+  }
   constructor (memory, offset, length) {
     this._data = new Uint8Array(this.instance.exports.memory.buffer, offset, length)
   }
@@ -55,6 +60,9 @@ class DataBuffer {
 }
 
 class LinkRef {
+  static get type () {
+    return 'link'
+  }
   serialize () {
     return Buffer.concat(Buffer.from([LANGUAGE_TYPES['link'], this]))
   }
@@ -63,20 +71,28 @@ class LinkRef {
 
 class FunctionRef {
   static get type () {
-    return 'funcRef'
+    return 'func'
   }
 
-  constructor (name, json, id) {
-    this.name = name
+  constructor (type, identifier, json, id) {
+    this.type = type
     this.destId = id
-    this.args = []
-    const typeIndex = json.typeMap[name]
-    const type = json.type[typeIndex]
-    const wrapper = typeCheckWrapper(type)
+    let funcIndex
+    if (type === 'export') {
+      this.indentifier = identifier
+      funcIndex = json.exports[identifier]
+    } else {
+      this.indentifier = identifier.tableIndex
+      funcIndex = Number(identifier.name) - 1
+    }
+    const typeIndex = json.indexes[funcIndex]
+    const funcType = json.types[typeIndex]
+
+    const wrapper = typeCheckWrapper(funcType)
     const wasm = json2wasm(wrapper)
-    this.mod = WebAssembly.Module(wasm)
+    const mod = WebAssembly.Module(wasm)
     const self = this
-    const instance = WebAssembly.Instance(this.mod, {
+    this.wrapper = WebAssembly.Instance(mod, {
       'env': {
         'checkTypes': function () {
           const args = [...arguments]
@@ -97,7 +113,7 @@ class FunctionRef {
         }
       }
     })
-    this.wrapper = instance
+    this.wrapper.exports.check.object = this
   }
   set container (container) {
     this._container = container
@@ -105,13 +121,17 @@ class FunctionRef {
 }
 
 class ModuleRef {
+  static get type () {
+    return 'mod'
+  }
+
   constructor (json, id) {
     this._json = json
     this.id = id
   }
 
   getFuncRef (name) {
-    return new FunctionRef(name, this._json, this.id)
+    return new FunctionRef('export', name, this._json, this.id)
   }
 
   serialize () {
@@ -132,7 +152,7 @@ module.exports = class WasmContainer {
       throw new Error('invalid wasm binary')
     }
     let moduleJSON = wasm2json(wasm)
-    const json = mergeTypeSections(moduleJSON)
+    const json = customTypes.mergeTypeSections(moduleJSON)
     moduleJSON = wasmMetering.meterJSON(moduleJSON, {
       meterType: 'i32'
     })
@@ -152,9 +172,18 @@ module.exports = class WasmContainer {
     const self = this
     return {
       func: {
-        externalize: () => {},
+        externalize: (index) => {
+          const func = this.instance.exports.table.get(index)
+          const object = func.object
+          if (object) {
+            return self.refs.add(object)
+          } else {
+            const ref = new FunctionRef(false, object.tableIndex, self.json, self.actor.id)
+            return self.refs.add(ref)
+          }
+        },
         internalize: (ref, index) => {
-          const funcRef = self.refs.get(ref, 'funcRef')
+          const funcRef = self.refs.get(ref)
           funcRef.container = self
           this.instance.exports.table.set(index, funcRef.wrapper.exports.check)
         },
@@ -185,11 +214,11 @@ module.exports = class WasmContainer {
           const mod = this.refs.get(modRef, 'mod')
           let name = this.getMemory(offset, length)
           name = Buffer.from(name).toString()
-          const funcRef = new FunctionRef(name, mod, this.actor.id)
-          return this.refs.add(funcRef)
+          const funcRef = mod.getFuncRef(name)
+          return this.refs.add(funcRef, 'func')
         },
         self: () => {
-          return this.refs.add(this.json, 'mod')
+          return this.refs.add(this.moduleObj, 'mod')
         }
       },
       memory: {
@@ -217,10 +246,10 @@ module.exports = class WasmContainer {
             }
           }
           const eleBuf = new ElementBuffer(objects)
-          return this.refs.add(eleBuf, 'ele')
+          return this.refs.add(eleBuf, 'elem')
         },
         internalize: (dataRef, writeOffset, readOffset, length) => {
-          let buf = this.refs.get(dataRef, 'ele')
+          let buf = this.refs.get(dataRef, 'elem')
           buf = buf.subarray(readOffset, length)
           const mem = this.getMemory(writeOffset, buf.length)
           mem.set(buf)
@@ -241,8 +270,15 @@ module.exports = class WasmContainer {
     const funcRef = message.funcRef
     const intef = this.getInterface(funcRef)
     this.instance = WebAssembly.Instance(this.mod, intef)
-    if (this.instance.exports.table) {
-      this._orginalTable = this.instance.exports.table
+    const table = this.instance.exports.table
+    if (table) {
+      let length = table.length
+      while (length--) {
+        const func = table.get(length)
+        if (func) {
+          func.tableIndex = length
+        }
+      }
     }
     const args = message.funcArguments.map(arg => {
       if (typeof arg === 'number') {
@@ -251,7 +287,11 @@ module.exports = class WasmContainer {
         return this.refs.add(arg, arg.constructor.type)
       }
     })
-    this.instance.exports[funcRef.name](...args)
+    if (funcRef.type === 'export') {
+      this.instance.exports[funcRef.indentifier](...args)
+    } else {
+      this.instance.exports.table.get(funcRef.indentifier)(...args)
+    }
     await this.onDone()
     this.refs.clear()
   }
@@ -308,6 +348,7 @@ module.exports = class WasmContainer {
     json = JSON.parse(json)
     this.mod = WebAssembly.Module(wasm)
     this.json = json
+    this.moduleObj = new ModuleRef(json, this.actor.id)
   }
 
   getMemory (offset, length) {
@@ -317,72 +358,4 @@ module.exports = class WasmContainer {
   static get typeId () {
     return 9
   }
-}
-
-function mergeTypeSections (json) {
-  const typeInfo = {
-    typeMap: [],
-    type: []
-  }
-  let typeSection = {
-    'entries': []
-  }
-  let importSection = {
-    'entries': []
-  }
-  let functionSection = {
-    'entries': []
-  }
-  let exportSection = {
-    'entries': []
-  }
-  json.forEach(section => {
-    switch (section.name) {
-      case 'type':
-        typeSection = section
-        break
-      case 'export':
-        exportSection = section
-        break
-      case 'import':
-        importSection = section
-        break
-      case 'function':
-        functionSection = section
-        break
-      case 'custom':
-        switch (section.sectionName) {
-          case 'type':
-            typeInfo.type = customTypes.decodeType(section.payload)
-            break
-          case 'typeMap':
-            typeInfo.typeMap = customTypes.decodeTypeMap(section.payload)
-            break
-        }
-        break
-    }
-  })
-
-  const foundTypes = new Map()
-  const mappedFuncs = new Map()
-  const newTypeMap = {}
-  typeInfo.typeMap.forEach(map => mappedFuncs.set(map.func, map.type))
-  for (let exprt of exportSection.entries) {
-    if (exprt.kind === 'function') {
-      if (!mappedFuncs.has(exprt.index)) {
-        const typeIndex = functionSection.entries[exprt.index - importSection.entries.length]
-        if (!foundTypes.has(typeIndex)) {
-          const customIndex = typeInfo.type.push(typeSection.entries[typeIndex]) - 1
-          foundTypes.set(typeIndex, customIndex)
-        }
-        const customIndex = foundTypes.get(typeIndex)
-        newTypeMap[exprt.field_str] = customIndex
-      } else {
-        newTypeMap[exprt.field_str] = mappedFuncs.get(exprt.index)
-      }
-    }
-  }
-
-  typeInfo.typeMap = newTypeMap
-  return typeInfo
 }

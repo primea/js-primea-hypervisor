@@ -35,7 +35,7 @@ class TestWasmContainer extends WasmContainer {
   }
 }
 
-tape.only('basic', async t => {
+tape('basic', async t => {
   t.plan(2)
   tester = t
   const expectedState = {
@@ -77,12 +77,11 @@ tape('two communicating actors', async t => {
   const hypervisor = new Hypervisor(tree)
   hypervisor.registerContainer(TestWasmContainer)
 
-  const {exports: receiverExports} = await hypervisor.createActor(TestWasmContainer.typeId, recieverWasm)
-  const {exports: callerExports} = await hypervisor.createActor(TestWasmContainer.typeId, callerWasm)
-
+  const {module: receiverMod} = await hypervisor.createActor(TestWasmContainer.typeId, recieverWasm)
+  const {module: callerMod} = await hypervisor.createActor(TestWasmContainer.typeId, callerWasm)
   const message = new Message({
-    funcRef: callerExports.call,
-    funcArguments: [receiverExports.receive]
+    funcRef: callerMod.getFuncRef('call'),
+    funcArguments: [receiverMod.getFuncRef('receive')]
   })
 
   hypervisor.send(message)
@@ -94,7 +93,7 @@ tape('two communicating actors with callback', async t => {
   // t.plan(2)
   tester = t
   const expectedState = {
-    '/': Buffer.from('f3cc5ba63d6b1737bea2c33bd1942e5488787b82', 'hex')
+    '/': Buffer.from('51ded6c294314defc886b70f7f593434c8d53c95', 'hex')
   }
 
   const tree = new RadixTree({
@@ -107,17 +106,17 @@ tape('two communicating actors with callback', async t => {
   const hypervisor = new Hypervisor(tree)
   hypervisor.registerContainer(TestWasmContainer)
 
-  const {exports: receiverExports} = await hypervisor.createActor(TestWasmContainer.typeId, recieverWasm)
-  const {exports: callerExports} = await hypervisor.createActor(TestWasmContainer.typeId, callerWasm)
+  const {module: receiverMod} = await hypervisor.createActor(TestWasmContainer.typeId, recieverWasm)
+  const {module: callerMod} = await hypervisor.createActor(TestWasmContainer.typeId, callerWasm)
 
   const message = new Message({
-    funcRef: callerExports.call,
-    funcArguments: [receiverExports.receive]
+    funcRef: callerMod.getFuncRef('call'),
+    funcArguments: [receiverMod.getFuncRef('receive')]
   })
 
   hypervisor.send(message)
   const stateRoot = await hypervisor.createStateRoot()
-  // t.deepEquals(stateRoot, expectedState, 'expected root!')
+  t.deepEquals(stateRoot, expectedState, 'expected root!')
   t.end()
 })
 
@@ -132,10 +131,10 @@ tape.skip('increment', async t => {
   const hypervisor = new Hypervisor(tree)
   hypervisor.registerContainer(TestWasmContainer)
 
-  const {exports} = await hypervisor.createActor(TestWasmContainer.typeId, wasm)
+  const {module} = await hypervisor.createActor(TestWasmContainer.typeId, wasm)
 
   const message = new Message({
-    funcRef: exports.increment,
+    funcRef: module.increment,
     funcArguments: []
   })
   hypervisor.send(message)

@@ -1,10 +1,10 @@
 const {wasm2json, json2wasm} = require('wasm-json-toolkit')
-const Message = require('./message.js')
 const wasmMetering = require('wasm-metering')
-const customTypes = require('./customTypes.js')
-const typeCheckWrapper = require('./typeCheckWrapper.js')
 const ReferanceMap = require('reference-map')
 const leb128 = require('leb128')
+const Message = require('./message.js')
+const customTypes = require('./customTypes.js')
+const typeCheckWrapper = require('./typeCheckWrapper.js')
 
 const nativeTypes = new Set(['i32', 'i64', 'f32', 'f64'])
 const LANGUAGE_TYPES = {
@@ -178,7 +178,7 @@ module.exports = class WasmContainer {
           if (object) {
             return self.refs.add(object)
           } else {
-            const ref = new FunctionRef(false, object.tableIndex, self.json, self.actor.id)
+            const ref = new FunctionRef('table', object.tableIndex, self.json, self.actor.id)
             return self.refs.add(ref)
           }
         },

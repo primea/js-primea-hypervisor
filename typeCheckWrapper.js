@@ -1,6 +1,8 @@
 const LANGUAGE_TYPES = {
-  'actor': 0x0,
+  'mod': 0x0,
   'buf': 0x1,
+  'elem': 0x2,
+  'link': 0x3,
   'i32': 0x7f,
   'i64': 0x7e,
   'f32': 0x7d,
@@ -10,7 +12,7 @@ const LANGUAGE_TYPES = {
   'block_type': 0x40
 }
 
-module.exports = function generateWrapper (type) {
+module.exports = function (type) {
   const module = [{
     'name': 'preramble',
     'magic': [
@@ -99,6 +101,7 @@ module.exports = function generateWrapper (type) {
       'code': []
     }]
   }]
+
   const definedTypes = new Set(['actor', 'func', 'buf'])
   const setGlobals = []
   const importType = module[1].entries[0].params

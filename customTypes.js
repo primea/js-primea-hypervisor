@@ -1,5 +1,6 @@
 const Stream = require('buffer-pipe')
 const leb = require('leb128')
+const {findSections} = require('wasm-json-toolkit')
 
 const LANGUAGE_TYPES = {
   'actor': 0x0,
@@ -138,10 +139,11 @@ function mergeTypeSections (json) {
     indexes: {},
     exports: {}
   }
-  const iterator = findSections(json)
+
+  const wantedSections = ['custom', 'custom', 'type', 'import', 'function', 'export']
+  const iterator = findSections(json, wantedSections)
   const mappedFuncs = new Map()
   const mappedTypes = new Map()
-  iterator.next()
   const {value: customType} = iterator.next('custom')
   if (customType) {
     const type = decodeType(customType.payload)
@@ -174,29 +176,6 @@ function mergeTypeSections (json) {
     }
   })
   return result
-}
-
-const wantedSections = new Set(['custom', 'type', 'function', 'export', 'import'])
-
-function * findSections (array) {
-  let section = array[0]
-  let index = 0
-  let nextSection = yield null
-
-  while (section) {
-    if (!wantedSections.has(section.name)) {
-      index++
-      section = array[index]
-    } else {
-      if (section.name === nextSection) {
-        nextSection = yield section
-        index++
-        section = array[index]
-      } else {
-        nextSection = yield null
-      }
-    }
-  }
 }
 
 module.exports = {

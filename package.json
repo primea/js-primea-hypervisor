@@ -47,7 +47,7 @@
     "level-browserify": "^1.1.1",
     "nyc": "^11.4.1",
     "primea-abstract-container": "0.0.6",
-    "standard": "10.0.3",
+    "standard": "11.0.0",
     "tape": "^4.6.3",
     "wabt": "^1.0.0"
   }

@@ -105,7 +105,6 @@ function encodeType (json, stream = new Stream()) {
     }
 
     binEntries.write([entry.return_type ? 1 : 0]) // number of return types
-
     if (entry.return_type) {
       binEntries.write([LANGUAGE_TYPES[entry.return_type]])
     }
@@ -159,10 +158,11 @@ function mergeTypeSections (json) {
   const result = {
     types: [],
     indexes: {},
-    exports: {}
+    exports: {},
+    globals: []
   }
 
-  const wantedSections = ['types', 'typeMap', 'type', 'import', 'function', 'export']
+  const wantedSections = ['types', 'typeMap', 'globals', 'type', 'import', 'function', 'export']
   const iterator = findSections(json, wantedSections)
   const mappedFuncs = new Map()
   const mappedTypes = new Map()
@@ -174,6 +174,11 @@ function mergeTypeSections (json) {
   let {value: typeMap} = iterator.next()
   if (typeMap) {
     decodeTypeMap(typeMap.payload).forEach(map => mappedFuncs.set(map.func, map.type))
+  }
+
+  let {value: globals} = iterator.next()
+  if (globals) {
+    result.globals = decodeGlobals(globals.payload)
   }
 
   const {value: type} = iterator.next()

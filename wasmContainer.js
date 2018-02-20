@@ -4,6 +4,7 @@ const ReferanceMap = require('reference-map')
 const leb128 = require('leb128')
 const Message = require('./message.js')
 const customTypes = require('./customTypes.js')
+const injectGlobals = require('./injectGlobals.js')
 const typeCheckWrapper = require('./typeCheckWrapper.js')
 
 const nativeTypes = new Set(['i32', 'i64', 'f32', 'f64'])
@@ -156,6 +157,9 @@ module.exports = class WasmContainer {
     moduleJSON = wasmMetering.meterJSON(moduleJSON, {
       meterType: 'i32'
     })
+    if (json.globals.length) {
+      moduleJSON = injectGlobals(moduleJSON, json.globals)
+    }
     wasm = json2wasm(moduleJSON)
     await Promise.all([
       new Promise((resolve, reject) => {

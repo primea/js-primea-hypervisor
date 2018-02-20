@@ -26,24 +26,46 @@ const LANGUAGE_TYPES = {
 
 function encodeJSON (json) {
   const stream = new Stream()
-  encodeCustomSection('type', json, stream, encodeType)
+  encodeCustomSection('types', json, stream, encodeType)
   encodeCustomSection('typeMap', json, stream, encodeTypeMap)
+  encodeCustomSection('globals', json, stream, encodeGlobals)
 
   return stream.buffer
 }
 
 function encodeCustomSection (name, json, stream, encodingFunc) {
-  stream.write([0])
   let payload = new Stream()
+  json = json[name]
 
-  // encode type
-  leb.unsigned.write(name.length, payload)
-  payload.write(name)
-  encodingFunc(json[name], payload)
-    // write the size of the payload
-  leb.unsigned.write(payload.bytesWrote, stream)
-  stream.write(payload.buffer)
+  if (json) {
+    stream.write([0])
+    // encode type
+    leb.unsigned.write(name.length, payload)
+    payload.write(name)
+    encodingFunc(json, payload)
+      // write the size of the payload
+    leb.unsigned.write(payload.bytesWrote, stream)
+    stream.write(payload.buffer)
+  }
   return stream
+}
+
+function encodeGlobals (json, stream) {
+  leb.unsigned.write(json.length, stream)
+  for (const entry of json) {
+    leb.unsigned.write(entry, stream)
+  }
+  return stream
+}
+
+function decodeGlobals (buf) {
+  const stream = new Stream(Buffer.from(buf))
+  let numOfEntries = leb.unsigned.read(stream)
+  const json = []
+  while (numOfEntries--) {
+    json.push(leb.unsigned.readBn(stream).toNumber())
+  }
+  return json
 }
 
 function encodeTypeMap (json, stream) {
@@ -140,23 +162,23 @@ function mergeTypeSections (json) {
     exports: {}
   }
 
-  const wantedSections = ['custom', 'custom', 'type', 'import', 'function', 'export']
+  const wantedSections = ['types', 'typeMap', 'type', 'import', 'function', 'export']
   const iterator = findSections(json, wantedSections)
   const mappedFuncs = new Map()
   const mappedTypes = new Map()
-  const {value: customType} = iterator.next('custom')
+  const {value: customType} = iterator.next()
   if (customType) {
     const type = decodeType(customType.payload)
     result.types = type
   }
-  let {value: typeMap} = iterator.next('custom')
+  let {value: typeMap} = iterator.next()
   if (typeMap) {
     decodeTypeMap(typeMap.payload).forEach(map => mappedFuncs.set(map.func, map.type))
   }
 
-  const {value: type} = iterator.next('type')
-  const {value: imports = {entries: []}} = iterator.next('import')
-  const {value: functions} = iterator.next('function')
+  const {value: type} = iterator.next()
+  const {value: imports = {entries: []}} = iterator.next()
+  const {value: functions} = iterator.next()
   functions.entries.forEach((typeIndex, funcIndex) => {
     let customIndex = mappedFuncs.get(funcIndex)
     if (customIndex === undefined) {
@@ -169,7 +191,7 @@ function mergeTypeSections (json) {
     result.indexes[funcIndex + imports.entries.length] = customIndex
   })
 
-  const {value: exports = {entries: []}} = iterator.next('export')
+  const {value: exports = {entries: []}} = iterator.next()
   exports.entries.forEach(entry => {
     if (entry.kind === 'function') {
       result.exports[entry.field_str] = entry.index
@@ -183,6 +205,7 @@ module.exports = {
   inject,
   decodeType,
   decodeTypeMap,
+  decodeGlobals,
   encodeType,
   encodeTypeMap,
   encodeJSON,

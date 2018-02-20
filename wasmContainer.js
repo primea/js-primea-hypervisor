@@ -172,7 +172,7 @@ module.exports = class WasmContainer {
     const self = this
     return {
       func: {
-        externalize: (index) => {
+        externalize: index => {
           const func = this.instance.exports.table.get(index)
           const object = func.object
           if (object) {
@@ -196,7 +196,7 @@ module.exports = class WasmContainer {
         setGasAmount: (funcRef) => {}
       },
       link: {
-        wrap: (ref) => {
+        wrap: ref => {
           const obj = this.refs.get(ref)
           const link = new LinkRef(obj.serialize())
           return this.refs.add(link, 'link')
@@ -256,7 +256,7 @@ module.exports = class WasmContainer {
         }
       },
       metering: {
-        usegas: (amount) => {
+        usegas: amount => {
           funcRef.gas -= amount
           if (funcRef.gas < 0) {
             throw new Error('out of gas! :(')

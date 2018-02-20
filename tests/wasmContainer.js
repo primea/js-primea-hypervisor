@@ -66,7 +66,7 @@ tape('two communicating actors', async t => {
   t.plan(2)
   tester = t
   const expectedState = {
-    '/': Buffer.from('123bcbf52421f0ebf0c9a28d6546a3b374f5d56d', 'hex')
+    '/': Buffer.from('8c230b5f0f680199b24ecd1800c2970dfca7cfdc', 'hex')
   }
 
   const tree = new RadixTree({db})
@@ -90,10 +90,41 @@ tape('two communicating actors', async t => {
 })
 
 tape('two communicating actors with callback', async t => {
-  // t.plan(2)
+  t.plan(2)
   tester = t
   const expectedState = {
-    '/': Buffer.from('51ded6c294314defc886b70f7f593434c8d53c95', 'hex')
+    '/': Buffer.from('9bf27cf07b75a90e0af530e2df73e3102482b24a', 'hex')
+  }
+
+  const tree = new RadixTree({
+    db
+  })
+
+  const recieverWasm = fs.readFileSync('./wasm/funcRef_reciever.wasm')
+  const callerWasm = fs.readFileSync('./wasm/funcRef_caller.wasm')
+
+  const hypervisor = new Hypervisor(tree)
+  hypervisor.registerContainer(TestWasmContainer)
+
+  const {module: receiverMod} = await hypervisor.createActor(TestWasmContainer.typeId, recieverWasm)
+  const {module: callerMod} = await hypervisor.createActor(TestWasmContainer.typeId, callerWasm)
+
+  const message = new Message({
+    funcRef: callerMod.getFuncRef('call'),
+    funcArguments: [receiverMod.getFuncRef('receive')]
+  })
+
+  hypervisor.send(message)
+  const stateRoot = await hypervisor.createStateRoot()
+  t.deepEquals(stateRoot, expectedState, 'expected root!')
+  // t.end()
+})
+
+tape.skip('two communicating actors with callback', async t => {
+  t.plan(2)
+  tester = t
+  const expectedState = {
+    '/': Buffer.from('9bf27cf07b75a90e0af530e2df73e3102482b24a', 'hex')
   }
 
   const tree = new RadixTree({

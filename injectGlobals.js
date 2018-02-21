@@ -17,7 +17,8 @@ module.exports = function injectGlobals (json, globals) {
   const {value: code} = iter.next()
   const getterCode = []
   const setterCode = []
-  globals.forEach((globalIndex, index) => {
+  globals.forEach((global, index) => {
+    const globalIndex = global.index
     // getter
     getterCode.push(i32_const(index * 4))
     getterCode.push(get_global(globalIndex))

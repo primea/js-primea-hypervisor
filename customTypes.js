@@ -53,7 +53,8 @@ function encodeCustomSection (name, json, stream, encodingFunc) {
 function encodeGlobals (json, stream) {
   leb.unsigned.write(json.length, stream)
   for (const entry of json) {
-    leb.unsigned.write(entry, stream)
+    leb.unsigned.write(entry.index, stream)
+    leb.unsigned.write(LANGUAGE_TYPES[entry.type], stream)
   }
   return stream
 }
@@ -63,7 +64,10 @@ function decodeGlobals (buf) {
   let numOfEntries = leb.unsigned.read(stream)
   const json = []
   while (numOfEntries--) {
-    json.push(leb.unsigned.readBn(stream).toNumber())
+    json.push({
+      index: leb.unsigned.readBn(stream).toNumber(),
+      type: LANGUAGE_TYPES[leb.unsigned.readBn(stream).toNumber()]
+    })
   }
   return json
 }

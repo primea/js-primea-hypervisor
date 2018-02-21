@@ -149,9 +149,9 @@ module.exports = class WasmContainer {
   }
 
   static async onCreation (wasm, id, cachedb) {
-    if (!WebAssembly.validate(wasm)) {
-      throw new Error('invalid wasm binary')
-    }
+    // if (!WebAssembly.validate(wasm)) {
+    //   throw new Error('invalid wasm binary')
+    // }
     let moduleJSON = wasm2json(wasm)
     const json = customTypes.mergeTypeSections(moduleJSON)
     moduleJSON = wasmMetering.meterJSON(moduleJSON, {
@@ -230,10 +230,10 @@ module.exports = class WasmContainer {
           const buf = this.getMemory(index, length)
           return this.refs.add(buf, 'buf')
         },
-        internalize: (dataRef, writeOffset, readOffset, length) => {
+        internalize: (dataRef, srcOffset, sinkOffset, length) => {
           let buf = this.refs.get(dataRef, 'buf')
-          buf = buf.subarray(readOffset, length)
-          const mem = this.getMemory(writeOffset, buf.length)
+          buf = buf.subarray(srcOffset, length)
+          const mem = this.getMemory(sinkOffset, buf.length)
           mem.set(buf)
         }
       },
@@ -298,6 +298,9 @@ module.exports = class WasmContainer {
     }
     await this.onDone()
     this.refs.clear()
+    if (this.json.globals.length) {
+      this.instance.exports.getter_globals()
+    }
   }
 
   /**

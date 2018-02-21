@@ -25,14 +25,6 @@ class TestWasmContainer extends WasmContainer {
       }
     })
   }
-  setState (key, ref) {
-    const obj = this.refs.get(ref)
-    this._storage.set(key, obj)
-  }
-  getState (key) {
-    const obj = this._storage.get(key)
-    return this.refs.add(obj)
-  }
 }
 
 tape('basic', async t => {
@@ -117,47 +109,20 @@ tape('two communicating actors with callback', async t => {
   hypervisor.send(message)
   const stateRoot = await hypervisor.createStateRoot()
   t.deepEquals(stateRoot, expectedState, 'expected root!')
-  // t.end()
 })
 
-tape.skip('two communicating actors with callback', async t => {
-  t.plan(2)
+tape('externalize/internalize memory', async t => {
+  t.plan(1)
   tester = t
   const expectedState = {
-    '/': Buffer.from('9bf27cf07b75a90e0af530e2df73e3102482b24a', 'hex')
+    '/': Buffer.from('4494963fb0e02312510e675fbca8b60b6e03bd00', 'hex')
   }
 
   const tree = new RadixTree({
     db
   })
 
-  const recieverWasm = fs.readFileSync('./wasm/funcRef_reciever.wasm')
-  const callerWasm = fs.readFileSync('./wasm/funcRef_caller.wasm')
-
-  const hypervisor = new Hypervisor(tree)
-  hypervisor.registerContainer(TestWasmContainer)
-
-  const {module: receiverMod} = await hypervisor.createActor(TestWasmContainer.typeId, recieverWasm)
-  const {module: callerMod} = await hypervisor.createActor(TestWasmContainer.typeId, callerWasm)
-
-  const message = new Message({
-    funcRef: callerMod.getFuncRef('call'),
-    funcArguments: [receiverMod.getFuncRef('receive')]
-  })
-
-  hypervisor.send(message)
-  const stateRoot = await hypervisor.createStateRoot()
-  t.deepEquals(stateRoot, expectedState, 'expected root!')
-  t.end()
-})
-
-// Increment a counter.
-tape.skip('increment', async t => {
-  const tree = new RadixTree({
-    db
-  })
-
-  const wasm = fs.readFileSync('./wasm/counter.wasm')
+  const wasm = fs.readFileSync('./wasm/memory.wasm')
 
   const hypervisor = new Hypervisor(tree)
   hypervisor.registerContainer(TestWasmContainer)
@@ -165,14 +130,11 @@ tape.skip('increment', async t => {
   const {module} = await hypervisor.createActor(TestWasmContainer.typeId, wasm)
 
   const message = new Message({
-    funcRef: module.increment,
-    funcArguments: []
+    funcRef: module.getFuncRef('test')
+  }).on('done', actor => {
+    const a = actor.container.getMemory(0, 5)
+    const b = actor.container.getMemory(5, 5)
+    t.deepEquals(a, b, 'should copy memory correctly')
   })
   hypervisor.send(message)
-
-  const stateRoot = await hypervisor.createStateRoot()
-  t.end()
-
-  console.log(stateRoot)
-
 })

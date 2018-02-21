@@ -62,7 +62,7 @@ module.exports = class Actor {
     } catch (e) {
       message.emit('execution:error', e)
     }
-    message.emit('done')
+    message.emit('done', this)
   }
 
   /**

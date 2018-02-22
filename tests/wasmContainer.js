@@ -114,10 +114,6 @@ tape('two communicating actors with callback', async t => {
 tape('externalize/internalize memory', async t => {
   t.plan(1)
   tester = t
-  const expectedState = {
-    '/': Buffer.from('4494963fb0e02312510e675fbca8b60b6e03bd00', 'hex')
-  }
-
   const tree = new RadixTree({
     db
   })
@@ -134,6 +130,30 @@ tape('externalize/internalize memory', async t => {
   }).on('done', actor => {
     const a = actor.container.getMemory(0, 5)
     const b = actor.container.getMemory(5, 5)
+    t.deepEquals(a, b, 'should copy memory correctly')
+  })
+  hypervisor.send(message)
+})
+
+tape('externalize/internalize table', async t => {
+  t.plan(1)
+  tester = t
+  const tree = new RadixTree({
+    db
+  })
+
+  const wasm = fs.readFileSync('./wasm/table.wasm')
+
+  const hypervisor = new Hypervisor(tree)
+  hypervisor.registerContainer(TestWasmContainer)
+
+  const {module} = await hypervisor.createActor(TestWasmContainer.typeId, wasm)
+
+  const message = new Message({
+    funcRef: module.getFuncRef('test')
+  }).on('done', actor => {
+    const a = actor.container.getMemory(0, 8)
+    const b = actor.container.getMemory(8, 8)
     t.deepEquals(a, b, 'should copy memory correctly')
   })
   hypervisor.send(message)

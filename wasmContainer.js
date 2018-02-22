@@ -35,8 +35,8 @@ class ElementBuffer {
   static get type () {
     return 'elem'
   }
-  constructor (size) {
-    this._array = new Array(size)
+  constructor (array) {
+    this._array = array
   }
 
   serialize () {
@@ -239,23 +239,20 @@ module.exports = class WasmContainer {
       },
       table: {
         externalize: (index, length) => {
-          const mem = this.getMemory(index, length * 4)
+          const mem = Buffer.from(this.getMemory(index, length * 4))
           const objects = []
           while (length--) {
-            const ref = mem[index + length]
-            if (this.refs.has(ref)) {
-              objects.push(ref)
-            } else {
-              throw new Error('invalid ref')
-            }
+            const ref = mem.readUInt32LE(length * 4)
+            const obj = this.refs.get(ref)
+            objects.unshift(obj)
           }
           const eleBuf = new ElementBuffer(objects)
           return this.refs.add(eleBuf, 'elem')
         },
-        internalize: (dataRef, writeOffset, readOffset, length) => {
-          let buf = this.refs.get(dataRef, 'elem')
-          buf = buf.subarray(readOffset, length)
-          const mem = this.getMemory(writeOffset, buf.length)
+        internalize: (elemRef, srcOffset, sinkOffset, length) => {
+          let table = this.refs.get(elemRef, 'elem')
+          const buf = table._array.slice(srcOffset, srcOffset + length).map(obj => this.refs.add(obj))
+          const mem = new Uint32Array(this.instance.exports.memory.buffer, sinkOffset, length)
           mem.set(buf)
         }
       },

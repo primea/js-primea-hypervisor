@@ -32,9 +32,6 @@ const LANGUAGE_TYPES = {
 }
 
 class ElementBuffer {
-  static get type () {
-    return 'elem'
-  }
   constructor (array) {
     this._array = array
   }
@@ -48,9 +45,6 @@ class ElementBuffer {
 }
 
 class DataBuffer {
-  static get type () {
-    return 'data'
-  }
   constructor (memory, offset, length) {
     this._data = new Uint8Array(this.instance.exports.memory.buffer, offset, length)
   }
@@ -61,9 +55,6 @@ class DataBuffer {
 }
 
 class LinkRef {
-  static get type () {
-    return 'link'
-  }
   serialize () {
     return Buffer.concat(Buffer.from([LANGUAGE_TYPES['link'], this]))
   }
@@ -71,15 +62,11 @@ class LinkRef {
 }
 
 class FunctionRef {
-  static get type () {
-    return 'func'
-  }
-
-  constructor (type, identifier, json, id) {
-    this.type = type
+  constructor (location, identifier, json, id) {
+    this.location = location
     this.destId = id
     let funcIndex
-    if (type === 'export') {
+    if (location === 'export') {
       this.indentifier = identifier
       funcIndex = json.exports[identifier]
     } else {
@@ -87,9 +74,9 @@ class FunctionRef {
       funcIndex = Number(identifier.name) - 1
     }
     const typeIndex = json.indexes[funcIndex]
-    const funcType = json.types[typeIndex]
+    this.type = json.types[typeIndex]
 
-    const wrapper = typeCheckWrapper(funcType)
+    const wrapper = typeCheckWrapper(this.type)
     const wasm = json2wasm(wrapper)
     const mod = WebAssembly.Module(wasm)
     const self = this
@@ -122,10 +109,6 @@ class FunctionRef {
 }
 
 class ModuleRef {
-  static get type () {
-    return 'mod'
-  }
-
   constructor (json, id) {
     this._json = json
     this.id = id
@@ -149,9 +132,9 @@ module.exports = class WasmContainer {
   }
 
   static async onCreation (wasm, id, cachedb) {
-    // if (!WebAssembly.validate(wasm)) {
-    //   throw new Error('invalid wasm binary')
-    // }
+    if (!WebAssembly.validate(wasm)) {
+      throw new Error('invalid wasm binary')
+    }
     let moduleJSON = wasm2json(wasm)
     const json = customTypes.mergeTypeSections(moduleJSON)
     moduleJSON = wasmMetering.meterJSON(moduleJSON, {
@@ -281,14 +264,15 @@ module.exports = class WasmContainer {
         }
       }
     }
-    const args = message.funcArguments.map(arg => {
-      if (typeof arg === 'number') {
+    const args = message.funcArguments.map((arg, index) => {
+      const type = funcRef.type.params[index]
+      if (nativeTypes.has(type)) {
         return arg
       } else {
-        return this.refs.add(arg, arg.constructor.type)
+        return this.refs.add(arg, type)
       }
     })
-    if (funcRef.type === 'export') {
+    if (funcRef.location === 'export') {
       this.instance.exports[funcRef.indentifier](...args)
     } else {
       this.instance.exports.table.get(funcRef.indentifier)(...args)

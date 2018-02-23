@@ -1,7 +1,6 @@
 const {wasm2json, json2wasm} = require('wasm-json-toolkit')
 const wasmMetering = require('wasm-metering')
 const ReferanceMap = require('reference-map')
-const leb128 = require('leb128')
 const Message = require('./message.js')
 const customTypes = require('./customTypes.js')
 const injectGlobals = require('./injectGlobals.js')
@@ -12,6 +11,8 @@ const LANGUAGE_TYPES = {
   'actor': 0x0,
   'buf': 0x1,
   'elem': 0x2,
+  'link': 0x3,
+  'id': 0x4,
   'i32': 0x7f,
   'i64': 0x7e,
   'f32': 0x7d,
@@ -22,6 +23,9 @@ const LANGUAGE_TYPES = {
 
   0x0: 'actor',
   0x1: 'buf',
+  0x02: 'elem',
+  0x03: 'link',
+  0x04: 'id',
   0x7f: 'i32',
   0x7e: 'i64',
   0x7d: 'f32',
@@ -29,36 +33,6 @@ const LANGUAGE_TYPES = {
   0x70: 'anyFunc',
   0x60: 'func',
   0x40: 'block_type'
-}
-
-class ElementBuffer {
-  constructor (array) {
-    this._array = array
-  }
-
-  serialize () {
-    const serialized = this._array.map(ref => ref.serailize())
-    return Buffer.concat(Buffer.from([LANGUAGE_TYPES['elem']]), leb128.encode(serialized.length), serialized)
-  }
-
-  static deserialize (serialized) {}
-}
-
-class DataBuffer {
-  constructor (memory, offset, length) {
-    this._data = new Uint8Array(this.instance.exports.memory.buffer, offset, length)
-  }
-  serialize () {
-    return Buffer.concat(Buffer.from([LANGUAGE_TYPES['elem']]), leb128.encode(this._data.length), this._data)
-  }
-  static deserialize (serialized) {}
-}
-
-class LinkRef {
-  serialize () {
-    return Buffer.concat(Buffer.from([LANGUAGE_TYPES['link'], this]))
-  }
-  static deserialize (serialized) {}
 }
 
 class FunctionRef {
@@ -185,7 +159,7 @@ module.exports = class WasmContainer {
       link: {
         wrap: ref => {
           const obj = this.refs.get(ref)
-          const link = new LinkRef(obj.serialize())
+          const link = {'/': obj}
           return this.refs.add(link, 'link')
         },
         unwrap: async (ref, cb) => {
@@ -210,7 +184,7 @@ module.exports = class WasmContainer {
       },
       memory: {
         externalize: (index, length) => {
-          const buf = this.getMemory(index, length)
+          const buf = Buffer.from(this.getMemory(index, length))
           return this.refs.add(buf, 'buf')
         },
         internalize: (dataRef, srcOffset, sinkOffset, length) => {
@@ -229,12 +203,11 @@ module.exports = class WasmContainer {
             const obj = this.refs.get(ref)
             objects.unshift(obj)
           }
-          const eleBuf = new ElementBuffer(objects)
-          return this.refs.add(eleBuf, 'elem')
+          return this.refs.add(objects, 'elem')
         },
         internalize: (elemRef, srcOffset, sinkOffset, length) => {
           let table = this.refs.get(elemRef, 'elem')
-          const buf = table._array.slice(srcOffset, srcOffset + length).map(obj => this.refs.add(obj))
+          const buf = table.slice(srcOffset, srcOffset + length).map(obj => this.refs.add(obj))
           const mem = new Uint32Array(this.instance.exports.memory.buffer, sinkOffset, length)
           mem.set(buf)
         }
@@ -278,10 +251,20 @@ module.exports = class WasmContainer {
       this.instance.exports.table.get(funcRef.indentifier)(...args)
     }
     await this.onDone()
-    this.refs.clear()
-    if (this.json.globals.length) {
+
+    let numOfGlobals = this.json.globals.length
+    if (numOfGlobals) {
+      const storage = []
       this.instance.exports.getter_globals()
+      const mem = new Uint32Array(this.instance.exports.memory.buffer, 0, numOfGlobals)
+      while (numOfGlobals--) {
+        const ref = mem[numOfGlobals]
+        storage.push(this.refs.get(ref, this.json.globals[numOfGlobals].type))
+      }
+      this.actor.state.set(Buffer.from([1]), storage)
     }
+
+    this.refs.clear()
   }
 
   /**
@@ -304,11 +287,6 @@ module.exports = class WasmContainer {
   pushOpsQueue (promise) {
     this._opsQueue = Promise.all([this._opsQueue, promise])
     return this._opsQueue
-  }
-
-  getFuncRef (name, send) {
-    const funcRef = new FunctionRef(this.json, name, send)
-    return funcRef
   }
 
   async onStartup () {

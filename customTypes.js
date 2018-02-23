@@ -5,6 +5,9 @@ const {findSections} = require('wasm-json-toolkit')
 const LANGUAGE_TYPES = {
   'actor': 0x0,
   'buf': 0x1,
+  'elem': 0x2,
+  'link': 0x3,
+  'id': 0x4,
   'i32': 0x7f,
   'i64': 0x7e,
   'f32': 0x7d,
@@ -15,6 +18,9 @@ const LANGUAGE_TYPES = {
 
   0x0: 'actor',
   0x1: 'buf',
+  0x02: 'elem',
+  0x03: 'link',
+  0x04: 'id',
   0x7f: 'i32',
   0x7e: 'i64',
   0x7d: 'f32',

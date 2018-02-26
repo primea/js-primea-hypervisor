@@ -98,8 +98,8 @@ tape('two communicating actors with callback', async t => {
   const hypervisor = new Hypervisor(tree)
   hypervisor.registerContainer(TestWasmContainer)
 
-  const {module: receiverMod} = await hypervisor.createActor(TestWasmContainer.typeId, recieverWasm)
   const {module: callerMod} = await hypervisor.createActor(TestWasmContainer.typeId, callerWasm)
+  const {module: receiverMod} = await hypervisor.createActor(TestWasmContainer.typeId, recieverWasm)
 
   const message = new Message({
     funcRef: callerMod.getFuncRef('call'),
@@ -143,7 +143,6 @@ tape('externalize/internalize table', async t => {
   })
 
   const wasm = fs.readFileSync('./wasm/table.wasm')
-
   const hypervisor = new Hypervisor(tree)
   hypervisor.registerContainer(TestWasmContainer)
 

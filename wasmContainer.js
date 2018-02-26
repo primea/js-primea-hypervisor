@@ -36,21 +36,13 @@ const LANGUAGE_TYPES = {
 }
 
 class FunctionRef {
-  constructor (location, identifier, json, id) {
+  constructor (location, identifier, params, id) {
     this.location = location
     this.destId = id
-    let funcIndex
-    if (location === 'export') {
-      this.indentifier = identifier
-      funcIndex = json.exports[identifier]
-    } else {
-      this.indentifier = identifier.tableIndex
-      funcIndex = Number(identifier.name) - 1
-    }
-    const typeIndex = json.indexes[funcIndex]
-    this.type = json.types[typeIndex]
+    this.params = params
+    this.identifier = identifier
 
-    const wrapper = typeCheckWrapper(this.type)
+    const wrapper = typeCheckWrapper(params)
     const wasm = json2wasm(wrapper)
     const mod = WebAssembly.Module(wasm)
     const self = this
@@ -83,17 +75,33 @@ class FunctionRef {
 }
 
 class ModuleRef {
-  constructor (json, id) {
-    this._json = json
+  constructor (ex, id) {
+    this.exports = ex
     this.id = id
   }
 
   getFuncRef (name) {
-    return new FunctionRef('export', name, this._json, this.id)
+    return new FunctionRef('export', name, this.exports[name], this.id)
   }
 
-  serialize () {
-    return this._json
+  encodeCBOR (gen) {
+    return gen.write({
+      '#': {
+        exports: this.exports,
+        '@': {
+          id: this.id
+        }
+      }
+    })
+  }
+
+  static fromMetaJSON (json, id) {
+    const exports = {}
+    for (const ex in json.exports) {
+      const type = json.types[json.indexes[json.exports[ex].toString()]].params
+      exports[ex] = type
+    }
+    return new ModuleRef(exports, id)
   }
 
   static deserialize (serialized) {}
@@ -126,7 +134,7 @@ module.exports = class WasmContainer {
         cachedb.put(id.toString() + 'code', wasm.toString('hex'), resolve)
       })
     ])
-    return new ModuleRef(json, id)
+    return ModuleRef.fromMetaJSON(json, id)
   }
 
   getInterface (funcRef) {
@@ -144,7 +152,7 @@ module.exports = class WasmContainer {
           }
         },
         internalize: (ref, index) => {
-          const funcRef = self.refs.get(ref)
+          const funcRef = self.refs.get(ref, 'func')
           funcRef.container = self
           this.instance.exports.table.set(index, funcRef.wrapper.exports.check)
         },
@@ -179,7 +187,7 @@ module.exports = class WasmContainer {
           return this.refs.add(funcRef, 'func')
         },
         self: () => {
-          return this.refs.add(this.moduleObj, 'mod')
+          return this.refs.add(this.modSelf, 'mod')
         }
       },
       memory: {
@@ -224,6 +232,7 @@ module.exports = class WasmContainer {
   }
 
   async onMessage (message) {
+    try {
     const funcRef = message.funcRef
     const intef = this.getInterface(funcRef)
     this.instance = WebAssembly.Instance(this.mod, intef)
@@ -238,7 +247,7 @@ module.exports = class WasmContainer {
       }
     }
     const args = message.funcArguments.map((arg, index) => {
-      const type = funcRef.type.params[index]
+      const type = funcRef.params[index]
       if (nativeTypes.has(type)) {
         return arg
       } else {
@@ -246,9 +255,9 @@ module.exports = class WasmContainer {
       }
     })
     if (funcRef.location === 'export') {
-      this.instance.exports[funcRef.indentifier](...args)
+      this.instance.exports[funcRef.identifier](...args)
     } else {
-      this.instance.exports.table.get(funcRef.indentifier)(...args)
+      this.instance.exports.table.get(funcRef.identifier)(...args)
     }
     await this.onDone()
 
@@ -265,6 +274,9 @@ module.exports = class WasmContainer {
     }
 
     this.refs.clear()
+    } catch (e) {
+      console.log(e)
+    }
   }
 
   /**
@@ -314,7 +326,7 @@ module.exports = class WasmContainer {
     json = JSON.parse(json)
     this.mod = WebAssembly.Module(wasm)
     this.json = json
-    this.moduleObj = new ModuleRef(json, this.actor.id)
+    this.modSelf = ModuleRef.fromMetaJSON(json, this.actor.id)
   }
 
   getMemory (offset, length) {

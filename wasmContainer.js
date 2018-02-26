@@ -38,15 +38,18 @@ const LANGUAGE_TYPES = {
 class FunctionRef {
   constructor (location, identifier, params, id) {
     this.location = location
+    this.identifier = identifier
     this.destId = id
     this.params = params
-    this.identifier = identifier
 
-    const wrapper = typeCheckWrapper(params)
+  }
+
+  generateWrapper (container) {
+    let wrapper = typeCheckWrapper(this.params)
     const wasm = json2wasm(wrapper)
     const mod = WebAssembly.Module(wasm)
     const self = this
-    this.wrapper = WebAssembly.Instance(mod, {
+    wrapper = WebAssembly.Instance(mod, {
       'env': {
         'checkTypes': function () {
           const args = [...arguments]
@@ -55,7 +58,7 @@ class FunctionRef {
             const type = LANGUAGE_TYPES[args.shift()]
             let arg = args.shift()
             if (!nativeTypes.has(type)) {
-              arg = self._container.refs.get(arg, type)
+              arg = container.refs.get(arg, type)
             }
             checkedArgs.push(arg)
           }
@@ -63,12 +66,20 @@ class FunctionRef {
             funcRef: self,
             funcArguments: checkedArgs
           })
-          self._container.actor.send(message)
+          container.actor.send(message)
         }
       }
     })
-    this.wrapper.exports.check.object = this
+    wrapper.exports.check.object = this
+    return wrapper
   }
+
+  encodeCBOR (gen) {
+    return gen.write({
+      '>': {}
+    })
+  }
+
   set container (container) {
     this._container = container
   }
@@ -88,8 +99,8 @@ class ModuleRef {
     return gen.write({
       '#': {
         exports: this.exports,
-        '@': {
-          id: this.id
+        id: {
+          '@': this.id
         }
       }
     })
@@ -153,8 +164,8 @@ module.exports = class WasmContainer {
         },
         internalize: (ref, index) => {
           const funcRef = self.refs.get(ref, 'func')
-          funcRef.container = self
-          this.instance.exports.table.set(index, funcRef.wrapper.exports.check)
+          const wrapper = funcRef.generateWrapper(self)
+          this.instance.exports.table.set(index, wrapper.exports.check)
         },
         catch: (ref, catchRef) => {
           const {funcRef} = self.refs.get(ref, FunctionRef)

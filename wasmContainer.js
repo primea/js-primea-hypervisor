@@ -5,24 +5,7 @@ const Message = require('./message.js')
 const customTypes = require('./customTypes.js')
 const injectGlobals = require('./injectGlobals.js')
 const typeCheckWrapper = require('./typeCheckWrapper.js')
-const {FunctionRef} = require('./systemObjects.js')
-const cbor = require('borc')
-
-const TAGS = {
-  link: 42,
-  id: 43,
-  func: 43,
-  mod: 44
-}
-
-const DEFAULTS = {
-  elem: [],
-  buf: Buffer.from([]),
-  id: new cbor.Tagged(TAGS.id, 0),
-  mod: new cbor.Tagged(TAGS.mod, [{}, new cbor.Tagged(TAGS.id, 0)]),
-  link: {'/': null},
-  func: new cbor.Tagged(TAGS.func, 0)
-}
+const {FunctionRef, ModuleRef, DEFAULTS} = require('./systemObjects.js')
 
 const nativeTypes = new Set(['i32', 'i64', 'f32', 'f64'])
 const LANGUAGE_TYPES = {
@@ -81,32 +64,6 @@ function generateWrapper (funcRef, container) {
   })
   wrapper.exports.check.object = funcRef
   return wrapper
-}
-
-class ModuleRef {
-  constructor (ex, id) {
-    this.exports = ex
-    this.id = id
-  }
-
-  getFuncRef (name) {
-    return new FunctionRef(false, name, this.exports[name], this.id)
-  }
-
-  encodeCBOR (gen) {
-    return gen.write(new cbor.Tagged(TAGS.mod, [this.exports, new cbor.Tagged(TAGS.id, this.id)]))
-  }
-
-  static fromMetaJSON (json, id) {
-    const exports = {}
-    for (const ex in json.exports) {
-      const type = json.types[json.indexes[json.exports[ex].toString()]].params
-      exports[ex] = type
-    }
-    return new ModuleRef(exports, id)
-  }
-
-  static deserialize (serialized) {}
 }
 
 module.exports = class WasmContainer {

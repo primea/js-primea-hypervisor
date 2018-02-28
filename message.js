@@ -1,4 +1,5 @@
 const EventEmitter = require('events')
+const {ID} = require('./systemObjects.js')
 
 /**
  * This implements Messages for Primea
@@ -32,7 +33,7 @@ module.exports = class Message extends EventEmitter {
       funcRef: null,
       funcArguments: [],
       funcParameters: [],
-      _fromId: Buffer.alloc(20),
+      _fromId: new ID(Buffer.alloc(20)),
       _fromTicks: 0
     }
   }

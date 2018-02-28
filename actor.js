@@ -1,6 +1,3 @@
-const Pipe = require('buffer-pipe')
-const leb128 = require('leb128').unsigned
-
 module.exports = class Actor {
   /**
    * the Actor manages the varous message passing functions and provides
@@ -106,16 +103,10 @@ module.exports = class Actor {
   }
 
   static serializeMetaData (type, nonce = 0) {
-    const p = new Pipe()
-    leb128.write(type, p)
-    leb128.write(nonce, p)
-    return p.buffer
+    return [type, nonce]
   }
 
-  static deserializeMetaData (buffer) {
-    const pipe = new Pipe(buffer)
-    const type = leb128.read(pipe)
-    const nonce = leb128.read(pipe)
+  static deserializeMetaData ([type, nonce]) {
     return {
       nonce,
       type

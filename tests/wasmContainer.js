@@ -158,7 +158,7 @@ tape('externalize/internalize table', async t => {
   hypervisor.send(message)
 })
 
-tape.skip('store globals', async t => {
+tape('load / store globals', async t => {
   t.plan(1)
   tester = t
   const tree = new RadixTree({
@@ -177,9 +177,6 @@ tape.skip('store globals', async t => {
       funcRef: module.getFuncRef('store')
     }).on('done', actor => {
       resolve()
-      // const a = actor.container.getMemory(0, 8)
-      // const b = actor.container.getMemory(8, 8)
-      // t.deepEquals(a, b, 'should copy memory correctly')
     })
     hypervisor.send(message)
   })
@@ -189,9 +186,9 @@ tape.skip('store globals', async t => {
       funcRef: module.getFuncRef('load')
     }).on('done', actor => {
       resolve()
-      // const a = actor.container.getMemory(0, 8)
-      // const b = actor.container.getMemory(8, 8)
-      // t.deepEquals(a, b, 'should copy memory correctly')
+      const b = actor.container.getMemory(5, 4)
+      const result = Buffer.from(b).toString()
+      t.deepEquals(result, 'test', 'should copy memory correctly')
     })
     hypervisor.send(message)
   })

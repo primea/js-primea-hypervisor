@@ -1,5 +1,6 @@
 const Actor = require('./actor.js')
 const Scheduler = require('./scheduler.js')
+const {ID} = require('./systemObjects.js')
 
 module.exports = class Hypervisor {
   /**
@@ -28,7 +29,7 @@ module.exports = class Hypervisor {
   }
 
   async loadActor (id) {
-    const state = await this.tree.getSubTree(id)
+    const state = await this.tree.getSubTree(id.id)
     const code = state.get(Buffer.from([0]))
     const {type, nonce} = Actor.deserializeMetaData(state.root['/'][3])
     const Container = this._containerTypes[type]
@@ -58,14 +59,15 @@ module.exports = class Hypervisor {
   async createActor (type, code, id = {nonce: this.nonce++, parent: null}) {
     const Container = this._containerTypes[type]
     const encoded = encodedID(id)
-    const idHash = await this._getHashFromObj(encoded)
-    const module = await Container.onCreation(code, idHash, this.tree.dag._dag)
+    let idHash = await this._getHashFromObj(encoded)
+    idHash = new ID(idHash)
+    const module = await Container.onCreation(code, idHash, this.tree)
     const metaData = Actor.serializeMetaData(type)
 
     // save the container in the state
-    this.tree.set(idHash, metaData)
+    this.tree.set(idHash.id, metaData)
     if (code) {
-      this.tree.set(Buffer.concat([idHash, Buffer.from([0])]), code)
+      this.tree.set(Buffer.concat([idHash.id, Buffer.from([0])]), code)
     }
     return {
       id: idHash,
@@ -106,7 +108,7 @@ module.exports = class Hypervisor {
 function encodedID (id) {
   const nonce = Buffer.from([id.nonce])
   if (id.parent) {
-    return Buffer.concat([nonce, id.parent])
+    return Buffer.concat([nonce, id.parent.id])
   } else {
     return nonce
   }

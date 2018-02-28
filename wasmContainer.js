@@ -9,19 +9,6 @@ const {FunctionRef, ModuleRef, DEFAULTS} = require('./systemObjects.js')
 
 const nativeTypes = new Set(['i32', 'i64', 'f32', 'f64'])
 const LANGUAGE_TYPES = {
-  'actor': 0x0,
-  'buf': 0x1,
-  'elem': 0x2,
-  'link': 0x3,
-  'id': 0x4,
-  'i32': 0x7f,
-  'i64': 0x7e,
-  'f32': 0x7d,
-  'f64': 0x7c,
-  'anyFunc': 0x70,
-  'func': 0x60,
-  'block_type': 0x40,
-
   0x0: 'actor',
   0x1: 'buf',
   0x02: 'elem',
@@ -258,7 +245,6 @@ module.exports = class WasmContainer {
         const ref = mem[numOfGlobals]
         this.storage.push(this.refs.get(ref, this.json.globals[numOfGlobals].type))
       }
-
       this.actor.state.set(Buffer.from([1]), this.storage)
     }
 
@@ -309,7 +295,7 @@ module.exports = class WasmContainer {
       }),
       this.actor.state.get(Buffer.from([1]))
     ])
-    this.storage = storage
+    this.storage = storage.value
     wasm = Buffer.from(wasm, 'hex')
     json = JSON.parse(json)
     this.mod = WebAssembly.Module(wasm)

@@ -1,4 +1,5 @@
 const Actor = require('./actor.js')
+const RadixTree = require('dfinity-radix-tree')
 const Scheduler = require('./scheduler.js')
 const {ID} = require('./systemObjects.js')
 
@@ -30,8 +31,9 @@ module.exports = class Hypervisor {
 
   async loadActor (id) {
     const state = await this.tree.getSubTree(id.id)
-    const code = state.get(Buffer.from([0]))
-    const {type, nonce} = Actor.deserializeMetaData(state.root['/'][3])
+    const state2 = await this.tree.get(id.id, true)
+    let code = await this.tree.graph.get(state2.root, '1')
+    const {type, nonce} = Actor.deserializeMetaData(state2.value)
     const Container = this._containerTypes[type]
 
     // create a new actor instance
@@ -67,7 +69,8 @@ module.exports = class Hypervisor {
     // save the container in the state
     this.tree.set(idHash.id, metaData)
     if (code) {
-      this.tree.set(Buffer.concat([idHash.id, Buffer.from([0])]), code)
+      const node = await this.tree.get(idHash.id)
+      await this.tree.graph.set(node.root, '1', code)
     }
     return {
       id: idHash,

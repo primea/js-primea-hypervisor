@@ -42,7 +42,7 @@
   },
   "devDependencies": {
     "coveralls": "^3.0.0",
-    "dfinity-radix-tree": "0.0.9",
+    "dfinity-radix-tree": "0.1.0",
     "documentation": "^5.3.5",
     "level-browserify": "^1.1.1",
     "nyc": "^11.4.1",

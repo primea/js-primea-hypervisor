@@ -32,8 +32,11 @@ module.exports = class Actor {
    * Runs the shutdown routine for the actor
    */
   async shutdown () {
-    await this.state.done()
-    this.state.root['/'][3] = this.serializeMetaData()
+    await this.tree.set(this.id.id, this.serializeMetaData())
+    if (this.storage.length) {
+      const state = await this.tree.get(this.id.id)
+      return this.tree.graph.set(state.root, '2', this.storage)
+    }
   }
 
   /**

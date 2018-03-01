@@ -30,10 +30,10 @@ module.exports = class Hypervisor {
   }
 
   async loadActor (id) {
-    const state = await this.tree.getSubTree(id.id)
-    const state2 = await this.tree.get(id.id, true)
-    let code = await this.tree.graph.get(state2.root, '1')
-    const {type, nonce} = Actor.deserializeMetaData(state2.value)
+    const state = await this.tree.get(id.id, true)
+    let code = await this.tree.graph.get(state.root, '1')
+    let storage = await this.tree.graph.get(state.root, '2')
+    const {type, nonce} = Actor.deserializeMetaData(state.value)
     const Container = this._containerTypes[type]
 
     // create a new actor instance
@@ -45,7 +45,9 @@ module.exports = class Hypervisor {
       nonce,
       type,
       code,
-      cachedb: this.tree.dag._dag
+      storage: storage || [],
+      cachedb: this.tree.dag._dag,
+      tree: this.tree
     })
 
     await actor.startup()

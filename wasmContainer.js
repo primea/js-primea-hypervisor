@@ -74,12 +74,6 @@ module.exports = class WasmContainer {
     let numOfGlobals = json.globals.length
     if (numOfGlobals) {
       moduleJSON = injectGlobals(moduleJSON, json.globals)
-      const storage = []
-      while (numOfGlobals--) {
-        const type = json.globals[numOfGlobals].type
-        storage.push(DEFAULTS[type])
-      }
-      tree.set(Buffer.concat([id.id, Buffer.from([1])]), storage)
     }
     // recompile the wasm
     wasm = json2wasm(moduleJSON)
@@ -222,7 +216,7 @@ module.exports = class WasmContainer {
     if (numOfGlobals) {
       const refs = []
       while (numOfGlobals--) {
-        const obj = this.storage[numOfGlobals]
+        const obj = this.actor.storage[numOfGlobals] || DEFAULTS[this.json.globals[numOfGlobals].type]
         refs.push(this.refs.add(obj, this.json.globals[numOfGlobals].type))
       }
       this.instance.exports.setter_globals(...refs)
@@ -238,14 +232,13 @@ module.exports = class WasmContainer {
 
     numOfGlobals = this.json.globals.length
     if (numOfGlobals) {
-      this.storage = []
+      this.actor.storage = []
       this.instance.exports.getter_globals()
       const mem = new Uint32Array(this.instance.exports.memory.buffer, 0, numOfGlobals)
       while (numOfGlobals--) {
         const ref = mem[numOfGlobals]
-        this.storage.push(this.refs.get(ref, this.json.globals[numOfGlobals].type))
+        this.actor.storage.push(this.refs.get(ref, this.json.globals[numOfGlobals].type))
       }
-      this.actor.state.set(Buffer.from([1]), this.storage)
     }
 
     this.refs.clear()
@@ -274,7 +267,7 @@ module.exports = class WasmContainer {
   }
 
   async onStartup () {
-    let [json, wasm, storage] = await Promise.all([
+    let [json, wasm] = await Promise.all([
       new Promise((resolve, reject) => {
         this.actor.cachedb.get(this.actor.id.id.toString() + 'meta', (err, json) => {
           if (err) {
@@ -292,10 +285,8 @@ module.exports = class WasmContainer {
             resolve(wasm)
           }
         })
-      }),
-      this.actor.state.get(Buffer.from([1]))
+      })
     ])
-    this.storage = storage.value
     wasm = Buffer.from(wasm, 'hex')
     json = JSON.parse(json)
     this.mod = WebAssembly.Module(wasm)

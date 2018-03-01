@@ -7,6 +7,8 @@ const injectGlobals = require('./injectGlobals.js')
 const typeCheckWrapper = require('./typeCheckWrapper.js')
 const {FunctionRef, ModuleRef, DEFAULTS} = require('./systemObjects.js')
 
+const FUNC_INDEX_OFFSET = 1
+
 const nativeTypes = new Set(['i32', 'i64', 'f32', 'f64'])
 const LANGUAGE_TYPES = {
   0x0: 'actor',
@@ -96,20 +98,18 @@ module.exports = class WasmContainer {
           const func = this.instance.exports.table.get(index)
           const object = func.object
           if (object) {
+            // externalize a pervously internalized function
             return self.refs.add(object)
           } else {
-            const ref = new FunctionRef(true, object.tableIndex, self.json, self.actor.id)
-            return self.refs.add(ref)
+            const params = self.json.types[self.json.indexes[func.name - FUNC_INDEX_OFFSET]].params
+            const ref = new FunctionRef(true, func.tableIndex, params, self.actor.id)
+            return self.refs.add(ref, 'func')
           }
         },
         internalize: (ref, index) => {
           const funcRef = self.refs.get(ref, 'func')
-          try {
-            const wrapper = generateWrapper(funcRef, self)
-            this.instance.exports.table.set(index, wrapper.exports.check)
-          } catch (e) {
-            console.log(e)
-          }
+          const wrapper = generateWrapper(funcRef, self)
+          this.instance.exports.table.set(index, wrapper.exports.check)
         },
         catch: (ref, catchRef) => {
           const {funcRef} = self.refs.get(ref, FunctionRef)
@@ -155,6 +155,10 @@ module.exports = class WasmContainer {
           buf = buf.subarray(srcOffset, length)
           const mem = this.getMemory(sinkOffset, buf.length)
           mem.set(buf)
+        },
+        length (dataRef) {
+          let buf = this.refs.get(dataRef, 'buf')
+          return buf.length
         }
       },
       table: {
@@ -188,6 +192,7 @@ module.exports = class WasmContainer {
 
   async onMessage (message) {
     const funcRef = message.funcRef
+    // console.log(funcRef)
     const intef = this.getInterface(funcRef)
     this.instance = WebAssembly.Instance(this.mod, intef)
     // map table indexes
@@ -230,6 +235,7 @@ module.exports = class WasmContainer {
     }
     await this.onDone()
 
+    // store globals
     numOfGlobals = this.json.globals.length
     if (numOfGlobals) {
       this.actor.storage = []
@@ -292,10 +298,6 @@ module.exports = class WasmContainer {
     this.mod = WebAssembly.Module(wasm)
     this.json = json
     this.modSelf = ModuleRef.fromMetaJSON(json, this.actor.id)
-  }
-
-  onShutdown () {
-
   }
 
   getMemory (offset, length) {

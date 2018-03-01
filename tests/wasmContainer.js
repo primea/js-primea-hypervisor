@@ -21,6 +21,10 @@ class TestWasmContainer extends WasmContainer {
       test: {
         check: (a, b) => {
           tester.equals(a, b)
+        },
+        print: (dataRef) => {
+          let buf = this.refs.get(dataRef, 'buf')
+          console.log(buf.toString())
         }
       }
     })
@@ -111,6 +115,36 @@ tape('two communicating actors with callback', async t => {
   // t.deepEquals(stateRoot, expectedState, 'expected root!')
 })
 
+tape('two communicating actors with callback', async t => {
+  t.plan(1)
+  tester = t
+  const expectedState = {
+    '/': Buffer.from('9bf27cf07b75a90e0af530e2df73e3102482b24a', 'hex')
+  }
+
+  const tree = new RadixTree({
+    db
+  })
+
+  const recieverWasm = fs.readFileSync('./wasm/funcRef_reciever.wasm')
+  const callerWasm = fs.readFileSync('./wasm/private_caller.wasm')
+
+  const hypervisor = new Hypervisor(tree)
+  hypervisor.registerContainer(TestWasmContainer)
+
+  const {module: callerMod} = await hypervisor.createActor(TestWasmContainer.typeId, callerWasm)
+  const {module: receiverMod} = await hypervisor.createActor(TestWasmContainer.typeId, recieverWasm)
+
+  const message = new Message({
+    funcRef: callerMod.getFuncRef('call'),
+    funcArguments: [receiverMod.getFuncRef('receive')]
+  }).on('execution:error', (e) => {console.log(e)})
+
+  hypervisor.send(message)
+  const stateRoot = await hypervisor.createStateRoot()
+  // t.deepEquals(stateRoot, expectedState, 'expected root!')
+})
+
 tape('externalize/internalize memory', async t => {
   t.plan(1)
   tester = t
@@ -192,4 +226,25 @@ tape('load / store globals', async t => {
     })
     hypervisor.send(message)
   })
+})
+
+tape.skip('ben', async t => {
+  // t.plan(1)
+  tester = t
+  const tree = new RadixTree({
+    db
+  })
+
+  const wasm = fs.readFileSync('./hi.wasm')
+  const hypervisor = new Hypervisor(tree)
+  hypervisor.registerContainer(TestWasmContainer)
+
+  const {module} = await hypervisor.createActor(TestWasmContainer.typeId, wasm)
+
+  const message = new Message({
+    funcRef: module.getFuncRef('main')
+  }).on('done', () => {
+    t.end()
+  })
+  hypervisor.send(message)
 })

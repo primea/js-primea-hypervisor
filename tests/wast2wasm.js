@@ -13,19 +13,23 @@ function filesWast2wasm () {
       json = fs.readFileSync(`${__dirname}/wast/${file}.json`)
       json = JSON.parse(json)
     } catch (e) {
-      console.log('no json')
+      console.log(`no json for ${file}`)
     }
 
-    console.log(wat)
-    const mod = wabt.parseWat('module.wast', wat)
-    const r = mod.toBinary({log: true})
-    let binary = Buffer.from(r.buffer)
-    if (json) {
-      console.log(json)
-      const buf = types.encodeJSON(json)
-      binary = types.injectCustomSection(buf, binary)
+    try {
+      const mod = wabt.parseWat('module.wast', wat)
+      const r = mod.toBinary({log: true})
+      let binary = Buffer.from(r.buffer)
+      if (json) {
+        console.log(json)
+        const buf = types.encodeJSON(json)
+        binary = types.injectCustomSection(buf, binary)
+      }
+      fs.writeFileSync(`${__dirname}/wasm/${file}.wasm`, binary)
+    } catch (e) {
+      console.log(`failed at ${file}`)
+      console.log(e)
     }
-    fs.writeFileSync(`${__dirname}/wasm/${file}.wasm`, binary)
   }
 }
 

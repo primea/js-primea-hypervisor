@@ -30,8 +30,10 @@ module.exports = class Hypervisor {
 
   async loadActor (id) {
     const state = await this.tree.get(id.id, true)
-    let code = await this.tree.graph.get(state.root, '1')
-    let storage = await this.tree.graph.get(state.root, '2')
+    const [code, storage] = await Promise.all([
+      this.tree.graph.get(state.root, '1'),
+      this.tree.graph.get(state.root, '2')
+    ])
     const [type, nonce] = state.value
     const Container = this._containerTypes[type]
 

@@ -17,22 +17,11 @@ module.exports = class Actor {
     this.container = new this.Container(this)
   }
 
-  serializeMetaData () {
-    return Actor.serializeMetaData(this.type, this.nonce)
-  }
-
-  getFuncRef (name) {
-    return {
-      name,
-      destId: this.id
-    }
-  }
-
   /**
    * Runs the shutdown routine for the actor
    */
   async shutdown () {
-    await this.tree.set(this.id.id, this.serializeMetaData())
+    await this.tree.set(this.id.id, [this.type, this.nonce])
     if (this.storage.length) {
       const state = await this.tree.get(this.id.id)
       return this.tree.graph.set(state.root, '2', this.storage)
@@ -103,16 +92,5 @@ module.exports = class Actor {
     message._fromId = this.id
 
     this.hypervisor.scheduler.queue([message])
-  }
-
-  static serializeMetaData (type, nonce = 0) {
-    return [type, nonce]
-  }
-
-  static deserializeMetaData ([type, nonce]) {
-    return {
-      nonce,
-      type
-    }
   }
 }

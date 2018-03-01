@@ -281,7 +281,10 @@ tape('actor creation', async t => {
       const {module} = await this.actor.createActor(testVMContainerB.typeId)
       const message = new Message({
         funcRef: module.main,
-        funcArguments: [this.actor.getFuncRef('main')]
+        funcArguments: [{
+          name: 'main',
+          destId: this.actor.id
+        }]
       })
       this.actor.send(message)
     }

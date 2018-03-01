@@ -1,0 +1,12 @@
+{
+  "types": [{
+    "form": "func",
+    "params": [
+      "func"
+    ]
+  }],
+  "typeMap": [{
+    "func": 0,
+    "type": 0
+  }]
+}

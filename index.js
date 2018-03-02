@@ -1,6 +1,7 @@
 const Actor = require('./actor.js')
 const Scheduler = require('./scheduler.js')
 const {ID} = require('./systemObjects.js')
+const crypto = require('crypto')
 
 module.exports = class Hypervisor {
   /**
@@ -31,8 +32,8 @@ module.exports = class Hypervisor {
   async loadActor (id) {
     const state = await this.tree.get(id.id, true)
     const [code, storage] = await Promise.all([
-      this.tree.graph.get(state.root, '1'),
-      this.tree.graph.get(state.root, '2')
+      this.tree.graph.get(state.node, '1'),
+      this.tree.graph.get(state.node, '2')
     ])
     const [type, nonce] = state.value
     const Container = this._containerTypes[type]
@@ -64,7 +65,7 @@ module.exports = class Hypervisor {
   async createActor (type, code, id = {nonce: this.nonce++, parent: null}) {
     const Container = this._containerTypes[type]
     const encoded = encodedID(id)
-    let idHash = await this._getHashFromObj(encoded)
+    let idHash = this._getHashFromObj(encoded)
     idHash = new ID(idHash)
     const module = await Container.onCreation(code, idHash, this.tree)
     const metaData = [type, 0]
@@ -73,7 +74,7 @@ module.exports = class Hypervisor {
     this.tree.set(idHash.id, metaData)
     if (code) {
       const node = await this.tree.get(idHash.id)
-      await this.tree.graph.set(node.root, '1', code)
+      await this.tree.graph.set(node.node, '1', code)
     }
     return {
       id: idHash,
@@ -83,7 +84,9 @@ module.exports = class Hypervisor {
 
   // get a hash from a POJO
   _getHashFromObj (obj) {
-    return this.tree.constructor.getMerkleLink(obj)
+    const hash = crypto.createHash('sha256')
+    hash.update(obj)
+    return hash.digest().slice(0, 20)
   }
 
   /**

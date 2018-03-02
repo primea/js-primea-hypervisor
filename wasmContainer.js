@@ -7,8 +7,6 @@ const injectGlobals = require('./injectGlobals.js')
 const typeCheckWrapper = require('./typeCheckWrapper.js')
 const {FunctionRef, ModuleRef, DEFAULTS} = require('./systemObjects.js')
 
-const FUNC_INDEX_OFFSET = 1
-
 const nativeTypes = new Set(['i32', 'i64', 'f32', 'f64'])
 const LANGUAGE_TYPES = {
   0x0: 'actor',
@@ -24,6 +22,7 @@ const LANGUAGE_TYPES = {
   0x60: 'func',
   0x40: 'block_type'
 }
+const FUNC_INDEX_OFFSET = 1
 
 function generateWrapper (funcRef, container) {
   let wrapper = typeCheckWrapper(funcRef.params)
@@ -61,8 +60,7 @@ module.exports = class WasmContainer {
     this.refs = new ReferanceMap()
   }
 
-  static async onCreation (wasm, id, tree) {
-    const cachedb = tree.dag._dag
+  static validateWasm (wasm, id) {
     if (!WebAssembly.validate(wasm)) {
       throw new Error('invalid wasm binary')
     }
@@ -79,6 +77,17 @@ module.exports = class WasmContainer {
     }
     // recompile the wasm
     wasm = json2wasm(moduleJSON)
+    const modRef = ModuleRef.fromMetaJSON(json, id)
+    return {
+      wasm,
+      json,
+      modRef
+    }
+  }
+
+  static async onCreation (unverifiedWasm, id, tree) {
+    const cachedb = tree.dag._dag
+    let {json, wasm, modRef} = this.validateWasm(unverifiedWasm, id)
     await Promise.all([
       new Promise((resolve, reject) => {
         cachedb.put(id.id.toString() + 'meta', JSON.stringify(json), resolve)
@@ -87,7 +96,7 @@ module.exports = class WasmContainer {
         cachedb.put(id.id.toString() + 'code', wasm.toString('hex'), resolve)
       })
     ])
-    return ModuleRef.fromMetaJSON(json, id)
+    return modRef
   }
 
   getInterface (funcRef) {
@@ -139,7 +148,9 @@ module.exports = class WasmContainer {
         }
       },
       module: {
-        new: code => {},
+        new: dataRef => {
+           
+        },
         exports: (modRef, offset, length) => {
           const mod = this.refs.get(modRef, 'mod')
           let name = this.getMemory(offset, length)
@@ -183,6 +194,10 @@ module.exports = class WasmContainer {
           const buf = table.slice(srcOffset, srcOffset + length).map(obj => this.refs.add(obj))
           const mem = new Uint32Array(this.instance.exports.memory.buffer, sinkOffset, length)
           mem.set(buf)
+        },
+        length (elemRef) {
+          let elem = this.refs.get(elemRef, 'elem')
+          return elem.length
         }
       },
       metering: {

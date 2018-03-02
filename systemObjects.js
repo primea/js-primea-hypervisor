@@ -22,6 +22,7 @@ class FunctionRef {
     this.identifier = identifier
     this.destId = id
     this.params = params
+    this.gas = 0
   }
 
   encodeCBOR (gen) {

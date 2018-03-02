@@ -77,7 +77,7 @@ module.exports = class Hypervisor {
     }
     return {
       id: idHash,
-      module: module
+      module
     }
   }
 

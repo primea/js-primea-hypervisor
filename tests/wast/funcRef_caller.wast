@@ -11,6 +11,7 @@
     i32.const 0
     i32.const 8
     call $exports
+
     i32.const 0
     get_local 0
     call $internalize 

@@ -48,9 +48,11 @@ tape('basic', async t => {
   hypervisor.registerContainer(TestWasmContainer)
 
   const {module} = await hypervisor.createActor(TestWasmContainer.typeId, wasm)
+  const funcRef = module.getFuncRef('receive')
+  funcRef.gas = 300
 
   const message = new Message({
-    funcRef: module.getFuncRef('receive'),
+    funcRef,
     funcArguments: [5]
   })
   hypervisor.send(message)
@@ -75,9 +77,13 @@ tape('two communicating actors', async t => {
 
   const {module: receiverMod} = await hypervisor.createActor(TestWasmContainer.typeId, recieverWasm)
   const {module: callerMod} = await hypervisor.createActor(TestWasmContainer.typeId, callerWasm)
+  const callFuncRef = callerMod.getFuncRef('call')
+  const recvFuncRef = receiverMod.getFuncRef('receive')
+  callFuncRef.gas = 100000
+  recvFuncRef.gas = 1000
   const message = new Message({
-    funcRef: callerMod.getFuncRef('call'),
-    funcArguments: [receiverMod.getFuncRef('receive')]
+    funcRef: callFuncRef,
+    funcArguments: [recvFuncRef]
   })
 
   hypervisor.send(message)
@@ -105,9 +111,14 @@ tape('two communicating actors with callback', async t => {
   const {module: callerMod} = await hypervisor.createActor(TestWasmContainer.typeId, callerWasm)
   const {module: receiverMod} = await hypervisor.createActor(TestWasmContainer.typeId, recieverWasm)
 
+  const callFuncRef = callerMod.getFuncRef('call')
+  const recvFuncRef = receiverMod.getFuncRef('receive')
+  callFuncRef.gas = 100000
+  recvFuncRef.gas = 100000
+
   const message = new Message({
-    funcRef: callerMod.getFuncRef('call'),
-    funcArguments: [receiverMod.getFuncRef('receive')]
+    funcRef: callFuncRef,
+    funcArguments: [recvFuncRef]
   })
 
   hypervisor.send(message)
@@ -115,7 +126,7 @@ tape('two communicating actors with callback', async t => {
   // t.deepEquals(stateRoot, expectedState, 'expected root!')
 })
 
-tape('two communicating actors with callback', async t => {
+tape('two communicating actors with private callback', async t => {
   t.plan(1)
   tester = t
   const expectedState = {
@@ -135,10 +146,15 @@ tape('two communicating actors with callback', async t => {
   const {module: callerMod} = await hypervisor.createActor(TestWasmContainer.typeId, callerWasm)
   const {module: receiverMod} = await hypervisor.createActor(TestWasmContainer.typeId, recieverWasm)
 
+  const callFuncRef = callerMod.getFuncRef('call')
+  const recvFuncRef = receiverMod.getFuncRef('receive')
+  callFuncRef.gas = 100000
+  recvFuncRef.gas = 100000
+
   const message = new Message({
-    funcRef: callerMod.getFuncRef('call'),
-    funcArguments: [receiverMod.getFuncRef('receive')]
-  }).on('execution:error', (e) => {console.log(e)})
+    funcRef: callFuncRef,
+    funcArguments: [recvFuncRef]
+  })
 
   hypervisor.send(message)
   const stateRoot = await hypervisor.createStateRoot()
@@ -158,10 +174,10 @@ tape('externalize/internalize memory', async t => {
   hypervisor.registerContainer(TestWasmContainer)
 
   const {module} = await hypervisor.createActor(TestWasmContainer.typeId, wasm)
+  const funcRef = module.getFuncRef('test')
+  funcRef.gas = 10000
 
-  const message = new Message({
-    funcRef: module.getFuncRef('test')
-  }).on('done', actor => {
+  const message = new Message({funcRef}).on('done', actor => {
     const a = actor.container.getMemory(0, 5)
     const b = actor.container.getMemory(5, 5)
     t.deepEquals(a, b, 'should copy memory correctly')
@@ -182,9 +198,10 @@ tape('externalize/internalize table', async t => {
 
   const {module} = await hypervisor.createActor(TestWasmContainer.typeId, wasm)
 
-  const message = new Message({
-    funcRef: module.getFuncRef('test')
-  }).on('done', actor => {
+  const funcRef = module.getFuncRef('test')
+  funcRef.gas = 10000
+
+  const message = new Message({funcRef}).on('done', actor => {
     const a = actor.container.getMemory(0, 8)
     const b = actor.container.getMemory(8, 8)
     t.deepEquals(a, b, 'should copy memory correctly')
@@ -207,8 +224,10 @@ tape('load / store globals', async t => {
   const {module} = await hypervisor.createActor(TestWasmContainer.typeId, wasm)
 
   await new Promise((resolve, reject) => {
+    const funcRef = module.getFuncRef('store')
+    funcRef.gas = 400
     const message = new Message({
-      funcRef: module.getFuncRef('store')
+      funcRef
     }).on('done', actor => {
       resolve()
     })
@@ -216,8 +235,10 @@ tape('load / store globals', async t => {
   })
 
   await new Promise((resolve, reject) => {
+    const funcRef = module.getFuncRef('load')
+    funcRef.gas = 400
     const message = new Message({
-      funcRef: module.getFuncRef('load')
+      funcRef
     }).on('done', actor => {
       resolve()
       const b = actor.container.getMemory(5, 4)

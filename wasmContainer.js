@@ -116,8 +116,14 @@ module.exports = class WasmContainer {
           const {funcRef: catchFunc} = self.refs.get(ref, FunctionRef)
           funcRef.catch = catchFunc
         },
-        getGasAmount: (funcRef) => {},
-        setGasAmount: (funcRef) => {}
+        get_gas_budget: (funcRef) => {
+          const func = self.refs.get(funcRef, 'func')
+          return func.gas
+        },
+        set_gas_budget: (funcRef, amount) => {
+          const func = self.refs.get(funcRef, 'func')
+          func.gas = amount
+        }
       },
       link: {
         wrap: ref => {
@@ -181,6 +187,7 @@ module.exports = class WasmContainer {
       },
       metering: {
         usegas: amount => {
+          this.actor.incrementTicks(amount)
           funcRef.gas -= amount
           if (funcRef.gas < 0) {
             throw new Error('out of gas! :(')
@@ -192,7 +199,6 @@ module.exports = class WasmContainer {
 
   async onMessage (message) {
     const funcRef = message.funcRef
-    // console.log(funcRef)
     const intef = this.getInterface(funcRef)
     this.instance = WebAssembly.Instance(this.mod, intef)
     // map table indexes

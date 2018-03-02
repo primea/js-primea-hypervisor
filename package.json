@@ -43,7 +43,7 @@
   "devDependencies": {
     "coveralls": "^3.0.0",
     "dfinity-radix-tree": "0.0.9",
-    "documentation": "^5.3.5",
+    "documentation": "^6.0.0",
     "level-browserify": "^1.1.1",
     "nyc": "^11.4.1",
     "primea-abstract-container": "0.0.6",

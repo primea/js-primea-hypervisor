@@ -63,6 +63,35 @@ tape('basic', async t => {
   // t.deepEquals(stateRoot, expectedState, 'expected root!')
 })
 
+tape('empty', async t => {
+  t.plan(1)
+  tester = t
+  const expectedState = {
+    '/': Buffer.from('a2440f97e233b183f5e66fb6d60765311be7a2b7', 'hex')
+  }
+
+  const tree = new RadixTree({
+    db
+  })
+
+  const wasm = fs.readFileSync(WASM_PATH + '/empty.wasm')
+
+  const hypervisor = new Hypervisor(tree)
+  hypervisor.registerContainer(TestWasmContainer)
+
+  const {module} = await hypervisor.createActor(TestWasmContainer.typeId, wasm)
+  const funcRef = module.getFuncRef('receive')
+  funcRef.gas = 300
+
+  const message = new Message({
+    funcRef,
+    funcArguments: [5]
+  })
+  hypervisor.send(message)
+  const stateRoot = await hypervisor.createStateRoot()
+  t.deepEquals(stateRoot, expectedState, 'expected root!')
+})
+
 tape('two communicating actors', async t => {
   t.plan(1)
   tester = t

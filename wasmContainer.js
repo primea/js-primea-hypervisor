@@ -192,7 +192,7 @@ module.exports = class WasmContainer {
         internalize: (elemRef, srcOffset, sinkOffset, length) => {
           let table = this.refs.get(elemRef, 'elem')
           const buf = table.slice(srcOffset, srcOffset + length).map(obj => this.refs.add(obj))
-          const mem = this.getMemory(sinkOffset, length)
+          const mem = this.get32Memory(sinkOffset, length)
           mem.set(buf)
         },
         length (elemRef) {
@@ -261,7 +261,7 @@ module.exports = class WasmContainer {
     if (numOfGlobals) {
       this.actor.storage = []
       this.instance.exports.getter_globals()
-      const mem = this.getMemory(0, numOfGlobals)
+      const mem = this.get32Memory(0, numOfGlobals)
       while (numOfGlobals--) {
         const ref = mem[numOfGlobals]
         this.actor.storage.push(this.refs.get(ref, this.json.globals[numOfGlobals].type))
@@ -321,8 +321,12 @@ module.exports = class WasmContainer {
     this.modSelf = ModuleRef.fromMetaJSON(json, this.actor.id)
   }
 
-  getMemory (offset, length) {
+  get8Memory (offset, length) {
     return new Uint8Array(this.instance.exports.memory.buffer, offset, length)
+  }
+
+  get32Memory (offset, length) {
+    return new Uint32Array(this.instance.exports.memory.buffer, offset, length)
   }
 
   static get typeId () {

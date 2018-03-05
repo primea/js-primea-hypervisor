@@ -210,8 +210,8 @@ tape('externalize/internalize memory', async t => {
   funcRef.gas = 10000
 
   const message = new Message({funcRef}).on('done', actor => {
-    const a = actor.container.getMemory(0, 5)
-    const b = actor.container.getMemory(5, 5)
+    const a = actor.container.get8Memory(0, 5)
+    const b = actor.container.get8Memory(5, 5)
     t.deepEquals(a, b, 'should copy memory correctly')
   })
   hypervisor.send(message)
@@ -234,8 +234,8 @@ tape('externalize/internalize table', async t => {
   funcRef.gas = 10000
 
   const message = new Message({funcRef}).on('done', actor => {
-    const a = actor.container.getMemory(0, 8)
-    const b = actor.container.getMemory(8, 8)
+    const a = actor.container.get8Memory(0, 8)
+    const b = actor.container.get8Memory(8, 8)
     t.deepEquals(a, b, 'should copy memory correctly')
   })
   hypervisor.send(message)
@@ -273,7 +273,7 @@ tape('load / store globals', async t => {
       funcRef
     }).on('done', actor => {
       resolve()
-      const b = actor.container.getMemory(5, 4)
+      const b = actor.container.get8Memory(5, 4)
       const result = Buffer.from(b).toString()
       t.deepEquals(result, 'test', 'should copy memory correctly')
     })

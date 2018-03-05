@@ -149,11 +149,11 @@ module.exports = class WasmContainer {
       },
       module: {
         new: dataRef => {
-           
+
         },
         exports: (modRef, offset, length) => {
           const mod = this.refs.get(modRef, 'mod')
-          let name = this.getMemory(offset, length)
+          let name = this.get8Memory(offset, length)
           name = Buffer.from(name).toString()
           const funcRef = mod.getFuncRef(name)
           return this.refs.add(funcRef, 'func')
@@ -164,13 +164,13 @@ module.exports = class WasmContainer {
       },
       memory: {
         externalize: (index, length) => {
-          const buf = Buffer.from(this.getMemory(index, length))
+          const buf = Buffer.from(this.get8Memory(index, length))
           return this.refs.add(buf, 'buf')
         },
         internalize: (dataRef, srcOffset, sinkOffset, length) => {
           let buf = this.refs.get(dataRef, 'buf')
           buf = buf.subarray(srcOffset, length)
-          const mem = this.getMemory(sinkOffset, buf.length)
+          const mem = this.get8Memory(sinkOffset, buf.length)
           mem.set(buf)
         },
         length (dataRef) {
@@ -180,7 +180,7 @@ module.exports = class WasmContainer {
       },
       table: {
         externalize: (index, length) => {
-          const mem = Buffer.from(this.getMemory(index, length * 4))
+          const mem = Buffer.from(this.get8Memory(index, length * 4))
           const objects = []
           while (length--) {
             const ref = mem.readUInt32LE(length * 4)

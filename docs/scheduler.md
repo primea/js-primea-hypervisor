@@ -3,86 +3,14 @@
 ### Table of Contents
 
 -   [constructor](#constructor)
--   [lock](#lock)
--   [update](#update)
--   [getInstance](#getinstance)
--   [done](#done)
--   [wait](#wait)
--   [leastNumberOfTicks](#leastnumberofticks)
 
 ## constructor
 
-[scheduler.js:13-17](https://github.com/dfinity/js-primea/blob/3d3fc0d82dd65f14b8533dcd2fb881c9fbbb1bd3/scheduler.js#L13-L17 "Source code on GitHub")
+[scheduler.js:19-26](https://github.com/dfinity/js-primea/blob/21960d62467278cd5659e2eb5f80cc6ddd87e663/scheduler.js#L19-L26 "Source code on GitHub")
 
 The Scheduler manages the actor instances and tracks how many "ticks" they
 have ran.
 
-## lock
-
-[scheduler.js:24-34](https://github.com/dfinity/js-primea/blob/3d3fc0d82dd65f14b8533dcd2fb881c9fbbb1bd3/scheduler.js#L24-L34 "Source code on GitHub")
-
-locks the scheduler from clearing waits untill the lock is resolved
-
 **Parameters**
 
--   `id` **[string](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/String)** 
-
-Returns **[function](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Statements/function)** the resolve function to call once it to unlock
-
-## update
-
-[scheduler.js:40-44](https://github.com/dfinity/js-primea/blob/3d3fc0d82dd65f14b8533dcd2fb881c9fbbb1bd3/scheduler.js#L40-L44 "Source code on GitHub")
-
-updates an instance with a new tick count
-
-**Parameters**
-
--   `instance` **[Object](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Object)** an actor instance
-
-## getInstance
-
-[scheduler.js:56-59](https://github.com/dfinity/js-primea/blob/3d3fc0d82dd65f14b8533dcd2fb881c9fbbb1bd3/scheduler.js#L56-L59 "Source code on GitHub")
-
-returns an Actor instance
-
-**Parameters**
-
--   `id` **[String](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/String)** 
-
-Returns **[Object](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Object)** 
-
-## done
-
-[scheduler.js:65-70](https://github.com/dfinity/js-primea/blob/3d3fc0d82dd65f14b8533dcd2fb881c9fbbb1bd3/scheduler.js#L65-L70 "Source code on GitHub")
-
-deletes an instance from the scheduler
-
-**Parameters**
-
--   `id` **[String](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/String)** the containers id
-
-## wait
-
-[scheduler.js:79-93](https://github.com/dfinity/js-primea/blob/3d3fc0d82dd65f14b8533dcd2fb881c9fbbb1bd3/scheduler.js#L79-L93 "Source code on GitHub")
-
-returns a promise that resolves once all containers have reached the given
-number of ticks
-
-**Parameters**
-
--   `ticks` **interger** the number of ticks to wait
--   `id` **[string](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/String)** optional id of the container that is waiting
-
-Returns **[Promise](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Promise)** 
-
-## leastNumberOfTicks
-
-[scheduler.js:99-109](https://github.com/dfinity/js-primea/blob/3d3fc0d82dd65f14b8533dcd2fb881c9fbbb1bd3/scheduler.js#L99-L109 "Source code on GitHub")
-
-returns the oldest container's ticks
-
-**Parameters**
-
--   `exclude`  
-
-Returns **integer** 
+-   `hypervisor`  

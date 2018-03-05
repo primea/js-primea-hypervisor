@@ -194,17 +194,19 @@ function mergeTypeSections (json) {
   const {value: type} = iterator.next()
   const {value: imports = {entries: []}} = iterator.next()
   const {value: functions} = iterator.next()
-  functions.entries.forEach((typeIndex, funcIndex) => {
-    let customIndex = mappedFuncs.get(funcIndex)
-    if (customIndex === undefined) {
-      customIndex = mappedTypes.get(typeIndex)
-    }
-    if (customIndex === undefined) {
-      customIndex = result.types.push(type.entries[typeIndex]) - 1
-      mappedTypes.set(typeIndex, customIndex)
-    }
-    result.indexes[funcIndex + imports.entries.length] = customIndex
-  })
+  if (functions) {
+    functions.entries.forEach((typeIndex, funcIndex) => {
+      let customIndex = mappedFuncs.get(funcIndex)
+      if (customIndex === undefined) {
+        customIndex = mappedTypes.get(typeIndex)
+      }
+      if (customIndex === undefined) {
+        customIndex = result.types.push(type.entries[typeIndex]) - 1
+        mappedTypes.set(typeIndex, customIndex)
+      }
+      result.indexes[funcIndex + imports.entries.length] = customIndex
+    })
+  }
 
   const {value: exports = {entries: []}} = iterator.next()
   exports.entries.forEach(entry => {

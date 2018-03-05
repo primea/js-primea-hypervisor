@@ -3,7 +3,6 @@
 ### Table of Contents
 
 -   [constructor](#constructor)
--   [queue](#queue)
 -   [shutdown](#shutdown)
 -   [startup](#startup)
 -   [runMessage](#runmessage)
@@ -13,7 +12,7 @@
 
 ## constructor
 
-[actor.js:15-25](https://github.com/dfinity/js-primea/blob/3d3fc0d82dd65f14b8533dcd2fb881c9fbbb1bd3/actor.js#L15-L25 "Source code on GitHub")
+[actor.js:11-18](https://github.com/dfinity/js-primea/blob/21960d62467278cd5659e2eb5f80cc6ddd87e663/actor.js#L11-L18 "Source code on GitHub")
 
 the Actor manages the varous message passing functions and provides
 an interface for the containers to use
@@ -26,32 +25,21 @@ an interface for the containers to use
     -   `opts.hypervisor` **[Object](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Object)** the instance of the hypervisor
     -   `opts.container` **[Object](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Object)** the container constuctor and argments
 
-## queue
-
-[actor.js:32-39](https://github.com/dfinity/js-primea/blob/3d3fc0d82dd65f14b8533dcd2fb881c9fbbb1bd3/actor.js#L32-L39 "Source code on GitHub")
-
-adds a message to this actor's message queue
-
-**Parameters**
-
--   `message` **[object](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Object)** 
--   `portName` **[string](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/String)** 
-
 ## shutdown
 
-[actor.js:89-92](https://github.com/dfinity/js-primea/blob/3d3fc0d82dd65f14b8533dcd2fb881c9fbbb1bd3/actor.js#L89-L92 "Source code on GitHub")
+[actor.js:23-29](https://github.com/dfinity/js-primea/blob/21960d62467278cd5659e2eb5f80cc6ddd87e663/actor.js#L23-L29 "Source code on GitHub")
 
 Runs the shutdown routine for the actor
 
 ## startup
 
-[actor.js:97-99](https://github.com/dfinity/js-primea/blob/3d3fc0d82dd65f14b8533dcd2fb881c9fbbb1bd3/actor.js#L97-L99 "Source code on GitHub")
+[actor.js:34-36](https://github.com/dfinity/js-primea/blob/21960d62467278cd5659e2eb5f80cc6ddd87e663/actor.js#L34-L36 "Source code on GitHub")
 
 Runs the startup routine for the actor
 
 ## runMessage
 
-[actor.js:107-114](https://github.com/dfinity/js-primea/blob/3d3fc0d82dd65f14b8533dcd2fb881c9fbbb1bd3/actor.js#L107-L114 "Source code on GitHub")
+[actor.js:44-56](https://github.com/dfinity/js-primea/blob/21960d62467278cd5659e2eb5f80cc6ddd87e663/actor.js#L44-L56 "Source code on GitHub")
 
 run the Actor with a given message
 
@@ -64,7 +52,7 @@ Returns **[Promise](https://developer.mozilla.org/docs/Web/JavaScript/Reference/
 
 ## incrementTicks
 
-[actor.js:120-123](https://github.com/dfinity/js-primea/blob/3d3fc0d82dd65f14b8533dcd2fb881c9fbbb1bd3/actor.js#L120-L123 "Source code on GitHub")
+[actor.js:62-64](https://github.com/dfinity/js-primea/blob/21960d62467278cd5659e2eb5f80cc6ddd87e663/actor.js#L62-L64 "Source code on GitHub")
 
 updates the number of ticks that the actor has run
 
@@ -74,7 +62,7 @@ updates the number of ticks that the actor has run
 
 ## createActor
 
-[actor.js:130-133](https://github.com/dfinity/js-primea/blob/3d3fc0d82dd65f14b8533dcd2fb881c9fbbb1bd3/actor.js#L130-L133 "Source code on GitHub")
+[actor.js:71-74](https://github.com/dfinity/js-primea/blob/21960d62467278cd5659e2eb5f80cc6ddd87e663/actor.js#L71-L74 "Source code on GitHub")
 
 creates an actor
 
@@ -86,7 +74,7 @@ creates an actor
 
 ## send
 
-[actor.js:150-155](https://github.com/dfinity/js-primea/blob/3d3fc0d82dd65f14b8533dcd2fb881c9fbbb1bd3/actor.js#L150-L155 "Source code on GitHub")
+[actor.js:91-96](https://github.com/dfinity/js-primea/blob/21960d62467278cd5659e2eb5f80cc6ddd87e663/actor.js#L91-L96 "Source code on GitHub")
 
 sends a message to a given port
 

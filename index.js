@@ -101,9 +101,13 @@ module.exports = class Hypervisor {
    */
   createStateRoot () {
     return new Promise((resolve, reject) => {
-      this.scheduler.on('idle', () => {
+      if (!this.scheduler._running) {
         this.tree.flush().then(resolve)
-      })
+      } else {
+        this.scheduler.on('idle', () => {
+          this.tree.flush().then(resolve)
+        })
+      }
     })
   }
 

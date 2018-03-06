@@ -152,7 +152,7 @@ module.exports = class WasmContainer {
       },
       module: {
         new: dataRef => {
-           
+
         },
         export: (modRef, bufRef) => {
           const mod = this.refs.get(modRef, 'mod')
@@ -167,13 +167,13 @@ module.exports = class WasmContainer {
       },
       memory: {
         externalize: (index, length) => {
-          const buf = Buffer.from(this.getMemory(index, length))
+          const buf = Buffer.from(this.get8Memory(index, length))
           return this.refs.add(buf, 'buf')
         },
         internalize: (dataRef, srcOffset, sinkOffset, length) => {
           let buf = this.refs.get(dataRef, 'buf')
           buf = buf.subarray(srcOffset, length)
-          const mem = this.getMemory(sinkOffset, buf.length)
+          const mem = this.get8Memory(sinkOffset, buf.length)
           mem.set(buf)
         },
         length (dataRef) {
@@ -183,7 +183,7 @@ module.exports = class WasmContainer {
       },
       table: {
         externalize: (index, length) => {
-          const mem = Buffer.from(this.getMemory(index, length * 4))
+          const mem = Buffer.from(this.get8Memory(index, length * 4))
           const objects = []
           while (length--) {
             const ref = mem.readUInt32LE(length * 4)
@@ -195,7 +195,7 @@ module.exports = class WasmContainer {
         internalize: (elemRef, srcOffset, sinkOffset, length) => {
           let table = this.refs.get(elemRef, 'elem')
           const buf = table.slice(srcOffset, srcOffset + length).map(obj => this.refs.add(obj))
-          const mem = new Uint32Array(this.instance.exports.memory.buffer, sinkOffset, length)
+          const mem = this.get32Memory(sinkOffset, length)
           mem.set(buf)
         },
         length (elemRef) {
@@ -264,7 +264,7 @@ module.exports = class WasmContainer {
     if (numOfGlobals) {
       this.actor.storage = []
       this.instance.exports.getter_globals()
-      const mem = new Uint32Array(this.instance.exports.memory.buffer, 0, numOfGlobals)
+      const mem = this.get32Memory(0, numOfGlobals)
       while (numOfGlobals--) {
         const ref = mem[numOfGlobals]
         this.actor.storage.push(this.refs.get(ref, this.json.globals[numOfGlobals].type))
@@ -324,8 +324,12 @@ module.exports = class WasmContainer {
     this.modSelf = ModuleRef.fromMetaJSON(json, this.actor.id)
   }
 
-  getMemory (offset, length) {
+  get8Memory (offset, length) {
     return new Uint8Array(this.instance.exports.memory.buffer, offset, length)
+  }
+
+  get32Memory (offset, length) {
+    return new Uint32Array(this.instance.exports.memory.buffer, offset, length)
   }
 
   static get typeId () {

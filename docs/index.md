@@ -1,7 +1,6 @@
 # API
 - [Hypervisor](./hypervisor.md)
-- [Kernel](./kernel.md)
-- [PortManager](./portManager.md)
+- [Actor](./actor.md)
 
-## internal API's
+## Internal APIs
 - [Scheduler](./scheduler.md)

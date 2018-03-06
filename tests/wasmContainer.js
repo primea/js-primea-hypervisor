@@ -1,5 +1,6 @@
 const tape = require('tape')
 const fs = require('fs')
+const path = require('path')
 const Message = require('../message.js')
 const Hypervisor = require('../')
 const WasmContainer = require('../wasmContainer.js')
@@ -7,6 +8,8 @@ const WasmContainer = require('../wasmContainer.js')
 const level = require('level-browserify')
 const RadixTree = require('dfinity-radix-tree')
 const db = level('./testdb')
+
+const WASM_PATH = path.join(__dirname, 'wasm')
 
 let tester
 
@@ -42,7 +45,7 @@ tape('basic', async t => {
     db
   })
 
-  const wasm = fs.readFileSync('./wasm/reciever.wasm')
+  const wasm = fs.readFileSync(WASM_PATH + '/reciever.wasm')
 
   const hypervisor = new Hypervisor(tree)
   hypervisor.registerContainer(TestWasmContainer)
@@ -60,6 +63,35 @@ tape('basic', async t => {
   // t.deepEquals(stateRoot, expectedState, 'expected root!')
 })
 
+tape('empty', async t => {
+  t.plan(1)
+  tester = t
+  const expectedState = {
+    '/': Buffer.from('bda5092c441e8d40c32eeeb69ce0e493f9d487cb', 'hex')
+  }
+
+  const tree = new RadixTree({
+    db
+  })
+
+  const wasm = fs.readFileSync(WASM_PATH + '/empty.wasm')
+
+  const hypervisor = new Hypervisor(tree)
+  hypervisor.registerContainer(TestWasmContainer)
+
+  const {module} = await hypervisor.createActor(TestWasmContainer.typeId, wasm)
+  const funcRef = module.getFuncRef('receive')
+  funcRef.gas = 300
+
+  const message = new Message({
+    funcRef,
+    funcArguments: [5]
+  })
+  hypervisor.send(message)
+  const stateRoot = await hypervisor.createStateRoot()
+  t.deepEquals(stateRoot, expectedState, 'expected root!')
+})
+
 tape('two communicating actors', async t => {
   t.plan(1)
   tester = t
@@ -69,8 +101,8 @@ tape('two communicating actors', async t => {
 
   const tree = new RadixTree({db})
 
-  const recieverWasm = fs.readFileSync('./wasm/reciever.wasm')
-  const callerWasm = fs.readFileSync('./wasm/caller.wasm')
+  const recieverWasm = fs.readFileSync(WASM_PATH + '/reciever.wasm')
+  const callerWasm = fs.readFileSync(WASM_PATH + '/caller.wasm')
 
   const hypervisor = new Hypervisor(tree)
   hypervisor.registerContainer(TestWasmContainer)
@@ -102,8 +134,8 @@ tape('two communicating actors with callback', async t => {
     db
   })
 
-  const recieverWasm = fs.readFileSync('./wasm/funcRef_reciever.wasm')
-  const callerWasm = fs.readFileSync('./wasm/funcRef_caller.wasm')
+  const recieverWasm = fs.readFileSync(WASM_PATH + '/funcRef_reciever.wasm')
+  const callerWasm = fs.readFileSync(WASM_PATH + '/funcRef_caller.wasm')
 
   const hypervisor = new Hypervisor(tree)
   hypervisor.registerContainer(TestWasmContainer)
@@ -137,8 +169,8 @@ tape('two communicating actors with private callback', async t => {
     db
   })
 
-  const recieverWasm = fs.readFileSync('./wasm/funcRef_reciever.wasm')
-  const callerWasm = fs.readFileSync('./wasm/private_caller.wasm')
+  const recieverWasm = fs.readFileSync(WASM_PATH + '/funcRef_reciever.wasm')
+  const callerWasm = fs.readFileSync(WASM_PATH + '/private_caller.wasm')
 
   const hypervisor = new Hypervisor(tree)
   hypervisor.registerContainer(TestWasmContainer)
@@ -168,7 +200,7 @@ tape('externalize/internalize memory', async t => {
     db
   })
 
-  const wasm = fs.readFileSync('./wasm/memory.wasm')
+  const wasm = fs.readFileSync(WASM_PATH + '/memory.wasm')
 
   const hypervisor = new Hypervisor(tree)
   hypervisor.registerContainer(TestWasmContainer)
@@ -178,8 +210,8 @@ tape('externalize/internalize memory', async t => {
   funcRef.gas = 10000
 
   const message = new Message({funcRef}).on('done', actor => {
-    const a = actor.container.getMemory(0, 5)
-    const b = actor.container.getMemory(5, 5)
+    const a = actor.container.get8Memory(0, 5)
+    const b = actor.container.get8Memory(5, 5)
     t.deepEquals(a, b, 'should copy memory correctly')
   })
   hypervisor.send(message)
@@ -192,7 +224,7 @@ tape('externalize/internalize table', async t => {
     db
   })
 
-  const wasm = fs.readFileSync('./wasm/table.wasm')
+  const wasm = fs.readFileSync(WASM_PATH + '/table.wasm')
   const hypervisor = new Hypervisor(tree)
   hypervisor.registerContainer(TestWasmContainer)
 
@@ -202,8 +234,8 @@ tape('externalize/internalize table', async t => {
   funcRef.gas = 10000
 
   const message = new Message({funcRef}).on('done', actor => {
-    const a = actor.container.getMemory(0, 8)
-    const b = actor.container.getMemory(8, 8)
+    const a = actor.container.get8Memory(0, 8)
+    const b = actor.container.get8Memory(8, 8)
     t.deepEquals(a, b, 'should copy memory correctly')
   })
   hypervisor.send(message)
@@ -216,7 +248,7 @@ tape('load / store globals', async t => {
     db
   })
 
-  const wasm = fs.readFileSync('./wasm/globals.wasm')
+  const wasm = fs.readFileSync(WASM_PATH + '/globals.wasm')
 
   const hypervisor = new Hypervisor(tree)
   hypervisor.registerContainer(TestWasmContainer)
@@ -240,35 +272,11 @@ tape('load / store globals', async t => {
     const message = new Message({
       funcRef
     }).on('done', actor => {
-      const b = actor.container.getMemory(5, 4)
+      const b = actor.container.get8Memory(5, 4)
       const result = Buffer.from(b).toString()
       t.deepEquals(result, 'test', 'should copy memory correctly')
       resolve()
     })
     hypervisor.send(message)
   })
-})
-
-tape('ben', async t => {
-  // t.plan(1)
-  tester = t
-  const tree = new RadixTree({
-    db
-  })
-
-  const wasm = fs.readFileSync('./indirect.wasm')
-  const hypervisor = new Hypervisor(tree)
-  hypervisor.registerContainer(TestWasmContainer)
-
-  const {module} = await hypervisor.createActor(TestWasmContainer.typeId, wasm)
-
-  const funcRef = module.getFuncRef('#main')
-  funcRef.gas = 100000
-
-  const message = new Message({
-    funcRef
-  }).on('done', () => {
-    t.end()
-  })
-  hypervisor.send(message)
 })

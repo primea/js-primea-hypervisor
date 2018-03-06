@@ -67,7 +67,7 @@ tape('empty', async t => {
   t.plan(1)
   tester = t
   const expectedState = {
-    '/': Buffer.from('a2440f97e233b183f5e66fb6d60765311be7a2b7', 'hex')
+    '/': Buffer.from('bda5092c441e8d40c32eeeb69ce0e493f9d487cb', 'hex')
   }
 
   const tree = new RadixTree({
@@ -279,28 +279,4 @@ tape('load / store globals', async t => {
     })
     hypervisor.send(message)
   })
-})
-
-tape('ben', async t => {
-  // t.plan(1)
-  tester = t
-  const tree = new RadixTree({
-    db
-  })
-
-  const wasm = fs.readFileSync(WASM_PATH + '.wasm')
-  const hypervisor = new Hypervisor(tree)
-  hypervisor.registerContainer(TestWasmContainer)
-
-  const {module} = await hypervisor.createActor(TestWasmContainer.typeId, wasm)
-
-  const funcRef = module.getFuncRef('#main')
-  funcRef.gas = 100000
-
-  const message = new Message({
-    funcRef
-  }).on('done', () => {
-    t.end()
-  })
-  hypervisor.send(message)
 })

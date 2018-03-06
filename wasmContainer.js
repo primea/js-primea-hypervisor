@@ -156,7 +156,7 @@ module.exports = class WasmContainer {
         },
         export: (modRef, bufRef) => {
           const mod = this.refs.get(modRef, 'mod')
-          let name = this.get8Memory(offset, length)
+          let name = this.refs.get(bufRef, 'buf')
           name = Buffer.from(name).toString()
           const funcRef = mod.getFuncRef(name)
           return this.refs.add(funcRef, 'func')

@@ -32,7 +32,7 @@ class BaseContainer {
 tape('basic', async t => {
   t.plan(2)
   const expectedState = {
-    '/': Buffer.from('a5e1aaebec14b7f144d6a7e007b148aa7c56804c', 'hex')
+    '/': Buffer.from('cd80335de00c2bf38570b41c55a79174c1c64e9f', 'hex')
   }
 
   const tree = new RadixTree({
@@ -63,7 +63,7 @@ tape('basic', async t => {
 tape('two communicating actors', async t => {
   t.plan(2)
   const expectedState = {
-    '/': Buffer.from('bc0af44b691ef57b362df8b11c274742147900cd', 'hex')
+    '/': Buffer.from('b063f3e53b2ea40f50afe964b9f9b49aad491155', 'hex')
   }
 
   const tree = new RadixTree({
@@ -111,7 +111,7 @@ tape('two communicating actors', async t => {
 tape('three communicating actors', async t => {
   t.plan(3)
   const expectedState = {
-    '/': Buffer.from('86e066f60fe2f722befbc29f128948f6487a207a', 'hex')
+    '/': Buffer.from('db532195ac569b142415cc9bdbec37f18f344a59', 'hex')
   }
 
   const tree = new RadixTree({
@@ -166,7 +166,7 @@ tape('three communicating actors', async t => {
 tape('three communicating actors, with tick counting', async t => {
   t.plan(3)
   const expectedState = {
-    '/': Buffer.from('86e066f60fe2f722befbc29f128948f6487a207a', 'hex')
+    '/': Buffer.from('db532195ac569b142415cc9bdbec37f18f344a59', 'hex')
   }
 
   const tree = new RadixTree({
@@ -221,7 +221,7 @@ tape('three communicating actors, with tick counting', async t => {
 tape('errors', async t => {
   t.plan(3)
   const expectedState = {
-    '/': Buffer.from('bc0af44b691ef57b362df8b11c274742147900cd', 'hex')
+    '/': Buffer.from('b063f3e53b2ea40f50afe964b9f9b49aad491155', 'hex')
   }
 
   const tree = new RadixTree({
@@ -269,7 +269,7 @@ tape('errors', async t => {
 tape('actor creation', async t => {
   t.plan(2)
   const expectedState = {
-    '/': Buffer.from('544ae05bc8831cc69c5524bc3a51c0d4806e9d60', 'hex')
+    '/': Buffer.from('8a21d80cd7ca04e64be7cb2726a72060fc546ed6', 'hex')
   }
 
   const tree = new RadixTree({
@@ -318,7 +318,7 @@ tape('actor creation', async t => {
 tape('simple message arbiter test', async t => {
   t.plan(4)
   const expectedState = {
-    '/': Buffer.from('bc0af44b691ef57b362df8b11c274742147900cd', 'hex')
+    '/': Buffer.from('b063f3e53b2ea40f50afe964b9f9b49aad491155', 'hex')
   }
 
   const tree = new RadixTree({
@@ -387,7 +387,7 @@ tape('arbiter test for id comparision', async t => {
   t.plan(4)
   let message
   const expectedState = {
-    '/': Buffer.from('86e066f60fe2f722befbc29f128948f6487a207a', 'hex')
+    '/': Buffer.from('db532195ac569b142415cc9bdbec37f18f344a59', 'hex')
   }
 
   const tree = new RadixTree({
@@ -454,7 +454,7 @@ tape('arbiter test for id comparision', async t => {
 tape('async work', async t => {
   t.plan(3)
   const expectedState = {
-    '/': Buffer.from('bc0af44b691ef57b362df8b11c274742147900cd', 'hex')
+    '/': Buffer.from('b063f3e53b2ea40f50afe964b9f9b49aad491155', 'hex')
   }
 
   const tree = new RadixTree({

@@ -2,7 +2,8 @@
   (import "func" "internalize" (func $internalize (param i32 i32)))
   (import "test" "check" (func $check (param i32 i32)))
   (import "module" "self" (func $self (result i32)))
-  (import "module" "exports" (func $exports (param i32 i32 i32) (result i32)))
+  (import "module" "export" (func $exports (param i32 i32) (result i32)))
+  (import "memory" "externalize" (func $externalize (param i32 i32) (result i32)))
   (memory (export "memory") 1)
   (data (i32.const 0) "callback")
   (table (export "table") 1 1 anyfunc)
@@ -10,6 +11,7 @@
     call $self
     i32.const 0
     i32.const 8
+    call $externalize
     call $exports
 
     i32.const 0

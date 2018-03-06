@@ -45,6 +45,8 @@ function generateWrapper (funcRef, container) {
         const message = new Message({
           funcRef: self,
           funcArguments: checkedArgs
+        }).on('execution:error', e => {
+          console.log(e)
         })
         container.actor.send(message)
       }
@@ -60,10 +62,11 @@ module.exports = class WasmContainer {
     this.refs = new ReferanceMap()
   }
 
-  static validateWasm (wasm, id) {
+  static createModule (wasm, id) {
     if (!WebAssembly.validate(wasm)) {
       throw new Error('invalid wasm binary')
     }
+
     let moduleJSON = wasm2json(wasm)
     const json = customTypes.mergeTypeSections(moduleJSON)
     moduleJSON = wasmMetering.meterJSON(moduleJSON, {
@@ -87,7 +90,7 @@ module.exports = class WasmContainer {
 
   static async onCreation (unverifiedWasm, id, tree) {
     const cachedb = tree.dag._dag
-    let {json, wasm, modRef} = this.validateWasm(unverifiedWasm, id)
+    let {json, wasm, modRef} = this.createModule(unverifiedWasm, id)
     await Promise.all([
       new Promise((resolve, reject) => {
         cachedb.put(id.id.toString() + 'meta', JSON.stringify(json), resolve)
@@ -115,7 +118,7 @@ module.exports = class WasmContainer {
             return self.refs.add(ref, 'func')
           }
         },
-        internalize: (ref, index) => {
+        internalize: (index, ref) => {
           const funcRef = self.refs.get(ref, 'func')
           const wrapper = generateWrapper(funcRef, self)
           this.instance.exports.table.set(index, wrapper.exports.check)
@@ -151,7 +154,7 @@ module.exports = class WasmContainer {
         new: dataRef => {
 
         },
-        exports: (modRef, offset, length) => {
+        export: (modRef, bufRef) => {
           const mod = this.refs.get(modRef, 'mod')
           let name = this.get8Memory(offset, length)
           name = Buffer.from(name).toString()
@@ -203,7 +206,7 @@ module.exports = class WasmContainer {
       metering: {
         usegas: amount => {
           this.actor.incrementTicks(amount)
-          funcRef.gas -= amount
+          // funcRef.gas -= amount
           if (funcRef.gas < 0) {
             throw new Error('out of gas! :(')
           }

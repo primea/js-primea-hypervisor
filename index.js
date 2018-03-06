@@ -65,27 +65,31 @@ module.exports = class Hypervisor {
   async createActor (type, code, id = {nonce: this.nonce++, parent: null}) {
     const Container = this._containerTypes[type]
     const encoded = encodedID(id)
-    let idHash = this._getHashFromObj(encoded)
+    let idHash = this._hash(encoded)
     idHash = new ID(idHash)
     const module = await Container.onCreation(code, idHash, this.tree)
     const metaData = [type, 0]
 
     // save the container in the state
-    this.tree.set(idHash.id, metaData)
-    if (code) {
-      const node = await this.tree.get(idHash.id)
-      await this.tree.graph.set(node.node, '1', code)
+    const node = await this.tree.set(idHash.id, metaData)
+    // save the code
+    node[1] = {
+      '/': code
     }
+    // save the storage
+    node[2] = {
+      '/': []
+    }
+
     return {
       id: idHash,
       module
     }
   }
 
-  // get a hash from a POJO
-  _getHashFromObj (obj) {
+  _hash (buf) {
     const hash = crypto.createHash('sha256')
-    hash.update(obj)
+    hash.update(buf)
     return hash.digest().slice(0, 20)
   }
 

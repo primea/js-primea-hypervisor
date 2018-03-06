@@ -151,7 +151,7 @@ tape('two communicating actors with callback', async t => {
   const message = new Message({
     funcRef: callFuncRef,
     funcArguments: [recvFuncRef]
-  })
+  }).on('execution:error', e => console.log(e))
 
   hypervisor.send(message)
   const stateRoot = await hypervisor.createStateRoot()
@@ -272,16 +272,16 @@ tape('load / store globals', async t => {
     const message = new Message({
       funcRef
     }).on('done', actor => {
-      resolve()
       const b = actor.container.get8Memory(5, 4)
       const result = Buffer.from(b).toString()
       t.deepEquals(result, 'test', 'should copy memory correctly')
+      resolve()
     })
     hypervisor.send(message)
   })
 })
 
-tape.skip('ben', async t => {
+tape('ben', async t => {
   // t.plan(1)
   tester = t
   const tree = new RadixTree({
@@ -294,8 +294,11 @@ tape.skip('ben', async t => {
 
   const {module} = await hypervisor.createActor(TestWasmContainer.typeId, wasm)
 
+  const funcRef = module.getFuncRef('#main')
+  funcRef.gas = 100000
+
   const message = new Message({
-    funcRef: module.getFuncRef('main')
+    funcRef
   }).on('done', () => {
     t.end()
   })

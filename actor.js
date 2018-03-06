@@ -22,10 +22,8 @@ module.exports = class Actor {
    */
   async shutdown () {
     await this.tree.set(this.id.id, [this.type, this.nonce])
-    if (this.storage.length) {
-      const state = await this.tree.get(this.id.id)
-      return this.tree.graph.set(state.root, '2', this.storage)
-    }
+    const state = await this.tree.get(this.id.id)
+    return this.tree.graph.set(state.root, '2', this.storage)
   }
 
   /**

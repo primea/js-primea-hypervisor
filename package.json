@@ -33,19 +33,18 @@
     "binary-search-insert": "^1.0.3",
     "borc": "^2.0.2",
     "events": "^2.0.0",
-    "levelup": "^2.0.2",
-    "reference-map": "^1.2.1",
+    "reference-map": "^1.2.3",
     "safe-buffer": "^5.1.1",
     "wasm-json-toolkit": "^0.2.2",
     "wasm-metering": "^0.1.1"
   },
   "devDependencies": {
+    "levelup": "^2.0.2",
     "coveralls": "^3.0.0",
-    "dfinity-radix-tree": "0.0.9",
+    "dfinity-radix-tree": "0.1.1",
     "documentation": "^5.3.5",
     "level-browserify": "^1.1.1",
     "nyc": "^11.4.1",
-    "primea-abstract-container": "0.0.6",
     "standard": "11.0.0",
     "tape": "^4.9.0",
     "wabt": "^1.0.0"

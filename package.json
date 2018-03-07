@@ -31,7 +31,7 @@
   "license": "MPL-2.0",
   "dependencies": {
     "binary-search-insert": "^1.0.3",
-    "borc": "^2.0.2",
+    "cbor": "^4.0.0",
     "events": "^2.0.0",
     "reference-map": "^1.2.3",
     "safe-buffer": "^5.1.1",

@@ -1,8 +1,8 @@
-const cbor = require('borc')
+const cbor = require('cbor')
 
 const TAGS = {
+  id: 41,
   link: 42,
-  id: 43,
   func: 43,
   mod: 44
 }
@@ -16,8 +16,30 @@ const DEFAULTS = {
   func: new cbor.Tagged(TAGS.func, 0)
 }
 
-class FunctionRef {
+const decoder = new cbor.Decoder({
+  tags: {
+    [TAGS.id]: val => new ID(val),
+    [TAGS.func]: val => new FunctionRef(...val),
+    [TAGS.mod]: val => new ModuleRef(...val),
+  }
+})
+
+class Serializable {
+  serialize () {
+    const encoder = new cbor.Encoder()
+    this.encodeCBOR(encoder)
+    return encoder.read().toString('hex')
+  }
+
+  static deserialize (serialized) {
+    decoder.push(Buffer.from(serialized, 'hex'))
+    return decoder.read()
+  }
+}
+
+class FunctionRef extends Serializable {
   constructor (privateFunc, identifier, params, id, gas=0) {
+    super()
     this.private = privateFunc
     this.identifier = identifier
     this.destId = id
@@ -29,8 +51,9 @@ class FunctionRef {
     return gen.write(new cbor.Tagged(TAGS.func, [
       this.private,
       this.identifier,
+      this.params,
       this.destId,
-      this.params
+      this.gas
     ]))
   }
 
@@ -39,8 +62,9 @@ class FunctionRef {
   }
 }
 
-class ModuleRef {
+class ModuleRef extends Serializable {
   constructor (ex, id) {
+    super()
     this.exports = ex
     this.id = id
   }
@@ -61,17 +85,16 @@ class ModuleRef {
     }
     return new ModuleRef(exports, id)
   }
-
-  static deserialize (serialized) {}
 }
 
-class ID {
+class ID extends Serializable {
   constructor (id) {
+    super()
     this.id = id
   }
 
   encodeCBOR (gen) {
-    return gen.write(cbor.Tagged(TAGS.id, this.id))
+    return gen.write(new cbor.Tagged(TAGS.id, this.id))
   }
 }
 

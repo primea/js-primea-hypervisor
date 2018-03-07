@@ -17,12 +17,12 @@ const DEFAULTS = {
 }
 
 class FunctionRef {
-  constructor (privateFunc, identifier, params, id) {
+  constructor (privateFunc, identifier, params, id, gas=0) {
     this.private = privateFunc
     this.identifier = identifier
     this.destId = id
     this.params = params
-    this.gas = 0
+    this.gas = gas
   }
 
   encodeCBOR (gen) {

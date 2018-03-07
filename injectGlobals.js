@@ -1,20 +1,20 @@
 const {findSections} = require('wasm-json-toolkit')
-const wantedSections = ['type', 'import', 'function', 'export', 'code']
 
 module.exports = function injectGlobals (json, globals) {
+  const wantedSections = ['type', 'import', 'function', 'export', 'code']
   const iter = findSections(json, wantedSections)
-  const {value: type} = iter.next()
+  const {value: type = {entries: []}} = iter.next()
   const getterType = type.entries.push(typeEntry()) - 1
   const setterType = type.entries.push(typeEntry(Array(globals.length).fill('i32'))) - 1
 
   const {value: imports = {entries: []}} = iter.next()
-  const {value: func} = iter.next()
+  const {value: func = {entries: []}} = iter.next()
   const getterIndex = func.entries.push(getterType) - 1 + imports.entries.length
   const setterIndex = func.entries.push(setterType) - 1 + imports.entries.length
-  const {value: exports} = iter.next()
+  const {value: exports = {entries: []}} = iter.next()
   exports.entries.push(exportEntry('getter_globals', getterIndex))
   exports.entries.push(exportEntry('setter_globals', setterIndex))
-  const {value: code} = iter.next()
+  const {value: code = {entries: []}} = iter.next()
   const getterCode = []
   const setterCode = []
   globals.forEach((global, index) => {

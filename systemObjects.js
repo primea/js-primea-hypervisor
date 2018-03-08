@@ -1,4 +1,4 @@
-const cbor = require('cbor')
+const cbor = require('borc')
 
 const TAGS = {
   id: 41,
@@ -28,12 +28,11 @@ class Serializable {
   serialize () {
     const encoder = new cbor.Encoder()
     this.encodeCBOR(encoder)
-    return encoder.read().toString('hex')
+    return encoder.finalize()
   }
 
   static deserialize (serialized) {
-    decoder.push(Buffer.from(serialized, 'hex'))
-    return decoder.read()
+    return decoder.decodeFirst(serialized)
   }
 }
 
@@ -42,6 +41,8 @@ class FunctionRef extends Serializable {
     super()
     this.private = privateFunc
     this.identifier = identifier
+    if (!(id instanceof ID))
+      id = new ID(id)
     this.destId = id
     this.params = params
     this.gas = gas
@@ -52,8 +53,7 @@ class FunctionRef extends Serializable {
       this.private,
       this.identifier,
       this.params,
-      this.destId,
-      this.gas
+      this.destId
     ]))
   }
 

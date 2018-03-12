@@ -88,8 +88,8 @@ module.exports = class WasmContainer {
     }
   }
 
-  static async onCreation (unverifiedWasm, id, tree) {
-    let {modRef} = this.createModule(unverifiedWasm, id)
+  static onCreation (unverifiedWasm, id, tree) {
+    const {modRef} = this.createModule(unverifiedWasm, id)
     return modRef
   }
 
@@ -143,7 +143,8 @@ module.exports = class WasmContainer {
       },
       module: {
         new: dataRef => {
-
+          const mod = this.actor.createActor(dataRef)
+          return this.refs.add(mod, 'mod')
         },
         export: (modRef, bufRef) => {
           const mod = this.refs.get(modRef, 'mod')

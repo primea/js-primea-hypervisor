@@ -61,24 +61,25 @@ module.exports = class Hypervisor {
    * @param {Object} message - an intial [message](https://github.com/primea/js-primea-message) to send newly created actor
    * @param {Object} id - the id for the actor
    */
-  async createActor (type, code, id = {nonce: this.nonce++, parent: null}) {
+  createActor (type, code, id = {nonce: this.nonce++, parent: null}) {
     const Container = this._containerTypes[type]
     const encoded = encodedID(id)
     let idHash = this._hash(encoded)
     idHash = new ID(idHash)
-    const module = await Container.onCreation(code, idHash, this.tree)
+    const module = Container.onCreation(code, idHash, this.tree)
     const metaData = [type, 0]
 
     // save the container in the state
-    const node = await this.tree.set(idHash.id, metaData)
-    // save the code
-    node[1] = {
-      '/': code
-    }
-    // save the storage
-    node[2] = {
-      '/': []
-    }
+    this.tree.set(idHash.id, metaData).then(node => {
+      // save the code
+      node[1] = {
+        '/': code
+      }
+      // save the storage
+      node[2] = {
+        '/': []
+      }
+    })
 
     return {
       id: idHash,

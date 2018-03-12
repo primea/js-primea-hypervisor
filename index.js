@@ -48,7 +48,6 @@ module.exports = class Hypervisor {
       type,
       code,
       storage: storage || [],
-      cachedb: this.tree.dag._dag,
       tree: this.tree
     })
 

@@ -89,16 +89,7 @@ module.exports = class WasmContainer {
   }
 
   static async onCreation (unverifiedWasm, id, tree) {
-    const cachedb = tree.dag._dag
-    let {json, wasm, modRef} = this.createModule(unverifiedWasm, id)
-    await Promise.all([
-      new Promise((resolve, reject) => {
-        cachedb.put(id.id.toString() + 'meta', JSON.stringify(json), resolve)
-      }),
-      new Promise((resolve, reject) => {
-        cachedb.put(id.id.toString() + 'code', wasm.toString('hex'), resolve)
-      })
-    ])
+    let {modRef} = this.createModule(unverifiedWasm, id)
     return modRef
   }
 
@@ -297,31 +288,11 @@ module.exports = class WasmContainer {
   }
 
   async onStartup () {
-    let [json, wasm] = await Promise.all([
-      new Promise((resolve, reject) => {
-        this.actor.cachedb.get(this.actor.id.id.toString() + 'meta', (err, json) => {
-          if (err) {
-            reject(err)
-          } else {
-            resolve(json)
-          }
-        })
-      }),
-      new Promise((resolve, reject) => {
-        this.actor.cachedb.get(this.actor.id.id.toString() + 'code', (err, wasm) => {
-          if (err) {
-            reject(err)
-          } else {
-            resolve(wasm)
-          }
-        })
-      })
-    ])
-    wasm = Buffer.from(wasm, 'hex')
-    json = JSON.parse(json)
+    const code = this.actor.code
+    const {json, wasm, modRef} = WasmContainer.createModule(code, this.actor.id)
     this.mod = WebAssembly.Module(wasm)
     this.json = json
-    this.modSelf = ModuleRef.fromMetaJSON(json, this.actor.id)
+    this.modSelf = modRef
   }
 
   get8Memory (offset, length) {

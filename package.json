@@ -45,7 +45,7 @@
     "documentation": "^5.3.5",
     "level-browserify": "^1.1.1",
     "nyc": "^11.4.1",
-    "standard": "11.0.0",
+    "standard": "11.0.1",
     "tape": "^4.9.0",
     "wabt": "^1.0.0"
   }

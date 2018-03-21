@@ -3,26 +3,11 @@ const annotations = require('primea-annotations')
 const wasmMetering = require('wasm-metering')
 const ReferanceMap = require('reference-map')
 const Message = require('./message.js')
-// const customTypes = require('./customTypes.js')
 const injectGlobals = require('./injectGlobals.js')
 const typeCheckWrapper = require('./typeCheckWrapper.js')
 const {FunctionRef, ModuleRef, DEFAULTS} = require('./systemObjects.js')
 
 const nativeTypes = new Set(['i32', 'i64', 'f32', 'f64'])
-const LANGUAGE_TYPES = {
-  0x0: 'actor',
-  0x1: 'data',
-  0x02: 'elem',
-  0x03: 'link',
-  0x04: 'id',
-  0x7f: 'i32',
-  0x7e: 'i64',
-  0x7d: 'f32',
-  0x7c: 'f64',
-  0x70: 'anyFunc',
-  0x60: 'func',
-  0x40: 'block_type'
-}
 const FUNC_INDEX_OFFSET = 1
 
 function generateWrapper (funcRef, container) {
@@ -36,7 +21,7 @@ function generateWrapper (funcRef, container) {
         const args = [...arguments]
         const checkedArgs = []
         while (args.length) {
-          const type = LANGUAGE_TYPES[args.shift()]
+          const type = annotations.LANGUAGE_TYPES_BIN[args.shift()]
           let arg = args.shift()
           if (!nativeTypes.has(type)) {
             arg = container.refs.get(arg, type)

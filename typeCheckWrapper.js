@@ -1,16 +1,4 @@
-const LANGUAGE_TYPES = {
-  'mod': 0x0,
-  'buf': 0x1,
-  'elem': 0x2,
-  'link': 0x3,
-  'i32': 0x7f,
-  'i64': 0x7e,
-  'f32': 0x7d,
-  'f64': 0x7c,
-  'anyFunc': 0x70,
-  'func': 0x60,
-  'block_type': 0x40
-}
+const {LANGUAGE_TYPES_STRG} = require('primea-annotations')
 
 module.exports = function (params) {
   const module = [{
@@ -113,7 +101,7 @@ module.exports = function (params) {
 
   params.forEach((param, index) => {
     let baseType = param
-    const typeCode = LANGUAGE_TYPES[param]
+    const typeCode = LANGUAGE_TYPES_STRG[param]
     // import type
     if (definedTypes.has(param)) {
       baseType = 'i32'

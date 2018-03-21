@@ -22,6 +22,7 @@ module.exports = class Scheduler extends EventEmitter {
     this._messages = []
     this._times = []
     this.actors = new Map()
+    this.drivers = new Map()
     this._running = false
   }
 
@@ -48,7 +49,7 @@ module.exports = class Scheduler extends EventEmitter {
 
   async _processMessage (message) {
     const to = message.funcRef.destId.id.toString('hex')
-    let actor = this.actors.get(to)
+    let actor = this.actors.get(to) || this.drivers.get(to)
     if (!actor) {
       actor = await this.hypervisor.loadActor(message.funcRef.destId)
       this.actors.set(to, actor)

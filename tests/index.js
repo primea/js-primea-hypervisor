@@ -1,8 +1,10 @@
 const tape = require('tape')
 const Message = require('../message.js')
 const Hypervisor = require('../')
+const {FunctionRef} = require('../systemObjects')
 
 const level = require('level-browserify')
+const EgressDriver = require('../egressDriver')
 const RadixTree = require('dfinity-radix-tree')
 const db = level('./testdb')
 
@@ -45,9 +47,7 @@ tape('basic', async t => {
     }
   }
 
-  const hypervisor = new Hypervisor(tree)
-  hypervisor.registerContainer(testVMContainer)
-
+  const hypervisor = new Hypervisor(tree, [testVMContainer])
   const {module} = hypervisor.createActor(testVMContainer.typeId)
 
   const message = new Message({
@@ -90,9 +90,7 @@ tape('two communicating actors', async t => {
     }
   }
 
-  const hypervisor = new Hypervisor(tree)
-  hypervisor.registerContainer(testVMContainerA)
-  hypervisor.registerContainer(testVMContainerB)
+  const hypervisor = new Hypervisor(tree, [testVMContainerA, testVMContainerB])
 
   const {module: moduleB} = hypervisor.createActor(testVMContainerB.typeId)
   const {module: moduleA} = hypervisor.createActor(testVMContainerA.typeId)
@@ -138,9 +136,7 @@ tape('three communicating actors', async t => {
     }
   }
 
-  const hypervisor = new Hypervisor(tree)
-  hypervisor.registerContainer(testVMContainerA)
-  hypervisor.registerContainer(testVMContainerB)
+  const hypervisor = new Hypervisor(tree, [testVMContainerA, testVMContainerB])
 
   let {module: moduleB} = hypervisor.createActor(testVMContainerB.typeId)
   let {module: moduleA0} = hypervisor.createActor(testVMContainerA.typeId)
@@ -194,9 +190,7 @@ tape('three communicating actors, with tick counting', async t => {
     }
   }
 
-  const hypervisor = new Hypervisor(tree)
-  hypervisor.registerContainer(testVMContainerA)
-  hypervisor.registerContainer(testVMContainerB)
+  const hypervisor = new Hypervisor(tree, [testVMContainerA, testVMContainerB])
 
   let actorB = hypervisor.createActor(testVMContainerB.typeId)
   let actorA0 = hypervisor.createActor(testVMContainerA.typeId)
@@ -510,6 +504,38 @@ tape('async work', async t => {
 
   const stateRoot = await hypervisor.createStateRoot()
   t.deepEquals(stateRoot, expectedState, 'expected root!')
+})
+
+tape('driver', async t => {
+  const tree = new RadixTree({
+    db
+  })
+
+  const egress = new EgressDriver()
+
+  egress.on('message', msg => {
+    t.equals(msg.funcArguments[0], 'hello')
+    t.end()
+  })
+
+  class testVMContainer extends BaseContainer {
+    main (funcRef) {
+      this.actor.send(new Message({
+        funcRef,
+        funcArguments: ['hello']
+      }))
+    }
+  }
+
+  const hypervisor = new Hypervisor(tree, [testVMContainer], [egress])
+  const {module} = hypervisor.createActor(testVMContainer.typeId)
+
+  const message = new Message({
+    funcRef: module.main,
+    funcArguments: [new FunctionRef({id: egress.id})]
+  })
+
+  hypervisor.send(message)
 })
 
 tape('random', async t => {

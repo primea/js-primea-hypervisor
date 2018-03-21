@@ -1,7 +1,7 @@
+const crypto = require('crypto')
 const Actor = require('./actor.js')
 const Scheduler = require('./scheduler.js')
 const {ID} = require('./systemObjects.js')
-const crypto = require('crypto')
 
 module.exports = class Hypervisor {
   /**
@@ -9,16 +9,17 @@ module.exports = class Hypervisor {
    * destorying them when possible. It also facilitates localating Containers
    * @param {Tree} tree - a [radix tree](https://github.com/dfinity/js-dfinity-radix-tree) to store the state
    */
-  constructor (tree, nonce = 0) {
+  constructor (tree, containers = [], drivers = [], nonce = 0) {
     this.tree = tree
     this.scheduler = new Scheduler(this)
     this._containerTypes = {}
     this.nonce = nonce
+    containers.forEach(container => this.registerContainer(container))
+    drivers.forEach(driver => this.registerDriver(driver))
   }
 
   /**
    * sends a message
-   * @param {Object} cap - the capabilitly used to send the message
    * @param {Object} message - the [message](https://github.com/primea/js-primea-message) to send
    * @returns {Promise} a promise that resolves once the receiving container is loaded
    */
@@ -119,6 +120,10 @@ module.exports = class Hypervisor {
    */
   registerContainer (Constructor) {
     this._containerTypes[Constructor.typeId] = Constructor
+  }
+
+  registerDriver (driver) {
+    this.scheduler.drivers.set(driver.id.id.toString('hex'), driver)
   }
 }
 

@@ -31,8 +31,6 @@ function generateWrapper (funcRef, container) {
         const message = new Message({
           funcRef: self,
           funcArguments: checkedArgs
-        }).on('execution:error', e => {
-          console.log(e)
         })
         container.actor.send(message)
       }
@@ -91,7 +89,12 @@ module.exports = class WasmContainer {
             return self.refs.add(object)
           } else {
             const params = self.json.types[self.json.indexes[func.name - FUNC_INDEX_OFFSET]].params
-            const ref = new FunctionRef(true, func.tableIndex, params, self.actor.id)
+            const ref = new FunctionRef({
+              private: true,
+              identifier: func.tableIndex,
+              params,
+              id: self.actor.id
+            })
             return self.refs.add(ref, 'func')
           }
         },
@@ -124,7 +127,6 @@ module.exports = class WasmContainer {
           const obj = this.refs.get(ref, 'link')
           const promise = this.actor.tree.dataStore.get(obj)
           await this._opsQueue.push(promise)
-          // todo
         }
       },
       module: {

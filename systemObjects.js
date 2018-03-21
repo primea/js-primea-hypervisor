@@ -20,7 +20,7 @@ const decoder = new cbor.Decoder({
   tags: {
     [TAGS.id]: val => new ID(val),
     [TAGS.func]: val => new FunctionRef(...val),
-    [TAGS.mod]: val => new ModuleRef(...val),
+    [TAGS.mod]: val => new ModuleRef(...val)
   }
 })
 
@@ -37,15 +37,16 @@ class Serializable {
 }
 
 class FunctionRef extends Serializable {
-  constructor (privateFunc, identifier, params, id, gas=0) {
+  constructor (opts) {
     super()
-    this.private = privateFunc
-    this.identifier = identifier
-    if (!(id instanceof ID))
-      id = new ID(id)
-    this.destId = id
-    this.params = params
-    this.gas = gas
+    this.private = opts.private
+    this.identifier = opts.identifier
+    if (!(opts.id instanceof ID)) {
+      opts.id = new ID(opts.id)
+    }
+    this.destId = opts.id
+    this.params = opts.params
+    this.gas = opts.gas
   }
 
   encodeCBOR (gen) {
@@ -70,7 +71,12 @@ class ModuleRef extends Serializable {
   }
 
   getFuncRef (name) {
-    return new FunctionRef(false, name, this.exports[name], this.id)
+    return new FunctionRef({
+      private: false,
+      identifier: name,
+      params: this.exports[name],
+      id: this.id
+    })
   }
 
   encodeCBOR (gen) {

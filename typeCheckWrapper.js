@@ -12,7 +12,7 @@ const LANGUAGE_TYPES = {
   'block_type': 0x40
 }
 
-module.exports = function (type) {
+module.exports = function (params) {
   const module = [{
     'name': 'preramble',
     'magic': [
@@ -111,7 +111,7 @@ module.exports = function (type) {
   const checkCode = module[7].entries[0].code
   const invokeCode = module[7].entries[1].code
 
-  type.params.forEach((param, index) => {
+  params.forEach((param, index) => {
     let baseType = param
     const typeCode = LANGUAGE_TYPES[param]
     // import type

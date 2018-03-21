@@ -5,6 +5,9 @@ const {findSections} = require('wasm-json-toolkit')
 const LANGUAGE_TYPES = {
   'actor': 0x0,
   'buf': 0x1,
+  'elem': 0x2,
+  'link': 0x3,
+  'id': 0x4,
   'i32': 0x7f,
   'i64': 0x7e,
   'f32': 0x7d,
@@ -15,6 +18,9 @@ const LANGUAGE_TYPES = {
 
   0x0: 'actor',
   0x1: 'buf',
+  0x02: 'elem',
+  0x03: 'link',
+  0x04: 'id',
   0x7f: 'i32',
   0x7e: 'i64',
   0x7d: 'f32',
@@ -26,24 +32,50 @@ const LANGUAGE_TYPES = {
 
 function encodeJSON (json) {
   const stream = new Stream()
-  encodeCustomSection('type', json, stream, encodeType)
+  encodeCustomSection('types', json, stream, encodeType)
   encodeCustomSection('typeMap', json, stream, encodeTypeMap)
+  encodeCustomSection('globals', json, stream, encodeGlobals)
 
   return stream.buffer
 }
 
 function encodeCustomSection (name, json, stream, encodingFunc) {
-  stream.write([0])
   let payload = new Stream()
+  json = json[name]
 
-  // encode type
-  leb.unsigned.write(name.length, payload)
-  payload.write(name)
-  encodingFunc(json[name], payload)
-    // write the size of the payload
-  leb.unsigned.write(payload.bytesWrote, stream)
-  stream.write(payload.buffer)
+  if (json) {
+    stream.write([0])
+    // encode type
+    leb.unsigned.write(name.length, payload)
+    payload.write(name)
+    encodingFunc(json, payload)
+      // write the size of the payload
+    leb.unsigned.write(payload.bytesWrote, stream)
+    stream.write(payload.buffer)
+  }
   return stream
+}
+
+function encodeGlobals (json, stream) {
+  leb.unsigned.write(json.length, stream)
+  for (const entry of json) {
+    leb.unsigned.write(entry.index, stream)
+    leb.unsigned.write(LANGUAGE_TYPES[entry.type], stream)
+  }
+  return stream
+}
+
+function decodeGlobals (buf) {
+  const stream = new Stream(Buffer.from(buf))
+  let numOfEntries = leb.unsigned.read(stream)
+  const json = []
+  while (numOfEntries--) {
+    json.push({
+      index: leb.unsigned.readBn(stream).toNumber(),
+      type: LANGUAGE_TYPES[leb.unsigned.readBn(stream).toNumber()]
+    })
+  }
+  return json
 }
 
 function encodeTypeMap (json, stream) {
@@ -83,7 +115,6 @@ function encodeType (json, stream = new Stream()) {
     }
 
     binEntries.write([entry.return_type ? 1 : 0]) // number of return types
-
     if (entry.return_type) {
       binEntries.write([LANGUAGE_TYPES[entry.return_type]])
     }
@@ -137,26 +168,32 @@ function mergeTypeSections (json) {
   const result = {
     types: [],
     indexes: {},
-    exports: {}
+    exports: {},
+    globals: []
   }
 
-  const wantedSections = ['custom', 'custom', 'type', 'import', 'function', 'export']
+  const wantedSections = ['types', 'typeMap', 'globals', 'type', 'import', 'function', 'export']
   const iterator = findSections(json, wantedSections)
   const mappedFuncs = new Map()
   const mappedTypes = new Map()
-  const {value: customType} = iterator.next('custom')
+  const {value: customType} = iterator.next()
   if (customType) {
     const type = decodeType(customType.payload)
     result.types = type
   }
-  let {value: typeMap} = iterator.next('custom')
+  let {value: typeMap} = iterator.next()
   if (typeMap) {
     decodeTypeMap(typeMap.payload).forEach(map => mappedFuncs.set(map.func, map.type))
   }
 
-  const {value: type} = iterator.next('type')
-  const {value: imports = {entries: []}} = iterator.next('import')
-  const {value: functions} = iterator.next('function')
+  let {value: globals} = iterator.next()
+  if (globals) {
+    result.globals = decodeGlobals(globals.payload)
+  }
+
+  const {value: type} = iterator.next()
+  const {value: imports = {entries: []}} = iterator.next()
+  const {value: functions = {entries: []}} = iterator.next()
   functions.entries.forEach((typeIndex, funcIndex) => {
     let customIndex = mappedFuncs.get(funcIndex)
     if (customIndex === undefined) {
@@ -169,7 +206,7 @@ function mergeTypeSections (json) {
     result.indexes[funcIndex + imports.entries.length] = customIndex
   })
 
-  const {value: exports = {entries: []}} = iterator.next('export')
+  const {value: exports = {entries: []}} = iterator.next()
   exports.entries.forEach(entry => {
     if (entry.kind === 'function') {
       result.exports[entry.field_str] = entry.index
@@ -183,6 +220,7 @@ module.exports = {
   inject,
   decodeType,
   decodeTypeMap,
+  decodeGlobals,
   encodeType,
   encodeTypeMap,
   encodeJSON,

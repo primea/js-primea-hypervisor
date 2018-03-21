@@ -7,7 +7,7 @@ function comparator (messageA, messageB) {
   if (messageA._fromTicks !== messageB._fromTicks) {
     return messageA._fromTicks > messageB._fromTicks
   } else {
-    return Buffer.compare(messageA._fromId, messageB._fromId)
+    return Buffer.compare(messageA._fromId.id, messageB._fromId.id)
   }
 }
 
@@ -47,7 +47,7 @@ module.exports = class Scheduler extends EventEmitter {
   }
 
   async _processMessage (message) {
-    const to = message.funcRef.destId.toString('hex')
+    const to = message.funcRef.destId.id.toString('hex')
     let actor = this.actors.get(to)
     if (!actor) {
       actor = await this.hypervisor.loadActor(message.funcRef.destId)

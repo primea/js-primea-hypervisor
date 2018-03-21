@@ -1,26 +1,19 @@
 const {wasm2json, json2wasm} = require('wasm-json-toolkit')
 const wasmMetering = require('wasm-metering')
 const ReferanceMap = require('reference-map')
-const leb128 = require('leb128')
 const Message = require('./message.js')
 const customTypes = require('./customTypes.js')
+const injectGlobals = require('./injectGlobals.js')
 const typeCheckWrapper = require('./typeCheckWrapper.js')
+const {FunctionRef, ModuleRef, DEFAULTS} = require('./systemObjects.js')
 
 const nativeTypes = new Set(['i32', 'i64', 'f32', 'f64'])
 const LANGUAGE_TYPES = {
-  'actor': 0x0,
-  'buf': 0x1,
-  'elem': 0x2,
-  'i32': 0x7f,
-  'i64': 0x7e,
-  'f32': 0x7d,
-  'f64': 0x7c,
-  'anyFunc': 0x70,
-  'func': 0x60,
-  'block_type': 0x40,
-
   0x0: 'actor',
   0x1: 'buf',
+  0x02: 'elem',
+  0x03: 'link',
+  0x04: 'id',
   0x7f: 'i32',
   0x7e: 'i64',
   0x7d: 'f32',
@@ -29,116 +22,38 @@ const LANGUAGE_TYPES = {
   0x60: 'func',
   0x40: 'block_type'
 }
+const FUNC_INDEX_OFFSET = 1
 
-class ElementBuffer {
-  static get type () {
-    return 'elem'
-  }
-  constructor (size) {
-    this._array = new Array(size)
-  }
-
-  serialize () {
-    const serialized = this._array.map(ref => ref.serailize())
-    return Buffer.concat(Buffer.from([LANGUAGE_TYPES['elem']]), leb128.encode(serialized.length), serialized)
-  }
-
-  static deserialize (serialized) {}
-}
-
-class DataBuffer {
-  static get type () {
-    return 'data'
-  }
-  constructor (memory, offset, length) {
-    this._data = new Uint8Array(this.instance.exports.memory.buffer, offset, length)
-  }
-  serialize () {
-    return Buffer.concat(Buffer.from([LANGUAGE_TYPES['elem']]), leb128.encode(this._data.length), this._data)
-  }
-  static deserialize (serialized) {}
-}
-
-class LinkRef {
-  static get type () {
-    return 'link'
-  }
-  serialize () {
-    return Buffer.concat(Buffer.from([LANGUAGE_TYPES['link'], this]))
-  }
-  static deserialize (serialized) {}
-}
-
-class FunctionRef {
-  static get type () {
-    return 'func'
-  }
-
-  constructor (type, identifier, json, id) {
-    this.type = type
-    this.destId = id
-    let funcIndex
-    if (type === 'export') {
-      this.indentifier = identifier
-      funcIndex = json.exports[identifier]
-    } else {
-      this.indentifier = identifier.tableIndex
-      funcIndex = Number(identifier.name) - 1
-    }
-    const typeIndex = json.indexes[funcIndex]
-    const funcType = json.types[typeIndex]
-
-    const wrapper = typeCheckWrapper(funcType)
-    const wasm = json2wasm(wrapper)
-    const mod = WebAssembly.Module(wasm)
-    const self = this
-    this.wrapper = WebAssembly.Instance(mod, {
-      'env': {
-        'checkTypes': function () {
-          const args = [...arguments]
-          const checkedArgs = []
-          while (args.length) {
-            const type = LANGUAGE_TYPES[args.shift()]
-            let arg = args.shift()
-            if (!nativeTypes.has(type)) {
-              arg = self._container.refs.get(arg, type)
-            }
-            checkedArgs.push(arg)
+function generateWrapper (funcRef, container) {
+  let wrapper = typeCheckWrapper(funcRef.params)
+  const wasm = json2wasm(wrapper)
+  const mod = WebAssembly.Module(wasm)
+  const self = funcRef
+  wrapper = WebAssembly.Instance(mod, {
+    'env': {
+      'checkTypes': function () {
+        const args = [...arguments]
+        const checkedArgs = []
+        while (args.length) {
+          const type = LANGUAGE_TYPES[args.shift()]
+          let arg = args.shift()
+          if (!nativeTypes.has(type)) {
+            arg = container.refs.get(arg, type)
           }
-          const message = new Message({
-            funcRef: self,
-            funcArguments: checkedArgs
-          })
-          self._container.actor.send(message)
+          checkedArgs.push(arg)
         }
+        const message = new Message({
+          funcRef: self,
+          funcArguments: checkedArgs
+        }).on('execution:error', e => {
+          console.log(e)
+        })
+        container.actor.send(message)
       }
-    })
-    this.wrapper.exports.check.object = this
-  }
-  set container (container) {
-    this._container = container
-  }
-}
-
-class ModuleRef {
-  static get type () {
-    return 'mod'
-  }
-
-  constructor (json, id) {
-    this._json = json
-    this.id = id
-  }
-
-  getFuncRef (name) {
-    return new FunctionRef('export', name, this._json, this.id)
-  }
-
-  serialize () {
-    return this._json
-  }
-
-  static deserialize (serialized) {}
+    }
+  })
+  wrapper.exports.check.object = funcRef
+  return wrapper
 }
 
 module.exports = class WasmContainer {
@@ -147,58 +62,76 @@ module.exports = class WasmContainer {
     this.refs = new ReferanceMap()
   }
 
-  static async onCreation (wasm, id, cachedb) {
+  static createModule (wasm, id) {
     if (!WebAssembly.validate(wasm)) {
       throw new Error('invalid wasm binary')
     }
+
     let moduleJSON = wasm2json(wasm)
     const json = customTypes.mergeTypeSections(moduleJSON)
     moduleJSON = wasmMetering.meterJSON(moduleJSON, {
       meterType: 'i32'
     })
+
+    // initialize the globals
+    let numOfGlobals = json.globals.length
+    if (numOfGlobals) {
+      moduleJSON = injectGlobals(moduleJSON, json.globals)
+    }
+    // recompile the wasm
     wasm = json2wasm(moduleJSON)
-    await Promise.all([
-      new Promise((resolve, reject) => {
-        cachedb.put(id.toString() + 'meta', JSON.stringify(json), resolve)
-      }),
-      new Promise((resolve, reject) => {
-        cachedb.put(id.toString() + 'code', wasm.toString('hex'), resolve)
-      })
-    ])
-    return new ModuleRef(json, id)
+    const modRef = ModuleRef.fromMetaJSON(json, id)
+    return {
+      wasm,
+      json,
+      modRef
+    }
+  }
+
+  static async onCreation (unverifiedWasm, id, tree) {
+    let {modRef} = this.createModule(unverifiedWasm, id)
+    return modRef
   }
 
   getInterface (funcRef) {
     const self = this
     return {
       func: {
-        externalize: (index) => {
+        externalize: index => {
           const func = this.instance.exports.table.get(index)
           const object = func.object
           if (object) {
+            // externalize a pervously internalized function
             return self.refs.add(object)
           } else {
-            const ref = new FunctionRef('table', object.tableIndex, self.json, self.actor.id)
-            return self.refs.add(ref)
+            const params = self.json.types[self.json.indexes[func.name - FUNC_INDEX_OFFSET]].params
+            const ref = new FunctionRef(true, func.tableIndex, params, self.actor.id)
+            return self.refs.add(ref, 'func')
           }
         },
-        internalize: (ref, index) => {
-          const funcRef = self.refs.get(ref)
-          funcRef.container = self
-          this.instance.exports.table.set(index, funcRef.wrapper.exports.check)
+        internalize: (index, ref) => {
+          const funcRef = self.refs.get(ref, 'func')
+          const wrapper = generateWrapper(funcRef, self)
+          this.instance.exports.table.set(index, wrapper.exports.check)
         },
         catch: (ref, catchRef) => {
           const {funcRef} = self.refs.get(ref, FunctionRef)
           const {funcRef: catchFunc} = self.refs.get(ref, FunctionRef)
           funcRef.catch = catchFunc
         },
-        getGasAmount: (funcRef) => {},
-        setGasAmount: (funcRef) => {}
+        get_gas_budget: (funcRef) => {
+          const func = self.refs.get(funcRef, 'func')
+          return func.gas
+        },
+        set_gas_budget: (funcRef, amount) => {
+          const func = self.refs.get(funcRef, 'func')
+          func.gas = amount
+        }
       },
       link: {
-        wrap: (ref) => {
+        wrap: ref => {
           const obj = this.refs.get(ref)
-          const link = new LinkRef(obj.serialize())
+          const link = {'/': obj}
           return this.refs.add(link, 'link')
         },
         unwrap: async (ref, cb) => {
@@ -209,55 +142,62 @@ module.exports = class WasmContainer {
         }
       },
       module: {
-        new: code => {},
-        exports: (modRef, offset, length) => {
+        new: dataRef => {
+
+        },
+        export: (modRef, bufRef) => {
           const mod = this.refs.get(modRef, 'mod')
-          let name = this.getMemory(offset, length)
+          let name = this.refs.get(bufRef, 'buf')
           name = Buffer.from(name).toString()
           const funcRef = mod.getFuncRef(name)
           return this.refs.add(funcRef, 'func')
         },
         self: () => {
-          return this.refs.add(this.moduleObj, 'mod')
+          return this.refs.add(this.modSelf, 'mod')
         }
       },
       memory: {
         externalize: (index, length) => {
-          const buf = this.getMemory(index, length)
+          const buf = Buffer.from(this.get8Memory(index, length))
           return this.refs.add(buf, 'buf')
         },
-        internalize: (dataRef, writeOffset, readOffset, length) => {
+        internalize: (dataRef, srcOffset, sinkOffset, length) => {
           let buf = this.refs.get(dataRef, 'buf')
-          buf = buf.subarray(readOffset, length)
-          const mem = this.getMemory(writeOffset, buf.length)
+          buf = buf.subarray(srcOffset, length)
+          const mem = this.get8Memory(sinkOffset, buf.length)
           mem.set(buf)
+        },
+        length (dataRef) {
+          let buf = this.refs.get(dataRef, 'buf')
+          return buf.length
         }
       },
       table: {
         externalize: (index, length) => {
-          const mem = this.getMemory(index, length * 4)
+          const mem = Buffer.from(this.get8Memory(index, length * 4))
           const objects = []
           while (length--) {
-            const ref = mem[index + length]
-            if (this.refs.has(ref)) {
-              objects.push(ref)
-            } else {
-              throw new Error('invalid ref')
-            }
+            const ref = mem.readUInt32LE(length * 4)
+            const obj = this.refs.get(ref)
+            objects.unshift(obj)
           }
-          const eleBuf = new ElementBuffer(objects)
-          return this.refs.add(eleBuf, 'elem')
+          return this.refs.add(objects, 'elem')
         },
-        internalize: (dataRef, writeOffset, readOffset, length) => {
-          let buf = this.refs.get(dataRef, 'elem')
-          buf = buf.subarray(readOffset, length)
-          const mem = this.getMemory(writeOffset, buf.length)
+        internalize: (elemRef, srcOffset, sinkOffset, length) => {
+          let table = this.refs.get(elemRef, 'elem')
+          const buf = table.slice(srcOffset, srcOffset + length).map(obj => this.refs.add(obj))
+          const mem = this.get32Memory(sinkOffset, length)
           mem.set(buf)
+        },
+        length (elemRef) {
+          let elem = this.refs.get(elemRef, 'elem')
+          return elem.length
         }
       },
       metering: {
-        usegas: (amount) => {
-          funcRef.gas -= amount
+        usegas: amount => {
+          this.actor.incrementTicks(amount)
+          // funcRef.gas -= amount
           if (funcRef.gas < 0) {
             throw new Error('out of gas! :(')
           }
@@ -270,6 +210,7 @@ module.exports = class WasmContainer {
     const funcRef = message.funcRef
     const intef = this.getInterface(funcRef)
     this.instance = WebAssembly.Instance(this.mod, intef)
+    // map table indexes
     const table = this.instance.exports.table
     if (table) {
       let length = table.length
@@ -280,19 +221,47 @@ module.exports = class WasmContainer {
         }
       }
     }
-    const args = message.funcArguments.map(arg => {
-      if (typeof arg === 'number') {
+    // import references
+    const args = message.funcArguments.map((arg, index) => {
+      const type = funcRef.params[index]
+      if (nativeTypes.has(type)) {
         return arg
       } else {
-        return this.refs.add(arg, arg.constructor.type)
+        return this.refs.add(arg, type)
       }
     })
-    if (funcRef.type === 'export') {
-      this.instance.exports[funcRef.indentifier](...args)
+
+    // setup globals
+    let numOfGlobals = this.json.globals.length
+    if (numOfGlobals) {
+      const refs = []
+      while (numOfGlobals--) {
+        const obj = this.actor.storage[numOfGlobals] || DEFAULTS[this.json.globals[numOfGlobals].type]
+        refs.push(this.refs.add(obj, this.json.globals[numOfGlobals].type))
+      }
+      this.instance.exports.setter_globals(...refs)
+    }
+
+    // call entrypoint function
+    if (funcRef.private) {
+      this.instance.exports.table.get(funcRef.identifier)(...args)
     } else {
-      this.instance.exports.table.get(funcRef.indentifier)(...args)
+      this.instance.exports[funcRef.identifier](...args)
     }
     await this.onDone()
+
+    // store globals
+    numOfGlobals = this.json.globals.length
+    if (numOfGlobals) {
+      this.actor.storage = []
+      this.instance.exports.getter_globals()
+      const mem = this.get32Memory(0, numOfGlobals)
+      while (numOfGlobals--) {
+        const ref = mem[numOfGlobals]
+        this.actor.storage.push(this.refs.get(ref, this.json.globals[numOfGlobals].type))
+      }
+    }
+
     this.refs.clear()
   }
 
@@ -318,41 +287,20 @@ module.exports = class WasmContainer {
     return this._opsQueue
   }
 
-  getFuncRef (name, send) {
-    const funcRef = new FunctionRef(this.json, name, send)
-    return funcRef
-  }
-
   async onStartup () {
-    let [json, wasm] = await Promise.all([
-      new Promise((resolve, reject) => {
-        this.actor.cachedb.get(this.actor.id.toString() + 'meta', (err, json) => {
-          if (err) {
-            reject(err)
-          } else {
-            resolve(json)
-          }
-        })
-      }),
-      new Promise((resolve, reject) => {
-        this.actor.cachedb.get(this.actor.id.toString() + 'code', (err, wasm) => {
-          if (err) {
-            reject(err)
-          } else {
-            resolve(wasm)
-          }
-        })
-      })
-    ])
-    wasm = Buffer.from(wasm, 'hex')
-    json = JSON.parse(json)
+    const code = this.actor.code
+    const {json, wasm, modRef} = WasmContainer.createModule(code, this.actor.id)
     this.mod = WebAssembly.Module(wasm)
     this.json = json
-    this.moduleObj = new ModuleRef(json, this.actor.id)
+    this.modSelf = modRef
   }
 
-  getMemory (offset, length) {
+  get8Memory (offset, length) {
     return new Uint8Array(this.instance.exports.memory.buffer, offset, length)
+  }
+
+  get32Memory (offset, length) {
+    return new Uint32Array(this.instance.exports.memory.buffer, offset, length)
   }
 
   static get typeId () {

@@ -1,6 +1,3 @@
-const Pipe = require('buffer-pipe')
-const leb128 = require('leb128').unsigned
-
 module.exports = class Actor {
   /**
    * the Actor manages the varous message passing functions and provides
@@ -20,23 +17,13 @@ module.exports = class Actor {
     this.container = new this.Container(this)
   }
 
-  serializeMetaData () {
-    return Actor.serializeMetaData(this.type, this.nonce)
-  }
-
-  getFuncRef (name) {
-    return {
-      name,
-      destId: this.id
-    }
-  }
-
   /**
    * Runs the shutdown routine for the actor
    */
   async shutdown () {
-    await this.state.done()
-    this.state.root['/'][3] = this.serializeMetaData()
+    await this.tree.set(this.id.id, [this.type, this.nonce])
+    const state = await this.tree.get(this.id.id)
+    return this.tree.graph.set(state.root, '2', this.storage)
   }
 
   /**
@@ -62,7 +49,7 @@ module.exports = class Actor {
     } catch (e) {
       message.emit('execution:error', e)
     }
-    message.emit('done')
+    message.emit('done', this)
   }
 
   /**
@@ -103,22 +90,5 @@ module.exports = class Actor {
     message._fromId = this.id
 
     this.hypervisor.scheduler.queue([message])
-  }
-
-  static serializeMetaData (type, nonce = 0) {
-    const p = new Pipe()
-    leb128.write(type, p)
-    leb128.write(nonce, p)
-    return p.buffer
-  }
-
-  static deserializeMetaData (buffer) {
-    const pipe = new Pipe(buffer)
-    const type = leb128.read(pipe)
-    const nonce = leb128.read(pipe)
-    return {
-      nonce,
-      type
-    }
   }
 }

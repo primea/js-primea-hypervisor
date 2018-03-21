@@ -42,7 +42,7 @@
     "levelup": "^2.0.2",
     "coveralls": "^3.0.0",
     "dfinity-radix-tree": "0.1.1",
-    "documentation": "^5.3.5",
+    "documentation": "^6.0.0",
     "level-browserify": "^1.1.1",
     "nyc": "^11.4.1",
     "standard": "11.0.0",

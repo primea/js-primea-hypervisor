@@ -1,6 +1,6 @@
 const wabt = require('wabt')
 const fs = require('fs')
-const types = require('../customTypes')
+const annotations = require('primea-annotations')
 
 function filesWast2wasm () {
   const srcFiles = fs.readdirSync(`${__dirname}/wast`)
@@ -22,8 +22,7 @@ function filesWast2wasm () {
       let binary = Buffer.from(r.buffer)
       if (json) {
         console.log(json)
-        const buf = types.encodeJSON(json)
-        binary = types.injectCustomSection(buf, binary)
+        binary = annotations.encodeAndInject(json, binary)
       }
       fs.writeFileSync(`${__dirname}/wasm/${file}.wasm`, binary)
     } catch (e) {

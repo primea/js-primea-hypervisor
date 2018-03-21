@@ -9,7 +9,7 @@ const TAGS = {
 
 const DEFAULTS = {
   elem: [],
-  buf: Buffer.from([]),
+  data: Buffer.from([]),
   id: new cbor.Tagged(TAGS.id, 0),
   mod: new cbor.Tagged(TAGS.mod, [{}, new cbor.Tagged(TAGS.id, 0)]),
   link: {'/': null},

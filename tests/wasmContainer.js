@@ -57,6 +57,8 @@ tape('basic', async t => {
   const message = new Message({
     funcRef,
     funcArguments: [5]
+  }).on('execution:error', e => {
+    console.log(e)
   })
   hypervisor.send(message)
   const stateRoot = await hypervisor.createStateRoot()

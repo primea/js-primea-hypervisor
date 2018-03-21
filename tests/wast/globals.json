@@ -1,6 +1,7 @@
 {
-  "globals": [{
+  "persist": [{
+    "form": "global",
     "index": 0,
-    "type": "buf"
+    "type": "data"
   }]
 }

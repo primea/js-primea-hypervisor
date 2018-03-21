@@ -39,7 +39,6 @@ class Serializable {
 class FunctionRef extends Serializable {
   constructor (opts) {
     super()
-    this.private = opts.private
     this.identifier = opts.identifier
     if (!(opts.id instanceof ID)) {
       opts.id = new ID(opts.id)
@@ -51,7 +50,6 @@ class FunctionRef extends Serializable {
 
   encodeCBOR (gen) {
     return gen.write(new cbor.Tagged(TAGS.func, [
-      this.private,
       this.identifier,
       this.params,
       this.destId
@@ -72,8 +70,7 @@ class ModuleRef extends Serializable {
 
   getFuncRef (name) {
     return new FunctionRef({
-      private: false,
-      identifier: name,
+      identifier: [false, name],
       params: this.exports[name],
       id: this.id
     })

@@ -90,8 +90,7 @@ module.exports = class WasmContainer {
           } else {
             const params = self.json.types[self.json.indexes[func.name - FUNC_INDEX_OFFSET]].params
             const ref = new FunctionRef({
-              private: true,
-              identifier: func.tableIndex,
+              identifier: [true, func.tableIndex],
               params,
               id: self.actor.id
             })
@@ -232,10 +231,10 @@ module.exports = class WasmContainer {
     }
 
     // call entrypoint function
-    if (funcRef.private) {
-      this.instance.exports.table.get(funcRef.identifier)(...args)
+    if (funcRef.identifier[0]) {
+      this.instance.exports.table.get(funcRef.identifier[1])(...args)
     } else {
-      this.instance.exports[funcRef.identifier](...args)
+      this.instance.exports[funcRef.identifier[1]](...args)
     }
     await this.onDone()
 

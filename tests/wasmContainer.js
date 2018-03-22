@@ -69,7 +69,7 @@ tape('empty', async t => {
   t.plan(1)
   tester = t
   const expectedState = {
-    '/': Buffer.from('bda5092c441e8d40c32eeeb69ce0e493f9d487cb', 'hex')
+    '/': Buffer.from('3ac226eb0a4809e7f0b3d7ba1e0bb6d57e0378a8', 'hex')
   }
 
   const tree = new RadixTree({

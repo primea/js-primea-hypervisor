@@ -42,7 +42,7 @@
   "devDependencies": {
     "levelup": "^2.0.2",
     "coveralls": "^3.0.0",
-    "dfinity-radix-tree": "^0.1.4",
+    "dfinity-radix-tree": "^0.1.5",
     "documentation": "^6.0.0",
     "level-browserify": "^1.1.2",
     "nyc": "^11.6.0",

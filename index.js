@@ -100,16 +100,17 @@ module.exports = class Hypervisor {
    * @param {Number} ticks the number of ticks at which to create the state root
    * @returns {Promise}
    */
-  createStateRoot () {
-    return new Promise((resolve, reject) => {
+  async createStateRoot () {
+    const promise = new Promise((resolve, reject) => {
       if (!this.scheduler._running) {
         this.tree.flush().then(resolve)
       } else {
-        this.scheduler.on('idle', () => {
+        this.scheduler.once('idle', () => {
           this.tree.flush().then(resolve)
         })
       }
     })
+    return promise
   }
 
   /**

@@ -31,7 +31,7 @@
   "license": "MPL-2.0",
   "dependencies": {
     "binary-search-insert": "^1.0.3",
-    "borc": "git+ssh://git@github.com:dignifiedquire/borc.git#fix/nested-array",
+    "borc": "git+https://github.com:dignifiedquire/borc.git#fix/nested-array",
     "events": "^2.0.0",
     "primea-annotations": "0.0.1",
     "reference-map": "^1.2.3",

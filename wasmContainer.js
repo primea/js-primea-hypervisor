@@ -67,8 +67,7 @@ module.exports = class WasmContainer {
     })
 
     // initialize the globals
-    let numOfGlobals = json.persist.length
-    if (numOfGlobals) {
+    if (json.persist.length) {
       moduleJSON = injectGlobals(moduleJSON, json.persist)
     }
     // recompile the wasm
@@ -194,7 +193,7 @@ module.exports = class WasmContainer {
       metering: {
         usegas: amount => {
           this.actor.incrementTicks(amount)
-          // funcRef.gas -= amount
+          funcRef.gas -= amount
           if (funcRef.gas < 0) {
             throw new Error('out of gas! :(')
           }
@@ -250,13 +249,14 @@ module.exports = class WasmContainer {
     // store globals
     numOfGlobals = this.json.persist.length
     if (numOfGlobals) {
-      this.actor.storage = []
+      const storage = []
       this.instance.exports.getter_globals()
       const mem = this.get32Memory(0, numOfGlobals)
       while (numOfGlobals--) {
         const ref = mem[numOfGlobals]
-        this.actor.storage.push(this.refs.get(ref, this.json.persist[numOfGlobals].type))
+        storage.push(this.refs.get(ref, this.json.persist[numOfGlobals].type))
       }
+      this.actor.storage = storage
     }
 
     this.refs.clear()

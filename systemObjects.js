@@ -12,58 +12,48 @@ const DEFAULTS = {
   data: Buffer.from([]),
   id: new cbor.Tagged(TAGS.id, 0),
   mod: new cbor.Tagged(TAGS.mod, [{}, new cbor.Tagged(TAGS.id, 0)]),
-  link: {'/': null},
+  link: new cbor.Tagged(TAGS.link, null),
   func: new cbor.Tagged(TAGS.func, 0)
 }
 
 const decoder = new cbor.Decoder({
   tags: {
     [TAGS.id]: val => new ID(val),
-    [TAGS.func]: val => new FunctionRef(...val),
-    [TAGS.mod]: val => new ModuleRef(...val)
+    [TAGS.func]: val => new FunctionRef({
+      identifier: val[0],
+      params: val[1],
+      id: val[2],
+      gas: val[3]
+    }),
+    [TAGS.mod]: val => new ModuleRef(...val),
+    [TAGS.link]: val => {
+      return {
+        '/': val
+      }
+    }
   }
 })
 
-class Serializable {
-  serialize () {
-    const encoder = new cbor.Encoder()
-    this.encodeCBOR(encoder)
-    return encoder.finalize()
-  }
-
-  static deserialize (serialized) {
-    return decoder.decodeFirst(serialized)
-  }
-}
-
-class FunctionRef extends Serializable {
+class FunctionRef {
   constructor (opts) {
-    super()
     this.identifier = opts.identifier
-    if (!(opts.id instanceof ID)) {
-      opts.id = new ID(opts.id)
-    }
     this.destId = opts.id
     this.params = opts.params
-    this.gas = opts.gas
+    this.gas = opts.gas || 0
   }
 
   encodeCBOR (gen) {
     return gen.write(new cbor.Tagged(TAGS.func, [
       this.identifier,
       this.params,
-      this.destId
+      this.destId,
+      this.gas
     ]))
-  }
-
-  set container (container) {
-    this._container = container
   }
 }
 
-class ModuleRef extends Serializable {
+class ModuleRef {
   constructor (ex, id) {
-    super()
     this.exports = ex
     this.id = id
   }
@@ -79,20 +69,10 @@ class ModuleRef extends Serializable {
   encodeCBOR (gen) {
     return gen.write(new cbor.Tagged(TAGS.mod, [this.exports, this.id]))
   }
-
-  static fromMetaJSON (json, id) {
-    const exports = {}
-    for (const ex in json.exports) {
-      const type = json.types[json.indexes[json.exports[ex].toString()]].params
-      exports[ex] = type
-    }
-    return new ModuleRef(exports, id)
-  }
 }
 
-class ID extends Serializable {
+class ID {
   constructor (id) {
-    super()
     this.id = id
   }
 
@@ -105,5 +85,6 @@ module.exports = {
   ID,
   FunctionRef,
   ModuleRef,
-  DEFAULTS
+  DEFAULTS,
+  decoder
 }

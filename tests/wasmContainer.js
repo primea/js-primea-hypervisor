@@ -37,9 +37,7 @@ class TestWasmContainer extends WasmContainer {
 tape('basic', async t => {
   t.plan(1)
   tester = t
-  const expectedState = {
-    '/': Buffer.from('4494963fb0e02312510e675fbca8b60b6e03bd00', 'hex')
-  }
+  const expectedState = Buffer.from('4494963fb0e02312510e675fbca8b60b6e03bd00', 'hex')
 
   const tree = new RadixTree({
     db
@@ -68,9 +66,7 @@ tape('basic', async t => {
 tape('empty', async t => {
   t.plan(1)
   tester = t
-  const expectedState = {
-    '/': Buffer.from('3ac226eb0a4809e7f0b3d7ba1e0bb6d57e0378a8', 'hex')
-  }
+  const expectedState = Buffer.from('aeb5418328108a82b7a2a57712bddc989d513f5d', 'hex')
 
   const tree = new RadixTree({
     db

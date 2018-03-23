@@ -1,7 +1,7 @@
 const crypto = require('crypto')
 const Actor = require('./actor.js')
 const Scheduler = require('./scheduler.js')
-const {ID} = require('./systemObjects.js')
+const {ID, decoder} = require('./systemObjects.js')
 
 module.exports = class Hypervisor {
   /**
@@ -10,6 +10,7 @@ module.exports = class Hypervisor {
    * @param {Tree} tree - a [radix tree](https://github.com/dfinity/js-dfinity-radix-tree) to store the state
    */
   constructor (tree, containers = [], drivers = [], nonce = 0) {
+    tree.dag.decoder = decoder
     this.tree = tree
     this.scheduler = new Scheduler(this)
     this._containerTypes = {}
@@ -48,7 +49,7 @@ module.exports = class Hypervisor {
       nonce,
       type,
       code,
-      storage: storage || [],
+      storage,
       tree: this.tree
     })
 
@@ -101,16 +102,12 @@ module.exports = class Hypervisor {
    * @returns {Promise}
    */
   async createStateRoot () {
-    const promise = new Promise((resolve, reject) => {
-      if (!this.scheduler._running) {
-        this.tree.flush().then(resolve)
-      } else {
-        this.scheduler.once('idle', () => {
-          this.tree.flush().then(resolve)
-        })
-      }
-    })
-    return promise
+    if (this.scheduler._running) {
+      await new Promise((resolve, reject) => {
+        this.scheduler.once('idle', resolve)
+      })
+    }
+    return this.tree.flush()
   }
 
   /**

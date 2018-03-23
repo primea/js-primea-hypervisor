@@ -31,7 +31,7 @@
   "license": "MPL-2.0",
   "dependencies": {
     "binary-search-insert": "^1.0.3",
-    "borc": "^2.0.2",
+    "borc": "git+ssh://git@github.com:dignifiedquire/borc.git#fix/nested-array",
     "events": "^2.0.0",
     "primea-annotations": "0.0.1",
     "reference-map": "^1.2.3",
@@ -42,7 +42,7 @@
   "devDependencies": {
     "levelup": "^2.0.2",
     "coveralls": "^3.0.0",
-    "dfinity-radix-tree": "^0.1.5",
+    "dfinity-radix-tree": "^0.2.1",
     "documentation": "^6.0.0",
     "level-browserify": "^1.1.2",
     "nyc": "^11.6.0",

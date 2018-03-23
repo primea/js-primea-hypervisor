@@ -1,7 +1,7 @@
 const tape = require('tape')
 const Message = require('../message.js')
 const Hypervisor = require('../')
-const {FunctionRef} = require('../systemObjects')
+const {FunctionRef, ModuleRef} = require('../systemObjects')
 
 const level = require('level-browserify')
 const EgressDriver = require('../egressDriver')
@@ -31,12 +31,56 @@ class BaseContainer {
   }
 }
 
-tape('basic', async t => {
-  t.plan(2)
-  const expectedState = {
-    '/': Buffer.from('1602fe14ee1e95c9d5cf10e809d0615cb21927a2', 'hex')
+tape('system objects', async t => {
+  t.plan(4)
+  const tree = new RadixTree({
+    db
+  })
+
+  let id
+  let mod
+  let funcref
+
+  class testVMContainer extends BaseContainer {
+    store () {
+      id = this.actor.id.id.toString('hex')
+      mod = new ModuleRef({'test': ['i32', 'i64']}, this.actor.id)
+      funcref = mod.getFuncRef('test')
+      this.actor.storage = [this.actor.id, {'/': 'test'}, mod, funcref]
+    }
+    load () {
+      const loadedID = this.actor.storage[0].id.toString('hex')
+      const link = this.actor.storage[1]
+      const loadedMod = this.actor.storage[2]
+      const loadedFuncref = this.actor.storage[3]
+      t.equals(id, loadedID, 'should load id correctly')
+      t.equals(link['/'].toString('hex'), '6fe3180f700090697285ac1e0e8dc400259373d7', 'should load link correctly')
+      t.deepEquals(loadedMod, mod)
+      t.deepEquals(funcref, loadedFuncref)
+    }
   }
 
+  const hypervisor = new Hypervisor(tree, [testVMContainer])
+  const {module} = hypervisor.createActor(testVMContainer.typeId)
+
+  const message = new Message({
+    funcRef: module.store
+  })
+
+  hypervisor.send(message)
+  await hypervisor.createStateRoot()
+
+  const message2 = new Message({
+    funcRef: module.load
+  })
+  hypervisor.send(message2)
+  await hypervisor.createStateRoot()
+  t.end()
+})
+
+tape('basic', async t => {
+  t.plan(2)
+  const expectedState = Buffer.from('1602fe14ee1e95c9d5cf10e809d0615cb21927a2', 'hex')
   const tree = new RadixTree({
     db
   })
@@ -48,6 +92,8 @@ tape('basic', async t => {
   }
 
   const hypervisor = new Hypervisor(tree, [testVMContainer])
+  await hypervisor.createStateRoot()
+
   const {module} = hypervisor.createActor(testVMContainer.typeId)
 
   const message = new Message({
@@ -56,15 +102,13 @@ tape('basic', async t => {
   })
   hypervisor.send(message)
 
-  const stateRoot = await hypervisor.createStateRoot()
-  t.deepEquals(stateRoot, expectedState, 'expected root!')
+  const stateRoot2 = await hypervisor.createStateRoot()
+  t.deepEquals(stateRoot2, expectedState, 'expected root!')
 })
 
 tape('two communicating actors', async t => {
   t.plan(2)
-  const expectedState = {
-    '/': Buffer.from('3cdad3b1024074e7edafadbb98ee162cc8cfe565', 'hex')
-  }
+  const expectedState = Buffer.from('3cdad3b1024074e7edafadbb98ee162cc8cfe565', 'hex')
 
   const tree = new RadixTree({
     db
@@ -108,10 +152,7 @@ tape('two communicating actors', async t => {
 
 tape('three communicating actors', async t => {
   t.plan(3)
-  const expectedState = {
-    '/': Buffer.from('7b659c263363b0b9c461a432aac8d8bf0d351788', 'hex')
-  }
-
+  const expectedState = Buffer.from('7b659c263363b0b9c461a432aac8d8bf0d351788', 'hex')
   const tree = new RadixTree({
     db: db
   })
@@ -161,10 +202,7 @@ tape('three communicating actors', async t => {
 
 tape('three communicating actors, with tick counting', async t => {
   t.plan(3)
-  const expectedState = {
-    '/': Buffer.from('7b659c263363b0b9c461a432aac8d8bf0d351788', 'hex')
-  }
-
+  const expectedState = Buffer.from('7b659c263363b0b9c461a432aac8d8bf0d351788', 'hex')
   const tree = new RadixTree({
     db: db
   })
@@ -214,10 +252,7 @@ tape('three communicating actors, with tick counting', async t => {
 
 tape('errors', async t => {
   t.plan(3)
-  const expectedState = {
-    '/': Buffer.from('3cdad3b1024074e7edafadbb98ee162cc8cfe565', 'hex')
-  }
-
+  const expectedState = Buffer.from('3cdad3b1024074e7edafadbb98ee162cc8cfe565', 'hex')
   const tree = new RadixTree({
     db: db
   })
@@ -262,9 +297,7 @@ tape('errors', async t => {
 
 tape('actor creation', async t => {
   t.plan(2)
-  const expectedState = {
-    '/': Buffer.from('f1803a4188890e205e2e6480159d504d149d8910', 'hex')
-  }
+  const expectedState = Buffer.from('f1803a4188890e205e2e6480159d504d149d8910', 'hex')
 
   const tree = new RadixTree({
     db: db
@@ -311,10 +344,7 @@ tape('actor creation', async t => {
 
 tape('simple message arbiter test', async t => {
   t.plan(4)
-  const expectedState = {
-    '/': Buffer.from('3cdad3b1024074e7edafadbb98ee162cc8cfe565', 'hex')
-  }
-
+  const expectedState = Buffer.from('3cdad3b1024074e7edafadbb98ee162cc8cfe565', 'hex')
   const tree = new RadixTree({
     db: db
   })
@@ -380,9 +410,7 @@ tape('simple message arbiter test', async t => {
 tape('arbiter test for id comparision', async t => {
   t.plan(4)
   let message
-  const expectedState = {
-    '/': Buffer.from('7b659c263363b0b9c461a432aac8d8bf0d351788', 'hex')
-  }
+  const expectedState = Buffer.from('7b659c263363b0b9c461a432aac8d8bf0d351788', 'hex')
 
   const tree = new RadixTree({
     db: db
@@ -447,9 +475,7 @@ tape('arbiter test for id comparision', async t => {
 
 tape('async work', async t => {
   t.plan(3)
-  const expectedState = {
-    '/': Buffer.from('3cdad3b1024074e7edafadbb98ee162cc8cfe565', 'hex')
-  }
+  const expectedState = Buffer.from('3cdad3b1024074e7edafadbb98ee162cc8cfe565', 'hex')
 
   const tree = new RadixTree({
     db: db

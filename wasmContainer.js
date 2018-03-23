@@ -10,6 +10,15 @@ const {FunctionRef, ModuleRef, DEFAULTS} = require('./systemObjects.js')
 const nativeTypes = new Set(['i32', 'i64', 'f32', 'f64'])
 const FUNC_INDEX_OFFSET = 1
 
+function fromMetaJSON (json, id) {
+  const exports = {}
+  for (const ex in json.exports) {
+    const type = json.types[json.indexes[json.exports[ex].toString()]].params
+    exports[ex] = type
+  }
+  return new ModuleRef(exports, id)
+}
+
 function generateWrapper (funcRef, container) {
   let wrapper = typeCheckWrapper(funcRef.params)
   const wasm = json2wasm(wrapper)
@@ -64,7 +73,7 @@ module.exports = class WasmContainer {
     }
     // recompile the wasm
     wasm = json2wasm(moduleJSON)
-    const modRef = ModuleRef.fromMetaJSON(json, id)
+    const modRef = fromMetaJSON(json, id)
     return {
       wasm,
       json,

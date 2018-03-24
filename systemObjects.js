@@ -59,9 +59,11 @@ class ModuleRef {
   }
 
   getFuncRef (name) {
+    const params = this.exports[name]
+
     return new FunctionRef({
       identifier: [false, name],
-      params: this.exports[name],
+      params,
       id: this.id
     })
   }

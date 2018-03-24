@@ -4,58 +4,48 @@ const Hypervisor = require('../')
 const level = require('level-browserify')
 const RadixTree = require('dfinity-radix-tree')
 const db = level('./testdb')
+const {ModuleRef} = require('../systemObjects')
 
-let numOfMsg = 0
-const messageOrder = {}
-
-class BenchmarkContainer {
-  static validate () {}
-  static compile () {}
+class BaseContainer {
+  constructor (actor) {
+    this.actor = actor
+  }
+  onStartup () {}
+  static onCreation (code, id) {
+    const exp = {}
+    Object.getOwnPropertyNames(this.prototype).filter(name => name !== 'constructor').forEach(name => {
+      exp[name] = {}
+    })
+    return new ModuleRef(exp, id)
+  }
+  onMessage (message) {
+    return this[message.funcRef.identifier[1]](...message.funcArguments)
+  }
   static get typeId () {
     return 9
-  }
-
-  static exports (m, id) {
-    return Object.keys(this.functions()).map(name => {
-      return {
-        name,
-        destId: id
-      }
-    })
-  }
-  static instance (actor) {
-    return {
-      exports: this.functions(actor)
-    }
-  }
-  static functions (actor) {
-    return {
-      onMessage: function () {
-        const refs = [...arguments]
-        const ref = refs.pop()
-        // console.log('run queue', this.actor.inbox._queue)
-        // console.log('from', message._fromId.toString('hex'), 'to: ', this.actor.id.toString('hex'), this.actor.ticks, message._fromTicks)
-        // const last = messageOrder[actor.id.toString('hex')]
-        // const message = actor.currentMessage 
-        // if (last && last > message._fromTicks) {
-        //   console.log(last, message._fromTicks)
-        //   // console.log(this.actor.hypervisor.scheduler.instances)
-        // }
-        // messageOrder[actor.id.toString('hex')] = message._fromTicks
-        numOfMsg++
-        actor.incrementTicks(10)
-        if (ref) {
-          return actor.send(new Message({
-            funcRef: ref,
-            funcArguments: refs
-          }))
-        }
-      }
-    }
   }
 }
 
 async function main (numOfActors, depth) {
+  // const messageOrder = {}
+  let numOfMsg = 0
+  class BenchmarkContainer extends BaseContainer {
+    main () {
+      const refs = [...arguments]
+      const ref = refs.pop()
+      // const last = messageOrder[this.actor.id.toString('hex')]
+      // const message = this.actor.currentMessage
+      // messageOrder[this.actor.id.toString('hex')] = message._fromTicks
+      numOfMsg++
+      this.actor.incrementTicks(10)
+      if (ref) {
+        this.actor.send(new Message({
+          funcRef: ref,
+          funcArguments: refs
+        }))
+      }
+    }
+  }
   const tree = new RadixTree({
     db: db
   })
@@ -66,10 +56,11 @@ async function main (numOfActors, depth) {
   const refernces = []
   let _numOfActors = numOfActors
   while (_numOfActors--) {
-    const {exports} = await hypervisor.createActor(BenchmarkContainer.typeId)
-    refernces.push(exports[0])
+    const {
+      module
+    } = hypervisor.createActor(BenchmarkContainer.typeId)
+    refernces.push(module.getFuncRef('main'))
   }
-  // console.log(refernces)
   _numOfActors = numOfActors
   let msgs = []
   while (_numOfActors--) {
@@ -88,9 +79,8 @@ async function main (numOfActors, depth) {
   }
 
   let start = new Date()
-  await Promise.all(msgs.map((msg) => hypervisor.send(msg)))
-  console.log('done sending')
-  hypervisor.scheduler.on('idle', () => {
+  hypervisor.send(msgs)
+  await hypervisor.scheduler.on('idle', () => {
     const end = new Date() - start
     console.info('Execution time: %dms', end)
     console.log('messages processed', numOfActors * depth + numOfActors)

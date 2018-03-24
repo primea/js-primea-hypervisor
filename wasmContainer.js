@@ -110,11 +110,11 @@ module.exports = class WasmContainer {
           const wrapper = generateWrapper(funcRef, self)
           this.instance.exports.table.set(index, wrapper.exports.check)
         },
-        catch: (ref, catchRef) => {
-          const {funcRef} = self.refs.get(ref, FunctionRef)
-          const {funcRef: catchFunc} = self.refs.get(ref, FunctionRef)
-          funcRef.catch = catchFunc
-        },
+        // catch: (ref, catchRef) => {
+        //   const {funcRef} = self.refs.get(ref, FunctionRef)
+        //   const {funcRef: catchFunc} = self.refs.get(ref, FunctionRef)
+        //   funcRef.catch = catchFunc
+        // },
         get_gas_budget: (funcRef) => {
           const func = self.refs.get(funcRef, 'func')
           return func.gas

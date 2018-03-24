@@ -66,13 +66,13 @@ module.exports = class Hypervisor {
   createActor (type, code, id = {nonce: this.nonce++, parent: null}) {
     const Container = this._containerTypes[type]
     const encoded = encodedID(id)
-    let idHash = this._hash(encoded)
-    idHash = new ID(idHash)
-    const module = Container.onCreation(code, idHash, this.tree)
+    id = this._hash(encoded)
+    id = new ID(id)
+    const module = Container.onCreation(code, id, this.tree)
     const metaData = [type, 0]
 
     // save the container in the state
-    this.tree.set(idHash.id, metaData).then(node => {
+    this.tree.set(id.id, metaData).then(node => {
       // save the code
       node[1] = {
         '/': code
@@ -84,7 +84,7 @@ module.exports = class Hypervisor {
     })
 
     return {
-      id: idHash,
+      id,
       module
     }
   }

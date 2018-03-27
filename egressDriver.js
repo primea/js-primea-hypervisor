@@ -1,4 +1,4 @@
-const {ID} = require('./systemObjects')
+const {ID} = require('primea-objects')
 const EventEmitter = require('events')
 
 module.exports = class Egress extends EventEmitter {

@@ -1,6 +1,6 @@
 const tape = require('tape')
 const Hypervisor = require('../')
-const {Message, FunctionRef, ModuleRef} = require('../systemObjects')
+const {Message, FunctionRef, ModuleRef} = require('primea-objects')
 
 const level = require('level-browserify')
 const EgressDriver = require('../egressDriver')
@@ -305,7 +305,7 @@ tape('actor creation', async t => {
         funcRef: module.getFuncRef('main'),
         funcArguments: [{
           identifier: [0, 'main'],
-          destId: this.actor.id
+          actorID: this.actor.id
         }]
       })
       this.actor.send(message)
@@ -553,7 +553,7 @@ tape('driver', async t => {
 
   const message = new Message({
     funcRef: module.getFuncRef('main'),
-    funcArguments: [new FunctionRef({id: egress.id})]
+    funcArguments: [new FunctionRef({actorID: egress.id})]
   })
 
   hypervisor.send(message)

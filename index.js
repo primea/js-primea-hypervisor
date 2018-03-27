@@ -1,7 +1,7 @@
 const crypto = require('crypto')
 const Actor = require('./actor.js')
 const Scheduler = require('./scheduler.js')
-const {ID, decoder} = require('./systemObjects.js')
+const {ID, decoder} = require('primea-objects')
 
 module.exports = class Hypervisor {
   /**
@@ -121,7 +121,7 @@ module.exports = class Hypervisor {
   }
 
   registerDriver (driver) {
-    this.scheduler.drivers.set(driver.id.id.toString('hex'), driver)
+    this.scheduler.drivers.set(driver.id.toString(), driver)
   }
 }
 

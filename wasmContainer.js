@@ -4,7 +4,7 @@ const wasmMetering = require('wasm-metering')
 const ReferanceMap = require('reference-map')
 const injectGlobals = require('./injectGlobals.js')
 const typeCheckWrapper = require('./typeCheckWrapper.js')
-const {Message, FunctionRef, ModuleRef, DEFAULTS} = require('./systemObjects.js')
+const {Message, FunctionRef, ModuleRef, DEFAULTS} = require('primea-objects')
 
 const nativeTypes = new Set(['i32', 'i64', 'f32', 'f64'])
 const FUNC_INDEX_OFFSET = 1
@@ -99,7 +99,7 @@ module.exports = class WasmContainer {
             const ref = new FunctionRef({
               identifier: [true, func.tableIndex],
               params,
-              id: self.actor.id
+              actorID: self.actor.id
             })
             return self.refs.add(ref, 'func')
           }

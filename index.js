@@ -1,6 +1,6 @@
 const crypto = require('crypto')
-const Actor = require('./asyncActor.js')
-const Scheduler = require('./concurrentScheduler.js')
+const Actor = require('./actor.js')
+const Scheduler = require('./scheduler.js')
 const {ID, decoder} = require('./systemObjects.js')
 
 module.exports = class Hypervisor {

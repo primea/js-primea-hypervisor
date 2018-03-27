@@ -1,4 +1,6 @@
-module.exports = class Actor {
+const EventEmitter = require('events')
+
+module.exports = class Actor extends EventEmitter {
   /**
    * the Actor manages the varous message passing functions and provides
    * an interface for the containers to use
@@ -9,11 +11,40 @@ module.exports = class Actor {
    * @param {Object} opts.container - the container constuctor and argments
    */
   constructor (opts) {
+    super()
     Object.assign(this, opts)
 
+    this.inbox = []
     this.ticks = 0
     this.running = false
     this.container = new this.Container(this)
+  }
+
+  /**
+   * adds a message to this actor's message queue
+   * @param {string} portName
+   * @param {object} message
+   */
+  queue (message) {
+    this.inbox.push(message)
+
+    if (!this.running) {
+      this.hypervisor.scheduler.addTime(this.ticks)
+      this.running = true
+      return this._startMessageLoop()
+    }
+  }
+
+  // waits for the next message
+  async _startMessageLoop () {
+    // this ensure we only every have one loop running at a time
+    while (this.inbox.length) {
+      const message = this.inbox.shift()
+      await this.runMessage(message)
+    }
+    this.hypervisor.scheduler.removeTime(this.ticks)
+    this.emit('idle')
+    this.running = false
   }
 
   /**
@@ -40,6 +71,7 @@ module.exports = class Actor {
    */
   async runMessage (message) {
     if (message._fromTicks > this.ticks) {
+      this.hypervisor.scheduler.update(this.ticks, message._fromTicks)
       this.ticks = message._fromTicks
     }
     try {
@@ -48,7 +80,7 @@ module.exports = class Actor {
     } catch (e) {
       message.emit('execution:error', e)
     }
-    message.emit('done', this)
+    message.emit('done')
   }
 
   /**
@@ -56,7 +88,9 @@ module.exports = class Actor {
    * @param {Number} count - the number of ticks to add
    */
   incrementTicks (count) {
+    const oldValue = this.ticks
     this.ticks += count
+    this.hypervisor.scheduler.update(oldValue, this.ticks)
   }
 
   /**

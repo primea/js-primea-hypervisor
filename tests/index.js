@@ -560,7 +560,7 @@ tape('driver', async t => {
   hypervisor.send(message)
 })
 
-tape.only('random', async t => {
+tape('random', async t => {
   const numOfActors = 10
   const depth = 10
   const messageOrder = {}
@@ -580,17 +580,13 @@ tape.only('random', async t => {
       }
       messageOrder[this.actor.id.id.toString('hex')] = message._fromTicks
       numOfMsg++
-      const r = Math.ceil(Math.random())
-      console.log(r)
-      setTimeout(() => {
-        this.actor.incrementTicks(10 * r)
-        if (ref) {
-          this.actor.send(new Message({
-            funcRef: ref,
-            funcArguments: refs
-          }))
-        }
-      }, 1000 * r)
+      this.actor.incrementTicks(10)
+      if (ref) {
+        this.actor.send(new Message({
+          funcRef: ref,
+          funcArguments: refs
+        }))
+      }
     }
   }
 

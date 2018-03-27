@@ -1,7 +1,6 @@
 const tape = require('tape')
-const Message = require('../message.js')
 const Hypervisor = require('../')
-const {FunctionRef, ModuleRef} = require('../systemObjects')
+const {Message, FunctionRef, ModuleRef} = require('../systemObjects')
 
 const level = require('level-browserify')
 const EgressDriver = require('../egressDriver')
@@ -573,12 +572,12 @@ tape('random', async t => {
     main () {
       const refs = [...arguments]
       const ref = refs.pop()
-      const last = messageOrder[this.actor.id.toString('hex')]
+      const last = messageOrder[this.actor.id.id.toString('hex')]
       const message = this.actor.currentMessage
       if (last) {
         t.ok(last <= message._fromTicks, 'message should be in correct order')
       }
-      messageOrder[this.actor.id.toString('hex')] = message._fromTicks
+      messageOrder[this.actor.id.id.toString('hex')] = message._fromTicks
       numOfMsg++
       this.actor.incrementTicks(10)
       if (ref) {

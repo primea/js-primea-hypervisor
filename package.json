@@ -30,6 +30,7 @@
   "contributors": "Alex Beregszaszi <alex@rtfs.hu>",
   "license": "MPL-2.0",
   "dependencies": {
+    "binary-search": "^1.3.3",
     "binary-search-insert": "^1.0.3",
     "borc": "git+https://github.com:dignifiedquire/borc.git#fix/nested-array",
     "events": "^2.0.0",

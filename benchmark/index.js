@@ -37,13 +37,19 @@ async function main (numOfActors, depth) {
       // const message = this.actor.currentMessage
       // messageOrder[this.actor.id.toString('hex')] = message._fromTicks
       numOfMsg++
-      this.actor.incrementTicks(10)
-      if (ref) {
-        this.actor.send(new Message({
-          funcRef: ref,
-          funcArguments: refs
-        }))
-      }
+      // const r = Math.ceil(Math.random() * 10)
+      // return new Promise((resolve, reject) => {
+      //   setTimeout(() => {
+          this.actor.incrementTicks(10)
+          if (ref) {
+            this.actor.send(new Message({
+              funcRef: ref,
+              funcArguments: refs
+            }))
+          }
+          // resolve()
+        // }, 100 * r)
+      // })
     }
   }
   const tree = new RadixTree({

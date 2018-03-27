@@ -560,7 +560,7 @@ tape('driver', async t => {
   hypervisor.send(message)
 })
 
-tape('random', async t => {
+tape.only('random', async t => {
   const numOfActors = 10
   const depth = 10
   const messageOrder = {}
@@ -573,20 +573,24 @@ tape('random', async t => {
     main () {
       const refs = [...arguments]
       const ref = refs.pop()
-      const last = messageOrder[this.actor.id.toString('hex')]
+      const last = messageOrder[this.actor.id.id.toString('hex')]
       const message = this.actor.currentMessage
       if (last) {
         t.ok(last <= message._fromTicks, 'message should be in correct order')
       }
-      messageOrder[this.actor.id.toString('hex')] = message._fromTicks
+      messageOrder[this.actor.id.id.toString('hex')] = message._fromTicks
       numOfMsg++
-      this.actor.incrementTicks(10)
-      if (ref) {
-        this.actor.send(new Message({
-          funcRef: ref,
-          funcArguments: refs
-        }))
-      }
+      const r = Math.ceil(Math.random())
+      console.log(r)
+      setTimeout(() => {
+        this.actor.incrementTicks(10 * r)
+        if (ref) {
+          this.actor.send(new Message({
+            funcRef: ref,
+            funcArguments: refs
+          }))
+        }
+      }, 1000 * r)
     }
   }
 

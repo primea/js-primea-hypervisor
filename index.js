@@ -2,6 +2,7 @@ const crypto = require('crypto')
 const Actor = require('./actor.js')
 const Scheduler = require('./scheduler.js')
 const {ID, decoder} = require('primea-objects')
+const cbor = require('borc')
 
 module.exports = class Hypervisor {
   /**
@@ -107,7 +108,10 @@ module.exports = class Hypervisor {
         this.scheduler.once('idle', resolve)
       })
     }
-    return this.tree.flush()
+    return this.tree.flush().then(sr => {
+      console.log(sr.toString('hex'))
+      return sr
+    })
   }
 
   /**
@@ -126,10 +130,9 @@ module.exports = class Hypervisor {
 }
 
 function encodedID (id) {
-  const nonce = Buffer.from([id.nonce])
   if (id.parent) {
-    return Buffer.concat([nonce, id.parent.id])
+    return cbor.encode([id.nonce, id.parent.id])
   } else {
-    return nonce
+    return cbor.encode([id.nonce, null])
   }
 }

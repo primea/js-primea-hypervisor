@@ -75,7 +75,7 @@ tape('system objects', async t => {
 
 tape('basic', async t => {
   t.plan(2)
-  const expectedState = Buffer.from('1602fe14ee1e95c9d5cf10e809d0615cb21927a2', 'hex')
+  const expectedState = Buffer.from('e3669fbd4ee56f958d9090f60617f3a50cd8062b', 'hex')
   const tree = new RadixTree({
     db
   })
@@ -103,7 +103,7 @@ tape('basic', async t => {
 
 tape('two communicating actors', async t => {
   t.plan(2)
-  const expectedState = Buffer.from('3cdad3b1024074e7edafadbb98ee162cc8cfe565', 'hex')
+  const expectedState = Buffer.from('d2ab2c32f5eca6706d72a70d08ba7711ef8dde03', 'hex')
 
   const tree = new RadixTree({
     db
@@ -147,7 +147,7 @@ tape('two communicating actors', async t => {
 
 tape('three communicating actors', async t => {
   t.plan(3)
-  const expectedState = Buffer.from('7b659c263363b0b9c461a432aac8d8bf0d351788', 'hex')
+  const expectedState = Buffer.from('622078699d4688e09c4930b49c6e465c9fbbcc07', 'hex')
   const tree = new RadixTree({
     db: db
   })
@@ -197,7 +197,7 @@ tape('three communicating actors', async t => {
 
 tape('three communicating actors, with tick counting', async t => {
   t.plan(3)
-  const expectedState = Buffer.from('7b659c263363b0b9c461a432aac8d8bf0d351788', 'hex')
+  const expectedState = Buffer.from('622078699d4688e09c4930b49c6e465c9fbbcc07', 'hex')
   const tree = new RadixTree({
     db: db
   })
@@ -247,7 +247,7 @@ tape('three communicating actors, with tick counting', async t => {
 
 tape('errors', async t => {
   t.plan(3)
-  const expectedState = Buffer.from('3cdad3b1024074e7edafadbb98ee162cc8cfe565', 'hex')
+  const expectedState = Buffer.from('d2ab2c32f5eca6706d72a70d08ba7711ef8dde03', 'hex')
   const tree = new RadixTree({
     db
   })
@@ -292,7 +292,7 @@ tape('errors', async t => {
 
 tape('actor creation', async t => {
   t.plan(2)
-  const expectedState = Buffer.from('f1803a4188890e205e2e6480159d504d149d8910', 'hex')
+  const expectedState = Buffer.from('09ada4d5ccb874b5767ea4aaf6081437eb36b3e0', 'hex')
 
   const tree = new RadixTree({
     db
@@ -339,7 +339,7 @@ tape('actor creation', async t => {
 
 tape('simple message arbiter test', async t => {
   t.plan(4)
-  const expectedState = Buffer.from('3cdad3b1024074e7edafadbb98ee162cc8cfe565', 'hex')
+  const expectedState = Buffer.from('d2ab2c32f5eca6706d72a70d08ba7711ef8dde03', 'hex')
   const tree = new RadixTree({
     db
   })
@@ -405,7 +405,7 @@ tape('simple message arbiter test', async t => {
 tape('arbiter test for id comparision', async t => {
   t.plan(4)
   let message
-  const expectedState = Buffer.from('7b659c263363b0b9c461a432aac8d8bf0d351788', 'hex')
+  const expectedState = Buffer.from('622078699d4688e09c4930b49c6e465c9fbbcc07', 'hex')
 
   const tree = new RadixTree({
     db: db
@@ -470,7 +470,7 @@ tape('arbiter test for id comparision', async t => {
 
 tape('async work', async t => {
   t.plan(3)
-  const expectedState = Buffer.from('3cdad3b1024074e7edafadbb98ee162cc8cfe565', 'hex')
+  const expectedState = Buffer.from('d2ab2c32f5eca6706d72a70d08ba7711ef8dde03', 'hex')
 
   const tree = new RadixTree({
     db

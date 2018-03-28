@@ -20,6 +20,7 @@ module.exports = class Hypervisor {
     drivers.forEach(driver => this.registerDriver(driver))
   }
 
+
   /**
    * sends a message
    * @param {Object} message - the [message](https://github.com/primea/js-primea-message) to send
@@ -108,10 +109,14 @@ module.exports = class Hypervisor {
         this.scheduler.once('idle', resolve)
       })
     }
-    return this.tree.flush().then(sr => {
-      console.log(sr.toString('hex'))
-      return sr
-    })
+    await this.tree.set(Buffer.from([0]), this.nonce)
+    return this.tree.flush()
+  }
+
+  async setStateRoot (stateRoot) {
+    this.tree.root = stateRoot
+    const node = await this.tree.get(Buffer.from([0]))
+    this.nonce = node.value
   }
 
   /**

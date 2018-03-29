@@ -1,10 +1,9 @@
-const Message = require('../message.js')
+const {Message, ModuleRef} = require('primea-objects')
 const Hypervisor = require('../')
 
 const level = require('level-browserify')
 const RadixTree = require('dfinity-radix-tree')
 const db = level('./testdb')
-const {ModuleRef} = require('../systemObjects')
 
 class BaseContainer {
   constructor (actor) {

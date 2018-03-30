@@ -20,7 +20,6 @@ module.exports = class Hypervisor {
     drivers.forEach(driver => this.registerDriver(driver))
   }
 
-
   /**
    * sends a message
    * @param {Object} message - the [message](https://github.com/primea/js-primea-message) to send

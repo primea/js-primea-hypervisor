@@ -33,12 +33,9 @@
     "binary-search-insert": "^1.0.3",
     "borc": "git+https://github.com:dignifiedquire/borc.git#fix/nested-array",
     "events": "^2.0.0",
-    "primea-annotations": "0.0.3",
     "primea-objects": "0.0.1",
     "reference-map": "^1.2.3",
-    "safe-buffer": "^5.1.1",
-    "wasm-json-toolkit": "^0.2.3",
-    "wasm-metering": "^0.1.1"
+    "safe-buffer": "^5.1.1"
   },
   "devDependencies": {
     "levelup": "^2.0.2",
@@ -48,7 +45,6 @@
     "level-browserify": "^1.1.2",
     "nyc": "^11.6.0",
     "standard": "11.0.1",
-    "tape": "^4.9.0",
-    "wabt": "^1.0.0"
+    "tape": "^4.9.0"
   }
 }

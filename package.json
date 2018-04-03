@@ -38,7 +38,6 @@
     "safe-buffer": "^5.1.1"
   },
   "devDependencies": {
-    "levelup": "^2.0.2",
     "coveralls": "^3.0.0",
     "dfinity-radix-tree": "^0.2.1",
     "documentation": "^6.0.0",

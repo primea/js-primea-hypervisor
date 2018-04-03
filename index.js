@@ -1,3 +1,4 @@
+const Buffer = require('safe-buffer').Buffer
 const crypto = require('crypto')
 const Actor = require('./actor.js')
 const Scheduler = require('./scheduler.js')

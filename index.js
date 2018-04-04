@@ -33,6 +33,11 @@ module.exports = class Hypervisor {
     this.scheduler.queue(messages)
   }
 
+  /**
+   * loads an actor from the tree given its id
+   * @param {ID} id
+   * @returns {Promise<Actor>}
+   */
   async loadActor (id) {
     const state = await this.tree.get(id.id, true)
     const [code, storage] = await Promise.all([
@@ -113,6 +118,9 @@ module.exports = class Hypervisor {
     return this.tree.flush()
   }
 
+  /**
+   * set the state root
+   */
   async setStateRoot (stateRoot) {
     this.tree.root = stateRoot
     const node = await this.tree.get(Buffer.from([0]))

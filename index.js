@@ -9,16 +9,21 @@ module.exports = class Hypervisor {
   /**
    * The Hypervisor manages the container instances by instantiating them and
    * destorying them when possible. It also facilitates localating Containers
-   * @param {Tree} tree - a [radix tree](https://github.com/dfinity/js-dfinity-radix-tree) to store the state
+   * @param {Object} opts
+   * @param {Object} opts.tree - a [radix tree](https://github.com/dfinity/js-dfinity-radix-tree) to store the state
+   * @param {Array} opts.container - an array of containers to regester
+   * @param {Array} opts.drivers - an array of drivers to install
+   * @param {boolean} [opts.meter=true] - whether to meter gas or not
    */
-  constructor (tree, containers = [], drivers = [], nonce = 0) {
-    tree.dag.decoder = decoder
-    this.tree = tree
+  constructor (opts) {
+    opts.tree.dag.decoder = decoder
+    this.tree = opts.tree
     this.scheduler = new Scheduler(this)
     this._containerTypes = {}
-    this.nonce = nonce
-    containers.forEach(container => this.registerContainer(container))
-    drivers.forEach(driver => this.registerDriver(driver))
+    this.nonce = opts.nonce || 0
+    this.meter = opts.meter !== undefined ? opts.meter : true;
+    (opts.containers || []).forEach(container => this.registerContainer(container));
+    (opts.drivers || []).forEach(driver => this.registerDriver(driver))
   }
 
   /**

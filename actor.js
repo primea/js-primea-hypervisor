@@ -1,3 +1,6 @@
+const errors = require('./errors.json')
+const nope = () => {}
+
 module.exports = class Actor {
   /**
    * the Actor manages the varous message passing functions and provides
@@ -11,10 +14,12 @@ module.exports = class Actor {
   constructor (opts) {
     Object.assign(this, opts)
 
-    this.inbox = []
     this.ticks = 0
     this.running = false
     this.container = new this.Container(this)
+    if (!this.hypervisor.meter) {
+      this.incrementTicks = nope
+    }
   }
 
   /**
@@ -57,6 +62,10 @@ module.exports = class Actor {
    * @param {Number} count - the number of ticks to add
    */
   incrementTicks (count) {
+    this.currentMessage.funcRef.gas -= count
+    if (this.currentMessage.funcRef.gas < 0) {
+      throw new Error(errors.OUT_OF_GAS)
+    }
     this.ticks += count
   }
 

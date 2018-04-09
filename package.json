@@ -1,6 +1,6 @@
 {
   "name": "primea-hypervisor",
-  "version": "0.6.0",
+  "version": "0.7.0",
   "description": "this is a JS implemention of the primea hypervisor",
   "scripts": {
     "coveralls": "npm run coverage && nyc report --reporter=text-lcov | coveralls",

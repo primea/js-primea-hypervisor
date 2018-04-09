@@ -6,10 +6,9 @@
     "coveralls": "npm run coverage && nyc report --reporter=text-lcov | coveralls",
     "coverage": "nyc npm test",
     "lint": "standard",
-    "build:docs": "npm run build:docs:hypervisor && npm run build:docs:actor && npm run build:docs:scheduler",
+    "build:docs": "npm run build:docs:hypervisor && npm run build:docs:actor",
     "build:docs:hypervisor": "documentation build ./index.js --github --shallow --sort-order source -f md  > ./docs/hypervisor.md",
     "build:docs:actor": "documentation build ./actor.js --github --shallow --sort-order source -f md  > ./docs/actor.md",
-    "build:docs:scheduler": "documentation build ./scheduler.js --github --shallow --sort-order source -f md  > ./docs/scheduler.md",
     "test": "node ./tests/index.js",
     "test:wasm": "node ./tests/wasmContainer.js"
   },

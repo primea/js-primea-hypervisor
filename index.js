@@ -27,7 +27,7 @@ module.exports = class Hypervisor {
   }
 
   /**
-   * sends a message
+   * sends a message(s). If an array of message is given the all the messages will be sent at once
    * @param {Object} message - the [message](https://github.com/primea/js-primea-message) to send
    * @returns {Promise} a promise that resolves once the receiving container is loaded
    */
@@ -80,7 +80,7 @@ module.exports = class Hypervisor {
     const encoded = encodedID(id)
     id = this._hash(encoded)
     id = new ID(id)
-    const module = Container.onCreation(code, id, this.tree)
+    const module = Container.onCreation(code, id)
     const metaData = [type, 0]
 
     // save the container in the state
@@ -124,7 +124,9 @@ module.exports = class Hypervisor {
   }
 
   /**
-   * set the state root
+   * set the state root. The promise must resolve before creating or sending any more messages to the hypervisor
+   * @param {Buffer} stateRoot
+   * @return {Promise}
    */
   async setStateRoot (stateRoot) {
     this.tree.root = stateRoot
@@ -133,15 +135,17 @@ module.exports = class Hypervisor {
   }
 
   /**
-   * regirsters a container with the hypervisor
-   * @param {Class} Constructor - a Class for instantiating the container
-   * @param {*} args - any args that the contructor takes
-   * @param {Integer} typeId - the container's type identification ID
+   * regesters a container with the hypervisor
+   * @param {Function} Constructor - the container's constuctor
    */
   registerContainer (Constructor) {
     this._containerTypes[Constructor.typeId] = Constructor
   }
 
+  /**
+   * register a driver with the hypervisor
+   * @param {driver} driver
+   */
   registerDriver (driver) {
     this.scheduler.drivers.set(driver.id.toString(), driver)
   }

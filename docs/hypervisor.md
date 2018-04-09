@@ -2,41 +2,58 @@
 
 ### Table of Contents
 
--   [constructor](#constructor)
--   [send](#send)
--   [createActor](#createactor)
--   [createStateRoot](#createstateroot)
--   [registerContainer](#registercontainer)
+-   [constructor][1]
+-   [send][2]
+-   [loadActor][3]
+-   [createActor][4]
+-   [createStateRoot][5]
+-   [setStateRoot][6]
+-   [registerContainer][7]
+-   [registerDriver][8]
 
 ## constructor
 
-[index.js:12-17](https://github.com/dfinity/js-primea/blob/21960d62467278cd5659e2eb5f80cc6ddd87e663/index.js#L12-L17 "Source code on GitHub")
+[index.js:18-27][9]
 
 The Hypervisor manages the container instances by instantiating them and
 destorying them when possible. It also facilitates localating Containers
 
 **Parameters**
 
--   `tree` **Tree** a [radix tree](https://github.com/dfinity/js-dfinity-radix-tree) to store the state
--   `nonce`   (optional, default `0`)
+-   `opts` **[Object][10]** 
+    -   `opts.tree` **[Object][10]** a [radix tree][11] to store the state
+    -   `opts.container` **[Array][12]** an array of containers to regester
+    -   `opts.drivers` **[Array][12]** an array of drivers to install
+    -   `opts.meter` **[boolean][13]** whether to meter gas or not (optional, default `true`)
 
 ## send
 
-[index.js:25-30](https://github.com/dfinity/js-primea/blob/21960d62467278cd5659e2eb5f80cc6ddd87e663/index.js#L25-L30 "Source code on GitHub")
+[index.js:34-39][14]
 
-sends a message
+sends a message(s). If an array of message is given the all the messages will be sent at once
 
 **Parameters**
 
 -   `messages`  
--   `cap` **[Object](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Object)** the capabilitly used to send the message
--   `message` **[Object](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Object)** the [message](https://github.com/primea/js-primea-message) to send
+-   `message` **[Object][10]** the [message][15] to send
 
-Returns **[Promise](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Promise)** a promise that resolves once the receiving container is loaded
+Returns **[Promise][16]** a promise that resolves once the receiving container is loaded
+
+## loadActor
+
+[index.js:46-70][17]
+
+loads an actor from the tree given its id
+
+**Parameters**
+
+-   `id` **ID** 
+
+Returns **[Promise][16]&lt;Actor>** 
 
 ## createActor
 
-[index.js:65-83](https://github.com/dfinity/js-primea/blob/21960d62467278cd5659e2eb5f80cc6ddd87e663/index.js#L65-L83 "Source code on GitHub")
+[index.js:78-102][18]
 
 creates an instance of an Actor
 
@@ -44,30 +61,100 @@ creates an instance of an Actor
 
 -   `type` **Integer** the type id for the container
 -   `code`  
--   `id` **[Object](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Object)** the id for the actor (optional, default `{nonce:this.nonce++,parent:null}`)
--   `message` **[Object](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Object)** an intial [message](https://github.com/primea/js-primea-message) to send newly created actor
+-   `id` **[Object][10]** the id for the actor (optional, default `{nonce:this.nonce++,parent:null}`)
+-   `message` **[Object][10]** an intial [message][15] to send newly created actor
 
 ## createStateRoot
 
-[index.js:98-104](https://github.com/dfinity/js-primea/blob/21960d62467278cd5659e2eb5f80cc6ddd87e663/index.js#L98-L104 "Source code on GitHub")
+[index.js:116-124][19]
 
 creates a state root starting from a given container and a given number of
 ticks
 
 **Parameters**
 
--   `ticks` **[Number](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number)** the number of ticks at which to create the state root
+-   `ticks` **[Number][20]** the number of ticks at which to create the state root
 
-Returns **[Promise](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Promise)** 
+Returns **[Promise][16]** 
 
-## registerContainer
+## setStateRoot
 
-[index.js:112-114](https://github.com/dfinity/js-primea/blob/21960d62467278cd5659e2eb5f80cc6ddd87e663/index.js#L112-L114 "Source code on GitHub")
+[index.js:131-135][21]
 
-regirsters a container with the hypervisor
+set the state root. The promise must resolve before creating or sending any more messages to the hypervisor
 
 **Parameters**
 
--   `Constructor` **Class** a Class for instantiating the container
--   `args` **any** any args that the contructor takes
--   `typeId` **Integer** the container's type identification ID
+-   `stateRoot` **[Buffer][22]** 
+
+Returns **[Promise][16]** 
+
+## registerContainer
+
+[index.js:141-143][23]
+
+regesters a container with the hypervisor
+
+**Parameters**
+
+-   `Constructor` **[Function][24]** the container's constuctor
+
+## registerDriver
+
+[index.js:149-151][25]
+
+register a driver with the hypervisor
+
+**Parameters**
+
+-   `driver` **driver** 
+
+[1]: #constructor
+
+[2]: #send
+
+[3]: #loadactor
+
+[4]: #createactor
+
+[5]: #createstateroot
+
+[6]: #setstateroot
+
+[7]: #registercontainer
+
+[8]: #registerdriver
+
+[9]: https://github.com/dfinity/js-primea/blob/1f8affb407f9413e9af400e3cc7408ece8274347/index.js#L18-L27 "Source code on GitHub"
+
+[10]: https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Object
+
+[11]: https://github.com/dfinity/js-dfinity-radix-tree
+
+[12]: https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Array
+
+[13]: https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Boolean
+
+[14]: https://github.com/dfinity/js-primea/blob/1f8affb407f9413e9af400e3cc7408ece8274347/index.js#L34-L39 "Source code on GitHub"
+
+[15]: https://github.com/primea/js-primea-message
+
+[16]: https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Promise
+
+[17]: https://github.com/dfinity/js-primea/blob/1f8affb407f9413e9af400e3cc7408ece8274347/index.js#L46-L70 "Source code on GitHub"
+
+[18]: https://github.com/dfinity/js-primea/blob/1f8affb407f9413e9af400e3cc7408ece8274347/index.js#L78-L102 "Source code on GitHub"
+
+[19]: https://github.com/dfinity/js-primea/blob/1f8affb407f9413e9af400e3cc7408ece8274347/index.js#L116-L124 "Source code on GitHub"
+
+[20]: https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number
+
+[21]: https://github.com/dfinity/js-primea/blob/1f8affb407f9413e9af400e3cc7408ece8274347/index.js#L131-L135 "Source code on GitHub"
+
+[22]: https://nodejs.org/api/buffer.html
+
+[23]: https://github.com/dfinity/js-primea/blob/1f8affb407f9413e9af400e3cc7408ece8274347/index.js#L141-L143 "Source code on GitHub"
+
+[24]: https://developer.mozilla.org/docs/Web/JavaScript/Reference/Statements/function
+
+[25]: https://github.com/dfinity/js-primea/blob/1f8affb407f9413e9af400e3cc7408ece8274347/index.js#L149-L151 "Source code on GitHub"

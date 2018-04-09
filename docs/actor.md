@@ -2,67 +2,70 @@
 
 ### Table of Contents
 
--   [constructor](#constructor)
--   [shutdown](#shutdown)
--   [startup](#startup)
--   [runMessage](#runmessage)
--   [incrementTicks](#incrementticks)
--   [createActor](#createactor)
--   [send](#send)
+-   [constructor][1]
+-   [shutdown][2]
+-   [startup][3]
+-   [runMessage][4]
+-   [incrementTicks][5]
+-   [createActor][6]
+-   [send][7]
 
 ## constructor
 
-[actor.js:11-18](https://github.com/dfinity/js-primea/blob/21960d62467278cd5659e2eb5f80cc6ddd87e663/actor.js#L11-L18 "Source code on GitHub")
+[actor.js:17-26][8]
 
 the Actor manages the varous message passing functions and provides
 an interface for the containers to use
 
 **Parameters**
 
--   `opts` **[Object](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Object)** 
-    -   `opts.id` **[Object](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Object)** the UUID of the Actor
-    -   `opts.state` **[Object](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Object)** the state of the container
-    -   `opts.hypervisor` **[Object](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Object)** the instance of the hypervisor
-    -   `opts.container` **[Object](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Object)** the container constuctor and argments
+-   `opts` **[Object][9]** 
+    -   `opts.id` **ID** the UUID of the Actor
+    -   `opts.state` **[Object][9]** the state of the container
+    -   `opts.storage` **[Object][9]** the actor's persistant storage
+    -   `opts.hypervisor` **[Object][9]** the instance of the hypervisor
+    -   `opts.nonce` **[Number][10]** 
+    -   `opts.type` **[Number][10]** the container type
+    -   `opts.container` **[Function][11]** the container constuctor and argments
 
 ## shutdown
 
-[actor.js:23-29](https://github.com/dfinity/js-primea/blob/21960d62467278cd5659e2eb5f80cc6ddd87e663/actor.js#L23-L29 "Source code on GitHub")
+[actor.js:31-35][12]
 
 Runs the shutdown routine for the actor
 
 ## startup
 
-[actor.js:34-36](https://github.com/dfinity/js-primea/blob/21960d62467278cd5659e2eb5f80cc6ddd87e663/actor.js#L34-L36 "Source code on GitHub")
+[actor.js:40-42][13]
 
 Runs the startup routine for the actor
 
 ## runMessage
 
-[actor.js:44-56](https://github.com/dfinity/js-primea/blob/21960d62467278cd5659e2eb5f80cc6ddd87e663/actor.js#L44-L56 "Source code on GitHub")
+[actor.js:50-61][14]
 
 run the Actor with a given message
 
 **Parameters**
 
--   `message` **[object](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Object)** the message to run
--   `method` **[String](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/String)** which method to run
+-   `message` **[object][9]** the message to run
+-   `method` **[String][15]** which method to run
 
-Returns **[Promise](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Promise)** 
+Returns **[Promise][16]** 
 
 ## incrementTicks
 
-[actor.js:62-64](https://github.com/dfinity/js-primea/blob/21960d62467278cd5659e2eb5f80cc6ddd87e663/actor.js#L62-L64 "Source code on GitHub")
+[actor.js:67-73][17]
 
 updates the number of ticks that the actor has run
 
 **Parameters**
 
--   `count` **[Number](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number)** the number of ticks to add
+-   `count` **[Number][10]** the number of ticks to add
 
 ## createActor
 
-[actor.js:71-74](https://github.com/dfinity/js-primea/blob/21960d62467278cd5659e2eb5f80cc6ddd87e663/actor.js#L71-L74 "Source code on GitHub")
+[actor.js:80-83][18]
 
 creates an actor
 
@@ -70,15 +73,55 @@ creates an actor
 
 -   `type` **Integer** the type id for the container
 -   `code`  
--   `message` **[Object](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Object)** an intial [message](https://github.com/primea/js-primea-message) to send newly created actor
+-   `message` **[Object][9]** an intial [message][19] to send newly created actor
 
 ## send
 
-[actor.js:91-96](https://github.com/dfinity/js-primea/blob/21960d62467278cd5659e2eb5f80cc6ddd87e663/actor.js#L91-L96 "Source code on GitHub")
+[actor.js:100-105][20]
 
 sends a message to a given port
 
 **Parameters**
 
 -   `message` **Message** the message
--   `portRef` **[Object](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Object)** the port
+-   `portRef` **[Object][9]** the port
+
+[1]: #constructor
+
+[2]: #shutdown
+
+[3]: #startup
+
+[4]: #runmessage
+
+[5]: #incrementticks
+
+[6]: #createactor
+
+[7]: #send
+
+[8]: https://github.com/dfinity/js-primea/blob/1f8affb407f9413e9af400e3cc7408ece8274347/actor.js#L17-L26 "Source code on GitHub"
+
+[9]: https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Object
+
+[10]: https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number
+
+[11]: https://developer.mozilla.org/docs/Web/JavaScript/Reference/Statements/function
+
+[12]: https://github.com/dfinity/js-primea/blob/1f8affb407f9413e9af400e3cc7408ece8274347/actor.js#L31-L35 "Source code on GitHub"
+
+[13]: https://github.com/dfinity/js-primea/blob/1f8affb407f9413e9af400e3cc7408ece8274347/actor.js#L40-L42 "Source code on GitHub"
+
+[14]: https://github.com/dfinity/js-primea/blob/1f8affb407f9413e9af400e3cc7408ece8274347/actor.js#L50-L61 "Source code on GitHub"
+
+[15]: https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/String
+
+[16]: https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Promise
+
+[17]: https://github.com/dfinity/js-primea/blob/1f8affb407f9413e9af400e3cc7408ece8274347/actor.js#L67-L73 "Source code on GitHub"
+
+[18]: https://github.com/dfinity/js-primea/blob/1f8affb407f9413e9af400e3cc7408ece8274347/actor.js#L80-L83 "Source code on GitHub"
+
+[19]: https://github.com/primea/js-primea-message
+
+[20]: https://github.com/dfinity/js-primea/blob/1f8affb407f9413e9af400e3cc7408ece8274347/actor.js#L100-L105 "Source code on GitHub"

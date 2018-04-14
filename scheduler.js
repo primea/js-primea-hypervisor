@@ -40,9 +40,7 @@ module.exports = class Scheduler extends EventEmitter {
       await this._processMessage(message)
     }
     this._running = false
-    const promises = []
-    this.actors.forEach(actor => promises.push(actor.shutdown()))
-    await Promise.all(promises)
+    this.actors.forEach(actor => actor.shutdown())
     this.actors.clear()
     this.emit('idle')
   }

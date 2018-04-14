@@ -28,10 +28,10 @@ module.exports = class Actor {
   /**
    * Runs the shutdown routine for the actor
    */
-  async shutdown () {
-    await this.tree.set(this.id.id, [this.type, this.nonce])
-    const state = await this.tree.get(this.id.id)
-    return this.tree.graph.set(state.root, '2', this.storage)
+  shutdown () {
+    // saves the nonce and storage to the state
+    this.state.value[1] = this.nonce
+    this.state.node[2] = {'/': this.storage}
   }
 
   /**

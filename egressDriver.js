@@ -7,6 +7,8 @@ module.exports = class Egress extends EventEmitter {
     this.id = new ID(Buffer.from([0]))
   }
 
+  startup () {}
+
   runMessage (message) {
     this.emit('message', message)
   }

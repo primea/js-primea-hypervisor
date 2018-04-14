@@ -688,7 +688,7 @@ tape('random', async t => {
 
   hypervisor.send(msgs)
   await hypervisor.scheduler.on('idle', () => {
-    t.equals(numOfMsg, 110)
+    t.equals(numOfMsg, depth * numOfActors + numOfActors)
     t.end()
   })
 })

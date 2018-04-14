@@ -26,15 +26,16 @@ class BaseContainer {
 }
 
 async function main (numOfActors, depth) {
-  // const messageOrder = {}
+  const tree = new RadixTree({
+    db
+  })
+
   let numOfMsg = 0
+
   class BenchmarkContainer extends BaseContainer {
     main () {
       const refs = [...arguments]
       const ref = refs.pop()
-      // const last = messageOrder[this.actor.id.toString('hex')]
-      // const message = this.actor.currentMessage
-      // messageOrder[this.actor.id.toString('hex')] = message._fromTicks
       numOfMsg++
       this.actor.incrementTicks(10)
       if (ref) {
@@ -45,20 +46,17 @@ async function main (numOfActors, depth) {
       }
     }
   }
-  const tree = new RadixTree({
-    db: db
-  })
 
-  const hypervisor = new Hypervisor(tree)
+  const hypervisor = new Hypervisor({tree})
   hypervisor.registerContainer(BenchmarkContainer)
 
   const refernces = []
   let _numOfActors = numOfActors
   while (_numOfActors--) {
-    const {
-      module
-    } = hypervisor.createActor(BenchmarkContainer.typeId)
-    refernces.push(module.getFuncRef('main'))
+    const {module} = hypervisor.createActor(BenchmarkContainer.typeId)
+    const funcRef = module.getFuncRef('main')
+    funcRef.gas = 1000
+    refernces.push(funcRef)
   }
   _numOfActors = numOfActors
   let msgs = []
@@ -76,7 +74,6 @@ async function main (numOfActors, depth) {
     })
     msgs.push(message)
   }
-
   let start = new Date()
   hypervisor.send(msgs)
   await hypervisor.scheduler.on('idle', () => {

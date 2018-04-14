@@ -147,6 +147,7 @@ module.exports = class Hypervisor {
    * @param {driver} driver
    */
   registerDriver (driver) {
+    driver.startup(this)
     this.scheduler.drivers.set(driver.id.toString(), driver)
   }
 }

@@ -77,9 +77,7 @@ module.exports = class Hypervisor {
    */
   createActor (type, code, id = {nonce: this.nonce++, parent: null}) {
     const Container = this._containerTypes[type]
-    const encoded = encodedID(id)
-    id = this._hash(encoded)
-    id = new ID(id)
+    id = this.generateId(id)
     const module = Container.onCreation(code, id)
     const metaData = [type, 0]
 
@@ -99,6 +97,12 @@ module.exports = class Hypervisor {
       id,
       module
     }
+  }
+
+  generateId (id) {
+    const encoded = encodedID(id)
+    const hashed = this._hash(encoded)
+    return new ID(hashed)
   }
 
   _hash (buf) {

@@ -451,7 +451,7 @@ tape('simple message arbiter test', async t => {
   const {module: moduleB} = hypervisor.createActor(testVMContainerB.typeId)
   const {module: moduleA} = hypervisor.createActor(testVMContainerA.typeId)
   const funcRef = moduleA.getFuncRef('main')
-  funcRef.gas = 100
+  funcRef.gas = 4000
 
   const message = new Message({
     funcRef,
@@ -579,7 +579,7 @@ tape('async work', async t => {
   const {module: moduleB} = hypervisor.createActor(testVMContainerB.typeId)
   const {module: moduleA} = hypervisor.createActor(testVMContainerA.typeId)
   const funcRef = moduleA.getFuncRef('main')
-  funcRef.gas = 100
+  funcRef.gas = 200
 
   const message = new Message({
     funcRef,
@@ -648,10 +648,11 @@ tape('random', async t => {
       }
       messageOrder[this.actor.id.id.toString('hex')] = message._fromTicks
       numOfMsg++
-      this.actor.incrementTicks(10)
+
       if (ref) {
+        const newRef = new FunctionRef({ ...ref, gas: message.funcRef.gas / 10 })
         this.actor.send(new Message({
-          funcRef: ref,
+          funcRef: newRef,
           funcArguments: refs
         }))
       }
@@ -661,27 +662,27 @@ tape('random', async t => {
   const hypervisor = new Hypervisor({tree})
   hypervisor.registerContainer(BenchmarkContainer)
 
-  const refernces = []
+  const references = []
   let _numOfActors = numOfActors
   while (_numOfActors--) {
     const {module} = hypervisor.createActor(BenchmarkContainer.typeId)
     const funcRef = module.getFuncRef('main')
-    funcRef.gas = 1000
-    refernces.push(funcRef)
+    funcRef.gas = Math.pow(numOfActors, depth)
+    references.push(funcRef)
   }
   _numOfActors = numOfActors
-  let msgs = []
+  const msgs = []
   while (_numOfActors--) {
     let _depth = depth
     const funcArguments = []
     while (_depth--) {
       const r = Math.floor(Math.random() * numOfActors)
-      const ref = refernces[r]
+      const ref = references[r]
       funcArguments.push(ref)
     }
     const message = new Message({
       funcArguments,
-      funcRef: refernces[_numOfActors]
+      funcRef: references[_numOfActors]
     })
     msgs.push(message)
   }

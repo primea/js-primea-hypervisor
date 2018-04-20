@@ -1,8 +1,7 @@
 const Buffer = require('safe-buffer').Buffer
-const crypto = require('crypto')
 const Actor = require('./actor.js')
 const Scheduler = require('./scheduler.js')
-const {ID, decoder} = require('primea-objects')
+const { ID, decoder, generateActorId } = require('primea-objects')
 const cbor = require('borc')
 
 module.exports = class Hypervisor {
@@ -44,7 +43,7 @@ module.exports = class Hypervisor {
    * @returns {Promise<Actor>}
    */
   async loadActor (id) {
-    const state = await this.tree.get(id.id, true)
+    const state = await this.tree.get(id.id)
     const [code, storage] = await Promise.all([
       this.tree.graph.get(state.node, '1'),
       this.tree.graph.get(state.node, '2')
@@ -77,12 +76,12 @@ module.exports = class Hypervisor {
    */
   createActor (type, code, id = {nonce: this.nonce++, parent: null}) {
     const Container = this._containerTypes[type]
-    id = this.generateId(id)
-    const module = Container.onCreation(code, id)
+    const actorId = generateActorId(id)
+    const module = Container.onCreation(code, actorId)
     const metaData = [type, 0]
 
     // save the container in the state
-    this.tree.set(id.id, metaData).then(node => {
+    this.tree.set(actorId.id, metaData).then(node => {
       // save the code
       node[1] = {
         '/': code
@@ -94,21 +93,9 @@ module.exports = class Hypervisor {
     })
 
     return {
-      id,
+      id: actorId,
       module
     }
-  }
-
-  generateId (id) {
-    const encoded = encodedID(id)
-    const hashed = this._hash(encoded)
-    return new ID(hashed)
-  }
-
-  _hash (buf) {
-    const hash = crypto.createHash('sha256')
-    hash.update(buf)
-    return hash.digest().slice(0, 20)
   }
 
   /**
@@ -153,13 +140,5 @@ module.exports = class Hypervisor {
   registerDriver (driver) {
     driver.startup(this)
     this.scheduler.drivers.set(driver.id.toString(), driver)
-  }
-}
-
-function encodedID (id) {
-  if (id.parent) {
-    return cbor.encode([id.nonce, id.parent.id])
-  } else {
-    return cbor.encode([id.nonce, null])
   }
 }

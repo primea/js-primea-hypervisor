@@ -32,7 +32,7 @@
     "binary-search-insert": "^1.0.3",
     "borc": "git+https://github.com:dignifiedquire/borc.git#fix/nested-array",
     "events": "^2.0.0",
-    "primea-objects": "0.0.3",
+    "primea-objects": "0.0.4",
     "safe-buffer": "^5.1.1"
   },
   "devDependencies": {

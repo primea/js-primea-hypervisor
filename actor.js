@@ -101,6 +101,7 @@ module.exports = class Actor {
     message._fromTicks = this.ticks
     message._fromId = this.id
 
+    this.incrementTicks(message.funcRef.gas)
     this.hypervisor.scheduler.queue([message])
   }
 }

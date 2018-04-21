@@ -542,7 +542,7 @@ tape('async work', async t => {
 
   class testVMContainerA extends BaseContainer {
     main (funcRef) {
-      funcRef.gas = 100
+      funcRef.gas = 10
       const message = new Message({
         funcRef,
         funcArguments: [2]
@@ -643,16 +643,17 @@ tape('random', async t => {
       const ref = refs.pop()
       const last = messageOrder[this.actor.id.id.toString('hex')]
       const message = this.actor.currentMessage
-      if (last) {
+      if (last !== undefined) {
         t.ok(last <= message._fromTicks, 'message should be in correct order')
       }
       messageOrder[this.actor.id.id.toString('hex')] = message._fromTicks
       numOfMsg++
 
+      this.actor.incrementTicks(10)
       if (ref) {
-        const newRef = new FunctionRef({ ...ref, gas: message.funcRef.gas / 10 })
+        ref.gas = this.actor.currentMessage.funcRef.gas
         this.actor.send(new Message({
-          funcRef: newRef,
+          funcRef: ref,
           funcArguments: refs
         }))
       }
@@ -667,7 +668,6 @@ tape('random', async t => {
   while (_numOfActors--) {
     const {module} = hypervisor.createActor(BenchmarkContainer.typeId)
     const funcRef = module.getFuncRef('main')
-    funcRef.gas = Math.pow(numOfActors, depth)
     references.push(funcRef)
   }
   _numOfActors = numOfActors
@@ -677,12 +677,15 @@ tape('random', async t => {
     const funcArguments = []
     while (_depth--) {
       const r = Math.floor(Math.random() * numOfActors)
-      const ref = references[r]
+      const ref = references[r].copy()
       funcArguments.push(ref)
     }
+    const funcRef = references[_numOfActors]
+    funcRef.gas = 1000000
+
     const message = new Message({
       funcArguments,
-      funcRef: references[_numOfActors]
+      funcRef
     })
     msgs.push(message)
   }

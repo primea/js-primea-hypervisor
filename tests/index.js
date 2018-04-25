@@ -18,7 +18,10 @@ class BaseContainer {
     Object.getOwnPropertyNames(this.prototype).filter(name => name !== 'constructor').forEach(name => {
       exp[name] = {}
     })
-    return new ModuleRef(exp, id)
+    return {
+      modRef: new ModuleRef(exp, id),
+      state: []
+    }
   }
   onMessage (message) {
     return this[message.funcRef.identifier[1]](...message.funcArguments)

@@ -77,7 +77,7 @@ module.exports = class Hypervisor {
   createActor (type, code, id = {nonce: this.nonce++, parent: null}) {
     const Container = this._containerTypes[type]
     const actorId = generateActorId(id)
-    const module = Container.onCreation(code, actorId)
+    const {modRef: module, state} = Container.onCreation(code, actorId)
     const metaData = [type, 0]
 
     // save the container in the state
@@ -88,7 +88,7 @@ module.exports = class Hypervisor {
       }
       // save the storage
       node[2] = {
-        '/': []
+        '/': state
       }
     })
 

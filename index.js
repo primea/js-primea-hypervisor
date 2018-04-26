@@ -1,8 +1,7 @@
 const Buffer = require('safe-buffer').Buffer
 const Actor = require('./actor.js')
 const Scheduler = require('./scheduler.js')
-const { ID, decoder, generateActorId } = require('primea-objects')
-const cbor = require('borc')
+const {decoder, generateActorId} = require('primea-objects')
 
 module.exports = class Hypervisor {
   /**

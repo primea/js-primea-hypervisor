@@ -1,7 +1,7 @@
 const Buffer = require('safe-buffer').Buffer
 const Actor = require('./actor.js')
 const Scheduler = require('./scheduler.js')
-const {decoder, generateActorId} = require('primea-objects')
+const {decoder, generateId, ModuleRef, ActorRef} = require('primea-objects')
 
 module.exports = class Hypervisor {
   /**
@@ -17,10 +17,10 @@ module.exports = class Hypervisor {
     opts.tree.dag.decoder = decoder
     this.tree = opts.tree
     this.scheduler = new Scheduler(this)
-    this._containerTypes = {}
+    this._modules = {}
     this.nonce = opts.nonce || 0
     this.meter = opts.meter !== undefined ? opts.meter : true;
-    (opts.containers || []).forEach(container => this.registerContainer(container));
+    (opts.modules || []).forEach(mod => this.registerModule(mod));
     (opts.drivers || []).forEach(driver => this.registerDriver(driver))
   }
 
@@ -43,12 +43,12 @@ module.exports = class Hypervisor {
    */
   async loadActor (id) {
     const state = await this.tree.get(id.id)
-    const [code, storage] = await Promise.all([
-      this.tree.graph.get(state.node, '1'),
+    const [module, storage] = await Promise.all([
+      this.tree.graph.tree(state.node, '1'),
       this.tree.graph.get(state.node, '2')
     ])
     const [type, nonce] = state.value
-    const Container = this._containerTypes[type]
+    const Container = this._modules[type]
 
     // create a new actor instance
     const actor = new Actor({
@@ -57,8 +57,7 @@ module.exports = class Hypervisor {
       Container,
       id,
       nonce,
-      type,
-      code,
+      module,
       storage,
       tree: this.tree
     })
@@ -67,31 +66,40 @@ module.exports = class Hypervisor {
     return actor
   }
 
+  newActor (mod, code) {
+    const modRef = this.createModule(mod, code)
+    return this.createActor(modRef)
+  }
+
+  createModule (mod, code, id = {nonce: this.nonce++, parent: null}) {
+    const moduleID = generateId(id)
+    const Module = this._modules[mod.typeId]
+    const {exports, state} = Module.onCreation(mod.code)
+    return new ModuleRef(moduleID, mod.typeId, exports, state, code)
+  }
+
   /**
    * creates an instance of an Actor
    * @param {Integer} type - the type id for the container
-   * @param {Object} message - an intial [message](https://github.com/primea/js-primea-message) to send newly created actor
    * @param {Object} id - the id for the actor
    */
-  createActor (type, code, id = {nonce: this.nonce++, parent: null}) {
-    const Container = this._containerTypes[type]
-    const actorId = generateActorId(id)
-    const {actor, state} = Container.onCreation(code, actorId)
-    const metaData = [type, 0]
+  createActor (modRef, id = {nonce: this.nonce++, parent: null}) {
+    const actorId = generateId(id)
+    const metaData = [modRef.type, 0]
 
     // save the container in the state
     this.tree.set(actorId.id, metaData).then(node => {
       // save the code
-      node[1] = {
-        '/': code
-      }
+      node[1] = [modRef.id.id, {
+        '/': modRef.code['/']
+      }]
       // save the storage
       node[2] = {
-        '/': state
+        '/': modRef.state
       }
     })
 
-    return actor
+    return new ActorRef(actorId, modRef)
   }
 
   /**
@@ -106,6 +114,7 @@ module.exports = class Hypervisor {
         this.scheduler.once('idle', resolve)
       })
     }
+    // console.log(JSON.stringify(this.tree.root, null, 2))
     await this.tree.set(Buffer.from([0]), this.nonce)
     return this.tree.flush()
   }
@@ -125,8 +134,8 @@ module.exports = class Hypervisor {
    * regesters a container with the hypervisor
    * @param {Function} Constructor - the container's constuctor
    */
-  registerContainer (Constructor) {
-    this._containerTypes[Constructor.typeId] = Constructor
+  registerModule (Constructor) {
+    this._modules[Constructor.typeId] = Constructor
   }
 
   /**

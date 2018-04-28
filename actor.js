@@ -11,7 +11,6 @@ module.exports = class Actor {
    * @param {Object} opts.storage - the actor's persistant storage
    * @param {Object} opts.hypervisor - the instance of the hypervisor
    * @param {Number} opts.nonce
-   * @param {Number} opts.type - the container type
    * @param {Function} opts.container - the container constuctor and argments
    */
   constructor (opts) {
@@ -72,14 +71,23 @@ module.exports = class Actor {
     this.ticks += count
   }
 
+  newActor (mod, code) {
+    const modRef = this.createModule(mod, code)
+    return this.createActor(modRef)
+  }
+
+  createModule (mod, code) {
+    const id = this._generateNextId()
+    return this.hypervisor.createModule(mod, code, id)
+  }
   /**
    * creates an actor
    * @param {Integer} type - the type id for the container
    * @param {Object} message - an intial [message](https://github.com/primea/js-primea-message) to send newly created actor
    */
-  createActor (type, code) {
+  createActor (modRef) {
     const id = this._generateNextId()
-    return this.hypervisor.createActor(type, code, id)
+    return this.hypervisor.createActor(modRef, id)
   }
 
   _generateNextId () {

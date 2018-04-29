@@ -7,84 +7,93 @@
 -   [startup][3]
 -   [runMessage][4]
 -   [incrementTicks][5]
--   [createActor][6]
--   [send][7]
+-   [newActor][6]
+-   [createModule][7]
+-   [createActor][8]
+-   [send][9]
 
 ## constructor
 
-[actor.js:17-26][8]
-
-the Actor manages the varous message passing functions and provides
+the Actor manages the various message passing functions and provides
 an interface for the containers to use
 
 **Parameters**
 
--   `opts` **[Object][9]** 
+-   `opts` **[Object][10]** 
     -   `opts.id` **ID** the UUID of the Actor
-    -   `opts.state` **[Object][9]** the state of the container
-    -   `opts.storage` **[Object][9]** the actor's persistant storage
-    -   `opts.hypervisor` **[Object][9]** the instance of the hypervisor
-    -   `opts.nonce` **[Number][10]** 
-    -   `opts.type` **[Number][10]** the container type
-    -   `opts.container` **[Function][11]** the container constuctor and argments
+    -   `opts.module` **[Object][10]** the module this actor was created from
+    -   `opts.state` **[Object][10]** the state of the module
+    -   `opts.storage` **[Object][10]** the actor's persistent storage
+    -   `opts.hypervisor` **[Object][10]** the instance of the hypervisor
+    -   `opts.nonce` **[Number][11]** 
+    -   `opts.Container` **[Function][12]** the module constructor and arguments
 
 ## shutdown
-
-[actor.js:31-35][12]
 
 Runs the shutdown routine for the actor
 
 ## startup
 
-[actor.js:40-42][13]
-
 Runs the startup routine for the actor
 
 ## runMessage
-
-[actor.js:50-61][14]
 
 run the Actor with a given message
 
 **Parameters**
 
--   `message` **[object][9]** the message to run
--   `method` **[String][15]** which method to run
+-   `message` **[object][10]** the message to run
+-   `method` **[String][13]** which method to run
 
-Returns **[Promise][16]** 
+Returns **[Promise][14]** 
 
 ## incrementTicks
-
-[actor.js:67-73][17]
 
 updates the number of ticks that the actor has run
 
 **Parameters**
 
--   `count` **[Number][10]** the number of ticks to add
+-   `count` **[Number][11]** the number of ticks to add
 
-## createActor
+## newActor
 
-[actor.js:80-83][18]
-
-creates an actor
+creates an actor from a module and code
 
 **Parameters**
 
--   `type` **Integer** the type id for the container
--   `code`  
--   `message` **[Object][9]** an intial [message][19] to send newly created actor
+-   `mod` **[Module][15]** the module
+-   `code` **[Buffer][16]** the code
+
+Returns **ActorRef** 
+
+## createModule
+
+creates a modref from a module and code
+
+**Parameters**
+
+-   `mod` **[Module][15]** the module
+-   `code` **[Buffer][16]** the code
+
+Returns **ModuleRef** 
+
+## createActor
+
+creates an actor from a modref
+
+**Parameters**
+
+-   `modRef` **ModuleRef** the modref
+
+Returns **ActorRef** 
 
 ## send
 
-[actor.js:100-105][20]
-
-sends a message to a given port
+sends a message
 
 **Parameters**
 
 -   `message` **Message** the message
--   `portRef` **[Object][9]** the port
 
 [1]: #constructor
 
@@ -96,32 +105,24 @@ sends a message to a given port
 
 [5]: #incrementticks
 
-[6]: #createactor
+[6]: #newactor
 
-[7]: #send
+[7]: #createmodule
 
-[8]: https://github.com/dfinity/js-primea/blob/1f8affb407f9413e9af400e3cc7408ece8274347/actor.js#L17-L26 "Source code on GitHub"
+[8]: #createactor
 
-[9]: https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Object
+[9]: #send
 
-[10]: https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number
+[10]: https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Object
 
-[11]: https://developer.mozilla.org/docs/Web/JavaScript/Reference/Statements/function
+[11]: https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number
 
-[12]: https://github.com/dfinity/js-primea/blob/1f8affb407f9413e9af400e3cc7408ece8274347/actor.js#L31-L35 "Source code on GitHub"
+[12]: https://developer.mozilla.org/docs/Web/JavaScript/Reference/Statements/function
 
-[13]: https://github.com/dfinity/js-primea/blob/1f8affb407f9413e9af400e3cc7408ece8274347/actor.js#L40-L42 "Source code on GitHub"
+[13]: https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/String
 
-[14]: https://github.com/dfinity/js-primea/blob/1f8affb407f9413e9af400e3cc7408ece8274347/actor.js#L50-L61 "Source code on GitHub"
+[14]: https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Promise
 
-[15]: https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/String
+[15]: https://nodejs.org/api/modules.html
 
-[16]: https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Promise
-
-[17]: https://github.com/dfinity/js-primea/blob/1f8affb407f9413e9af400e3cc7408ece8274347/actor.js#L67-L73 "Source code on GitHub"
-
-[18]: https://github.com/dfinity/js-primea/blob/1f8affb407f9413e9af400e3cc7408ece8274347/actor.js#L80-L83 "Source code on GitHub"
-
-[19]: https://github.com/primea/js-primea-message
-
-[20]: https://github.com/dfinity/js-primea/blob/1f8affb407f9413e9af400e3cc7408ece8274347/actor.js#L100-L105 "Source code on GitHub"
+[16]: https://nodejs.org/api/buffer.html

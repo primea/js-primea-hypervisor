@@ -5,43 +5,39 @@
 -   [constructor][1]
 -   [send][2]
 -   [loadActor][3]
--   [createActor][4]
--   [createStateRoot][5]
--   [setStateRoot][6]
--   [registerContainer][7]
--   [registerDriver][8]
+-   [newActor][4]
+-   [createModule][5]
+-   [createActor][6]
+-   [createStateRoot][7]
+-   [setStateRoot][8]
+-   [registerModule][9]
+-   [registerDriver][10]
 
 ## constructor
 
-[index.js:18-27][9]
-
-The Hypervisor manages the container instances by instantiating them and
-destorying them when possible. It also facilitates localating Containers
+The Hypervisor manages module instances by instantiating them and
+destroying them when possible. It also facilitates locating Containers
 
 **Parameters**
 
--   `opts` **[Object][10]** 
-    -   `opts.tree` **[Object][10]** a [radix tree][11] to store the state
-    -   `opts.container` **[Array][12]** an array of containers to regester
-    -   `opts.drivers` **[Array][12]** an array of drivers to install
-    -   `opts.meter` **[boolean][13]** whether to meter gas or not (optional, default `true`)
+-   `opts` **[Object][11]** 
+    -   `opts.tree` **[Object][11]** a [radix tree][12] to store the state
+    -   `opts.modules` **[Array][13]** an array of modules to register
+    -   `opts.drivers` **[Array][13]** an array of drivers to install
+    -   `opts.meter` **[boolean][14]** whether to meter gas or not (optional, default `true`)
 
 ## send
-
-[index.js:34-39][14]
 
 sends a message(s). If an array of message is given the all the messages will be sent at once
 
 **Parameters**
 
 -   `messages`  
--   `message` **[Object][10]** the [message][15] to send
+-   `message` **[Object][11]** the [message][15] to send
 
-Returns **[Promise][16]** a promise that resolves once the receiving container is loaded
+Returns **[Promise][16]** a promise that resolves once the receiving module is loaded
 
 ## loadActor
-
-[index.js:46-70][17]
 
 loads an actor from the tree given its id
 
@@ -51,63 +47,72 @@ loads an actor from the tree given its id
 
 Returns **[Promise][16]&lt;Actor>** 
 
-## createActor
+## newActor
 
-[index.js:78-102][18]
+creates an actor from a module and code
+
+**Parameters**
+
+-   `mod` **[Module][17]** the module
+-   `code` **[Buffer][18]** the code
+
+Returns **ActorRef** 
+
+## createModule
+
+creates a modref from a module and code
+
+**Parameters**
+
+-   `mod` **[Module][17]** the module
+-   `code` **[Buffer][18]** the code
+-   `id` **id** the id for the module (optional, default `{nonce:this.nonce++,parent:null}`)
+
+Returns **ModuleRef** 
+
+## createActor
 
 creates an instance of an Actor
 
 **Parameters**
 
--   `type` **Integer** the type id for the container
--   `code`  
--   `id` **[Object][10]** the id for the actor (optional, default `{nonce:this.nonce++,parent:null}`)
--   `message` **[Object][10]** an intial [message][15] to send newly created actor
+-   `modRef`  
+-   `id` **[Object][11]** the id for the actor (optional, default `{nonce:this.nonce++,parent:null}`)
+-   `type` **ModuleRef** the modref
+
+Returns **ActorRef** 
 
 ## createStateRoot
 
-[index.js:116-124][19]
-
-creates a state root starting from a given container and a given number of
-ticks
-
-**Parameters**
-
--   `ticks` **[Number][20]** the number of ticks at which to create the state root
+creates a state root when scheduler is idle
 
 Returns **[Promise][16]** 
 
 ## setStateRoot
 
-[index.js:131-135][21]
-
 set the state root. The promise must resolve before creating or sending any more messages to the hypervisor
 
 **Parameters**
 
--   `stateRoot` **[Buffer][22]** 
+-   `stateRoot` **[Buffer][18]** 
 
 Returns **[Promise][16]** 
 
-## registerContainer
+## registerModule
 
-[index.js:141-143][23]
-
-regesters a container with the hypervisor
+registers a module with the hypervisor
 
 **Parameters**
 
--   `Constructor` **[Function][24]** the container's constuctor
+-   `Constructor` **[Function][19]** the module's constructor
 
 ## registerDriver
-
-[index.js:149-151][25]
 
 register a driver with the hypervisor
 
 **Parameters**
 
--   `driver` **driver** 
+-   `driver` **Driver** 
 
 [1]: #constructor
 
@@ -115,46 +120,34 @@ register a driver with the hypervisor
 
 [3]: #loadactor
 
-[4]: #createactor
+[4]: #newactor
 
-[5]: #createstateroot
+[5]: #createmodule
 
-[6]: #setstateroot
+[6]: #createactor
 
-[7]: #registercontainer
+[7]: #createstateroot
 
-[8]: #registerdriver
+[8]: #setstateroot
 
-[9]: https://github.com/dfinity/js-primea/blob/1f8affb407f9413e9af400e3cc7408ece8274347/index.js#L18-L27 "Source code on GitHub"
+[9]: #registermodule
 
-[10]: https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Object
+[10]: #registerdriver
 
-[11]: https://github.com/dfinity/js-dfinity-radix-tree
+[11]: https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Object
 
-[12]: https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Array
+[12]: https://github.com/dfinity/js-dfinity-radix-tree
 
-[13]: https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Boolean
+[13]: https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Array
 
-[14]: https://github.com/dfinity/js-primea/blob/1f8affb407f9413e9af400e3cc7408ece8274347/index.js#L34-L39 "Source code on GitHub"
+[14]: https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Boolean
 
 [15]: https://github.com/primea/js-primea-message
 
 [16]: https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Promise
 
-[17]: https://github.com/dfinity/js-primea/blob/1f8affb407f9413e9af400e3cc7408ece8274347/index.js#L46-L70 "Source code on GitHub"
+[17]: https://nodejs.org/api/modules.html
 
-[18]: https://github.com/dfinity/js-primea/blob/1f8affb407f9413e9af400e3cc7408ece8274347/index.js#L78-L102 "Source code on GitHub"
+[18]: https://nodejs.org/api/buffer.html
 
-[19]: https://github.com/dfinity/js-primea/blob/1f8affb407f9413e9af400e3cc7408ece8274347/index.js#L116-L124 "Source code on GitHub"
-
-[20]: https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number
-
-[21]: https://github.com/dfinity/js-primea/blob/1f8affb407f9413e9af400e3cc7408ece8274347/index.js#L131-L135 "Source code on GitHub"
-
-[22]: https://nodejs.org/api/buffer.html
-
-[23]: https://github.com/dfinity/js-primea/blob/1f8affb407f9413e9af400e3cc7408ece8274347/index.js#L141-L143 "Source code on GitHub"
-
-[24]: https://developer.mozilla.org/docs/Web/JavaScript/Reference/Statements/function
-
-[25]: https://github.com/dfinity/js-primea/blob/1f8affb407f9413e9af400e3cc7408ece8274347/index.js#L149-L151 "Source code on GitHub"
+[19]: https://developer.mozilla.org/docs/Web/JavaScript/Reference/Statements/function

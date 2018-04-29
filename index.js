@@ -5,11 +5,11 @@ const {decoder, generateId, ModuleRef, ActorRef} = require('primea-objects')
 
 module.exports = class Hypervisor {
   /**
-   * The Hypervisor manages the container instances by instantiating them and
-   * destorying them when possible. It also facilitates localating Containers
+   * The Hypervisor manages module instances by instantiating them and
+   * destroying them when possible. It also facilitates locating Containers
    * @param {Object} opts
    * @param {Object} opts.tree - a [radix tree](https://github.com/dfinity/js-dfinity-radix-tree) to store the state
-   * @param {Array} opts.container - an array of containers to regester
+   * @param {Array} opts.modules - an array of modules to register
    * @param {Array} opts.drivers - an array of drivers to install
    * @param {boolean} [opts.meter=true] - whether to meter gas or not
    */
@@ -27,7 +27,7 @@ module.exports = class Hypervisor {
   /**
    * sends a message(s). If an array of message is given the all the messages will be sent at once
    * @param {Object} message - the [message](https://github.com/primea/js-primea-message) to send
-   * @returns {Promise} a promise that resolves once the receiving container is loaded
+   * @returns {Promise} a promise that resolves once the receiving module is loaded
    */
   send (messages) {
     if (!Array.isArray(messages)) {
@@ -47,6 +47,7 @@ module.exports = class Hypervisor {
       this.tree.graph.tree(state.node, '1'),
       this.tree.graph.get(state.node, '2')
     ])
+    await this.tree.graph.get(module[1][1], '')
     const [type, nonce] = state.value
     const Container = this._modules[type]
 
@@ -66,22 +67,36 @@ module.exports = class Hypervisor {
     return actor
   }
 
+  /**
+   * creates an actor from a module and code
+   * @param {Module} mod - the module
+   * @param {Buffer} code - the code
+   * @return {ActorRef}
+   */
   newActor (mod, code) {
     const modRef = this.createModule(mod, code)
     return this.createActor(modRef)
   }
 
+  /**
+   * creates a modref from a module and code
+   * @param {Module} mod - the module
+   * @param {Buffer} code - the code
+   * @param {id} id - the id for the module
+   * @return {ModuleRef}
+   */
   createModule (mod, code, id = {nonce: this.nonce++, parent: null}) {
     const moduleID = generateId(id)
     const Module = this._modules[mod.typeId]
-    const {exports, state} = Module.onCreation(mod.code)
+    const {exports, state} = Module.onCreation(code)
     return new ModuleRef(moduleID, mod.typeId, exports, state, code)
   }
 
   /**
    * creates an instance of an Actor
-   * @param {Integer} type - the type id for the container
+   * @param {ModuleRef} type - the modref
    * @param {Object} id - the id for the actor
+   * @return {ActorRef}
    */
   createActor (modRef, id = {nonce: this.nonce++, parent: null}) {
     const actorId = generateId(id)
@@ -103,9 +118,7 @@ module.exports = class Hypervisor {
   }
 
   /**
-   * creates a state root starting from a given container and a given number of
-   * ticks
-   * @param {Number} ticks the number of ticks at which to create the state root
+   * creates a state root when scheduler is idle
    * @returns {Promise}
    */
   async createStateRoot () {
@@ -114,7 +127,7 @@ module.exports = class Hypervisor {
         this.scheduler.once('idle', resolve)
       })
     }
-    // console.log(JSON.stringify(this.tree.root, null, 2))
+
     await this.tree.set(Buffer.from([0]), this.nonce)
     return this.tree.flush()
   }
@@ -131,8 +144,8 @@ module.exports = class Hypervisor {
   }
 
   /**
-   * regesters a container with the hypervisor
-   * @param {Function} Constructor - the container's constuctor
+   * registers a module with the hypervisor
+   * @param {Function} Constructor - the module's constructor
    */
   registerModule (Constructor) {
     this._modules[Constructor.typeId] = Constructor
@@ -140,7 +153,7 @@ module.exports = class Hypervisor {
 
   /**
    * register a driver with the hypervisor
-   * @param {driver} driver
+   * @param {Driver} driver
    */
   registerDriver (driver) {
     driver.startup(this)

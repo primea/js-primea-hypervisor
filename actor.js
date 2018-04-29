@@ -71,19 +71,29 @@ module.exports = class Actor {
     this.ticks += count
   }
 
+  /**
+   * creates an actor from a module and code
+   * @param {Module} mod - the module
+   * @param {Buffer} code - the code
+   */
   newActor (mod, code) {
     const modRef = this.createModule(mod, code)
     return this.createActor(modRef)
   }
 
+  /**
+   * creates a modref from a module and code
+   * @param {Module} mod - the module
+   * @param {Buffer} code - the code
+   */
   createModule (mod, code) {
     const id = this._generateNextId()
     return this.hypervisor.createModule(mod, code, id)
   }
+
   /**
-   * creates an actor
-   * @param {Integer} type - the type id for the container
-   * @param {Object} message - an intial [message](https://github.com/primea/js-primea-message) to send newly created actor
+   * creates an actor from a modref
+   * @param {ModuleRef} modRef - the modref
    */
   createActor (modRef) {
     const id = this._generateNextId()

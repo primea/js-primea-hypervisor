@@ -52,11 +52,11 @@ tape('system objects', async t => {
     load () {
       const loadedID = this.actor.storage[0].id.toString('hex')
       const link = this.actor.storage[1]
-      // const loadedMod = this.actor.storage[2]
+      const loadedMod = this.actor.storage[2]
       const loadedFuncref = this.actor.storage[3]
       t.equals(id, loadedID, 'should load id correctly')
       t.equals(link['/'].toString('hex'), '6fe3180f700090697285ac1e0e8dc400259373d7', 'should load link correctly')
-      // t.deepEquals(loadedMod, mod)
+      t.deepEquals(loadedMod, mod)
       t.deepEquals(funcref, loadedFuncref)
     }
   }

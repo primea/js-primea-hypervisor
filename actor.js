@@ -3,16 +3,16 @@ const nope = () => {}
 
 module.exports = class Actor {
   /**
-   * the Actor manages the varous message passing functions and provides
+   * the Actor manages the various message passing functions and provides
    * an interface for the containers to use
    * @param {Object} opts
    * @param {ID} opts.id - the UUID of the Actor
-   * @param {Object} opts.state - the state of the container
-   * @param {Object} opts.storage - the actor's persistant storage
+   * @param {Object} opts.module - the module this actor was created from
+   * @param {Object} opts.state - the state of the module
+   * @param {Object} opts.storage - the actor's persistent storage
    * @param {Object} opts.hypervisor - the instance of the hypervisor
    * @param {Number} opts.nonce
-   * @param {Number} opts.type - the container type
-   * @param {Function} opts.container - the container constuctor and argments
+   * @param {Function} opts.Container - the module constructor and arguments
    */
   constructor (opts) {
     Object.assign(this, opts)
@@ -73,13 +73,35 @@ module.exports = class Actor {
   }
 
   /**
-   * creates an actor
-   * @param {Integer} type - the type id for the container
-   * @param {Object} message - an intial [message](https://github.com/primea/js-primea-message) to send newly created actor
+   * creates an actor from a module and code
+   * @param {Module} mod - the module
+   * @param {Buffer} code - the code
+   * @return {ActorRef}
    */
-  createActor (type, code) {
+  newActor (mod, code) {
+    const modRef = this.createModule(mod, code)
+    return this.createActor(modRef)
+  }
+
+  /**
+   * creates a modref from a module and code
+   * @param {Module} mod - the module
+   * @param {Buffer} code - the code
+   * @return {ModuleRef}
+   */
+  createModule (mod, code) {
     const id = this._generateNextId()
-    return this.hypervisor.createActor(type, code, id)
+    return this.hypervisor.createModule(mod, code, id)
+  }
+
+  /**
+   * creates an actor from a modref
+   * @param {ModuleRef} modRef - the modref
+   * @return {ActorRef}
+   */
+  createActor (modRef) {
+    const id = this._generateNextId()
+    return this.hypervisor.createActor(modRef, id)
   }
 
   _generateNextId () {
@@ -93,8 +115,7 @@ module.exports = class Actor {
   }
 
   /**
-   * sends a message to a given port
-   * @param {Object} portRef - the port
+   * sends a message
    * @param {Message} message - the message
    */
   send (message) {

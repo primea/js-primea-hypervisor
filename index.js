@@ -3,6 +3,8 @@ const Actor = require('./actor.js')
 const Scheduler = require('./scheduler.js')
 const {decoder, generateId, ModuleRef, ActorRef} = require('primea-objects')
 
+const debug = require('debug')('lifecycle:createActor')
+
 module.exports = class Hypervisor {
   /**
    * The Hypervisor manages module instances by instantiating them and
@@ -101,6 +103,8 @@ module.exports = class Hypervisor {
   createActor (modRef, id = {nonce: this.nonce++, parent: null}) {
     const actorId = generateId(id)
     const metaData = [modRef.type, 0]
+    debug('new id', actorId.toJSON())
+    debug(modRef.toJSON())
 
     // save the container in the state
     this.tree.set(actorId.id, metaData).then(node => {

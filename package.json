@@ -32,11 +32,11 @@
     "binary-search-insert": "^1.0.3",
     "debug": "^3.1.0",
     "events": "^2.0.0",
-    "primea-objects": "0.0.9",
+    "primea-objects": "0.0.11",
     "safe-buffer": "^5.1.2"
   },
   "devDependencies": {
-    "coveralls": "^3.0.0",
+    "coveralls": "^3.0.1",
     "dfinity-radix-tree": "^0.2.3",
     "documentation": "^6.3.2",
     "level-browserify": "^1.1.2",

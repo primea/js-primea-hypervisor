@@ -31,7 +31,7 @@
   "dependencies": {
     "binary-search-insert": "^1.0.3",
     "events": "^2.0.0",
-    "primea-objects": "0.0.9",
+    "primea-objects": "0.0.10",
     "safe-buffer": "^5.1.2"
   },
   "devDependencies": {

@@ -4,7 +4,7 @@
 [![Build Status](https://img.shields.io/travis/primea/js-primea-hypervisor.svg?branch=master&style=flat-square)](https://travis-ci.org/primea/js-primea-hypervisor)
 [![Coverage Status](https://img.shields.io/coveralls/primea/js-primea-hypervisor.svg?style=flat-square)](https://coveralls.io/r/primea/js-primea-hypervisor)
 
-[![js-standard-style](https://cdn.rawgit.com/feross/standard/master/badge.svg)](https://github.com/feross/standard)  
+[![js-standard-style](https://cdn.rawgit.com/feross/standard/master/badge.svg)](https://github.com/feross/standard)
 
 A JavaScript Implementation of Primea HyperVisor
 
@@ -35,7 +35,7 @@ const {module} = hypervisor.createActor(WasmContainer.typeId, wasm)
 const message = new Message({
   funcRef: module.getFuncRef('main'),
   funcArguments: [new FunctionRef({
-    actorID: egress.id,
+    actorId: egress.id,
     params: ['data']
   })]
 }).on('execution:error', e => console.error(e))

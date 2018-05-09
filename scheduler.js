@@ -46,10 +46,10 @@ module.exports = class Scheduler extends EventEmitter {
   }
 
   async _processMessage (message) {
-    const to = message.funcRef.actorID.toString()
+    const to = message.funcRef.actorId.toString()
     let actor = this.actors.get(to) || this.drivers.get(to)
     if (!actor) {
-      actor = await this.hypervisor.loadActor(message.funcRef.actorID)
+      actor = await this.hypervisor.loadActor(message.funcRef.actorId)
       this.actors.set(to, actor)
     }
     return actor.runMessage(message)

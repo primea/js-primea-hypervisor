@@ -50,7 +50,10 @@ async function main (numOfActors, depth) {
     }
   }
 
-  const hypervisor = new Hypervisor({tree, meter: false})
+  const hypervisor = new Hypervisor({
+    tree,
+    meter: false
+  })
   hypervisor.registerModule(BenchmarkContainer)
 
   const refernces = []

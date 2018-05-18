@@ -10,12 +10,15 @@ class BaseContainer {
     this.actor = actor
   }
   onStartup () {}
-  static onCreation (code, id) {
+  static onCreation (code) {
     const exp = {}
     Object.getOwnPropertyNames(this.prototype).filter(name => name !== 'constructor').forEach(name => {
       exp[name] = {}
     })
-    return new ModuleRef(exp, id)
+    return {
+      exports: exp,
+      state: []
+    }
   }
   onMessage (message) {
     return this[message.funcRef.identifier[1]](...message.funcArguments)
@@ -47,14 +50,14 @@ async function main (numOfActors, depth) {
     }
   }
 
-  const hypervisor = new Hypervisor({tree})
-  hypervisor.registerContainer(BenchmarkContainer)
+  const hypervisor = new Hypervisor({tree, meter: false})
+  hypervisor.registerModule(BenchmarkContainer)
 
   const refernces = []
   let _numOfActors = numOfActors
   while (_numOfActors--) {
-    const {module} = hypervisor.createActor(BenchmarkContainer.typeId)
-    const funcRef = module.getFuncRef('main')
+    const actor = hypervisor.newActor(BenchmarkContainer)
+    const funcRef = actor.getFuncRef('main')
     funcRef.gas = 1000
     refernces.push(funcRef)
   }

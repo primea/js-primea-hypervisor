@@ -1,4 +1,4 @@
-const {Message, ModuleRef} = require('primea-objects')
+const {Message} = require('primea-objects')
 const Hypervisor = require('../')
 
 const level = require('level-browserify')

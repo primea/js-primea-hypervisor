@@ -59,7 +59,7 @@ Its high level goals are
 * Interoperability with existing codebases
 * Deterministic execution
 
-# SPONSERED BY
+# SPONSORED BY
 [![](assests/dfinity.png)](www.dfinity.org)
 
 # LICENSE

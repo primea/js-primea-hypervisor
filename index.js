@@ -144,7 +144,7 @@ module.exports = class Hypervisor {
   async setStateRoot (stateRoot) {
     this.tree.root = stateRoot
     const node = await this.tree.get(Buffer.from([0]))
-    this.nonce = node.value
+    this.nonce = node.value || 0
   }
 
   /**

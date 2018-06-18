@@ -1,43 +1,39 @@
 const EventEmitter = require('events')
-const binarySearchInsert = require('binary-search-insert')
-
-// decides which message to go first
-function comparator (messageA, messageB) {
-  // order by number of ticks if messages have different number of ticks
-  if (messageA._fromTicks !== messageB._fromTicks) {
-    return messageA._fromTicks > messageB._fromTicks
-  } else {
-    return Buffer.compare(messageA._fromId.id, messageB._fromId.id)
-  }
-}
 
 module.exports = class Scheduler extends EventEmitter {
   /**
    * The Scheduler manages the actor instances and tracks how many "ticks" they
    * have ran.
    */
-  constructor (hypervisor) {
+  constructor (hypervisor, numOfThreads = 1) {
     super()
     this.hypervisor = hypervisor
+    this._numOfThreads = numOfThreads
     this._messages = []
-    this._times = []
+    this._processing = 0
     this.actors = new Map()
     this.drivers = new Map()
     this._running = false
   }
 
   queue (messages) {
-    messages.forEach(msg => binarySearchInsert(this._messages, comparator, msg))
+    this._messages.push.apply(this._messages, messages)
     if (!this._running) {
       this._running = true
       this._messageLoop()
     }
   }
-
   async _messageLoop () {
+    const promises = new Set()
     while (this._messages.length) {
       const message = this._messages.shift()
-      await this._processMessage(message)
+      let promise = this._processMessage(message).then(() => {
+        promises.delete(promise)
+      })
+      promises.add(promise)
+      if (promises.size >= this._numOfThreads) {
+        await Promise.race(promises)
+      }
     }
     this._running = false
     this.actors.forEach(actor => actor.shutdown())

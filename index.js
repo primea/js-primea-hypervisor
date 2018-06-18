@@ -1,6 +1,7 @@
 const Buffer = require('safe-buffer').Buffer
 const Actor = require('./actor.js')
-const Scheduler = require('./scheduler.js')
+const OrderedScheduler = require('./scheduler/ordered.js')
+const Scheduler = require('./scheduler/index.js')
 const {decoder, generateId, ModuleRef, ActorRef} = require('primea-objects')
 
 const debug = require('debug')('lifecycle:createActor')
@@ -18,7 +19,11 @@ module.exports = class Hypervisor {
   constructor (opts) {
     opts.tree.dag.decoder = decoder
     this.tree = opts.tree
-    this.scheduler = new Scheduler(this)
+    if (opts.noOrder) {
+      this.scheduler = new Scheduler(this, opts.numOfThreads)
+    } else {
+      this.scheduler = new OrderedScheduler(this)
+    }
     this._modules = {}
     this.nonce = opts.nonce || 0
     this.meter = opts.meter !== undefined ? opts.meter : true;

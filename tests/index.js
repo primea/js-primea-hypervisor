@@ -61,7 +61,7 @@ tape('system objects', async t => {
     }
   }
 
-  const hypervisor = new Hypervisor({tree, modules: [TestModule]})
+  const hypervisor = new Hypervisor({tree, modules: [TestModule], noOrder: true})
   const actor = hypervisor.newActor(TestModule)
   const message = new Message({
     funcRef: actor.getFuncRef('store')
@@ -138,7 +138,8 @@ tape('two communicating actors', async t => {
 
   const hypervisor = new Hypervisor({
     tree,
-    modules: [TestModuleA, TestModuleB]
+    modules: [TestModuleA, TestModuleB],
+    noOrder: true
   })
 
   const actorB = hypervisor.newActor(TestModuleB)
@@ -182,7 +183,12 @@ tape('three communicating actors', async t => {
     }
   }
 
-  const hypervisor = new Hypervisor({tree, modules: [TestModuleA, TestModuleB]})
+  const hypervisor = new Hypervisor({
+    tree,
+    modules: [TestModuleA, TestModuleB],
+    noOrder: true,
+    numOfThreads: 2
+  })
 
   let actorB = hypervisor.newActor(TestModuleB)
   let actorA0 = hypervisor.newActor(TestModuleA)
@@ -198,8 +204,7 @@ tape('three communicating actors', async t => {
     funcArguments: [actorB.getFuncRef('main')]
   })
 
-  await hypervisor.send(message0)
-  await hypervisor.send(message1)
+  hypervisor.send([message0, message1])
 
   const stateRoot = await hypervisor.createStateRoot()
   t.deepEquals(stateRoot, expectedState, 'expected root!')

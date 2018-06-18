@@ -266,7 +266,7 @@ tape('three communicating actors, with tick counting', async t => {
 })
 
 tape('errors', async t => {
-  t.plan(3)
+  t.plan(4)
   const expectedState = Buffer.from('25bc7e81511bfded44a1846f4bca1acc99f24273', 'hex')
   const tree = new RadixTree({
     db
@@ -306,6 +306,12 @@ tape('errors', async t => {
   hypervisor.send(message)
   const stateRoot = await hypervisor.createStateRoot()
   t.deepEquals(stateRoot, expectedState, 'expected root!')
+
+  try {
+    await hypervisor.setStateRoot(Buffer.from([0]))
+  } catch (e) {
+    t.pass('should catch invalid state roots')
+  }
 })
 
 tape('out-of-gas', async t => {

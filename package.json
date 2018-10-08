@@ -30,7 +30,7 @@
   "license": "MPL-2.0",
   "dependencies": {
     "binary-search-insert": "^1.0.3",
-    "debug": "^3.1.0",
+    "debug": "^4.1.0",
     "events": "^3.0.0",
     "primea-objects": "0.1.1",
     "safe-buffer": "^5.1.2"
